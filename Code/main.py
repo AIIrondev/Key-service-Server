@@ -45,6 +45,10 @@ def default():
         return jsonify({"error": "No JSON data provided"}), 400
     license_key = data.get("license")
     hwid_uuid = data.get("hwid")
+    if not license_key or not hwid_uuid:
+        return jsonify({"error": "Missing 'license' or 'hwid' in JSON data"}), 400
+    if verify.check(license_key, hwid_uuid):
+        return 200
 
 
 def main():
