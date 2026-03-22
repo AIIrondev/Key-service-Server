@@ -1,9 +1,7 @@
 from pathlib import Path
 import sys
-from flask import Flask, render_template
+from flask import Flask, render_template, request, jsonify
 import verify
-import requests
-import json
 
 def _resolve_template_dir() -> Path:
     candidates = [
@@ -38,9 +36,9 @@ def _read_app_version() -> str:
 
 APP_VERSION = _read_app_version()
 
-@app.route("/_validate__information", methods=['POST'])
-def default():
-    data = requests.get_json()
+@app.route("/validate__information", methods=['POST'])
+def validate__information():
+    data = request.get_json(silent=True)
     if not data:
         return jsonify({"error": "No JSON data provided"}), 400
     license_key = data.get("license")
@@ -48,7 +46,13 @@ def default():
     if not license_key or not hwid_uuid:
         return jsonify({"error": "Missing 'license' or 'hwid' in JSON data"}), 400
     if verify.check(license_key, hwid_uuid):
-        return 200
+        return jsonify({"status": "ok"}), 200
+    else:
+        return jsonify({"status": "invalid"}), 402
+
+@app.route("/")
+def default():
+    return render_template("main.html")
 
 
 def main():

@@ -2,7 +2,7 @@ import json
 import os
 import secrets
 
-LICENSES_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "licenses.json"))
+LICENSES_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "licenses.json"))
 
 
 def load_file() -> dict:
