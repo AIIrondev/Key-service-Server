@@ -1,2 +1,53 @@
-<a>This is a Test If this works it would be great!</a>
-<p>Version: {{ version }}</p>
+{% extends "base.html" %}
+
+{% block title %}Keys & HWIDs{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h2 class="mb-1">All Keys</h2>
+        <p class="text-muted mb-0">Overview of license keys and bound HWIDs.</p>
+    </div>
+    <form method="POST" action="{{ url_for('generate_new') }}">
+        <button type="submit" class="btn btn-success">Generate New Key</button>
+    </form>
+</div>
+
+<div class="table-wrap">
+    <table class="table table-striped table-hover align-middle">
+        <thead>
+            <tr>
+                <th scope="col">User ID</th>
+                <th scope="col">License Key</th>
+                <th scope="col">HWID</th>
+                <th scope="col" class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in keys %}
+            <tr>
+                <td>{{ item.user_id }}</td>
+                <td><code>{{ item.license_key }}</code></td>
+                <td>
+                    {% if item.hwid_uuid %}
+                        <code>{{ item.hwid_uuid }}</code>
+                    {% else %}
+                        <span class="text-warning">Not assigned</span>
+                    {% endif %}
+                </td>
+                <td class="text-end">
+                    <form method="POST" action="{{ url_for('remove_key', user_id=item.user_id) }}" onsubmit="return confirm('Remove key for user {{ item.user_id }}?');">
+                        <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="text-center text-muted py-4">No keys found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

@@ -46,5 +46,16 @@ def new_key() -> str:
     register_new_Key(data)
     return generated_key
 
+
+def remove_key(user_id: str) -> bool:
+    data = load_file()
+    filtered = [item for item in data if str(item.get("user_id", "")) != str(user_id)]
+
+    if len(filtered) == len(data):
+        return False
+
+    register_new_Key(filtered)
+    return True
+
 def key_generator():
     return secrets.token_urlsafe(32)

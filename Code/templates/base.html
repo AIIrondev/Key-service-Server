@@ -1,0 +1,132 @@
+<!--
+   Copyright 2025 Maximilian Gründinger
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>{% block title %}Admin Inventarsystem{% endblock %}</title>
+    {% block head %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        :root {
+            color-scheme: light dark;
+            --c-bg:#f4f6f9;--c-bg-alt:#ffffff;--c-surface:#ffffff;--c-surface-alt:#f1f5f9;--c-border:#d9dde3;--c-border-strong:#b7bcc4;--c-text:#1f2933;--c-text-soft:#4b5563;--c-text-faint:#6b7280;--c-accent:#2563eb;--c-accent-hover:#1d4ed8;--c-accent-active:#1942b3;--c-success:#059669;--c-success-hover:#047857;--c-danger:#dc2626;--c-danger-hover:#b91c1c;--c-warning:#d97706;--c-focus-ring:0 0 0 3px rgba(37,99,235,.35);--c-shadow-sm:0 1px 3px rgba(0,0,0,0.08);--c-shadow-md:0 4px 12px rgba(0,0,0,0.12);--c-shadow-lg:0 8px 28px rgba(0,0,0,0.18);--c-scroll-track:#e5e7eb;--c-scroll-thumb:#c0c6ce;--c-scroll-thumb-hover:#9aa2ac;--c-badge-bg:#eef2ff;--c-badge-text:#3730a3;--c-code-bg:#f8fafc;--c-overlay:rgba(17,24,39,0.45);--c-link:#2563eb;--c-link-hover:#1d4ed8;--radius-sm:6px;--radius-md:10px;--radius-lg:14px;--transition:.18s cubic-bezier(.4,0,.2,1)
+        }
+        @media (prefers-color-scheme: dark){:root{--c-bg:#0d1117;--c-bg-alt:#101723;--c-surface:#121c29;--c-surface-alt:#182432;--c-border:#2a3a49;--c-border-strong:#3a4d5e;--c-text:#e3e9f1;--c-text-soft:#c2ccd6;--c-text-faint:#94a3b4;--c-accent:#3b82f6;--c-accent-hover:#2563eb;--c-accent-active:#1d4ed8;--c-success:#10b981;--c-success-hover:#059669;--c-danger:#ef4444;--c-danger-hover:#dc2626;--c-warning:#f59e0b;--c-focus-ring:0 0 0 3px rgba(59,130,246,.45);--c-shadow-sm:0 1px 4px rgba(0,0,0,0.55);--c-shadow-md:0 4px 18px rgba(0,0,0,0.55);--c-shadow-lg:0 10px 38px rgba(0,0,0,0.6);--c-scroll-track:#1c2632;--c-scroll-thumb:#314254;--c-scroll-thumb-hover:#44576a;--c-badge-bg:#1e293b;--c-badge-text:#c7d2fe;--c-code-bg:#182432;--c-overlay:rgba(11,18,32,0.62);--c-link:#60a5fa;--c-link-hover:#3b82f6}}
+        html{box-sizing:border-box}*,*::before,*::after{box-sizing:inherit}body{min-height:100svh;margin:0;font-family:Arial,system-ui,sans-serif;background:var(--c-bg);color:var(--c-text);padding:0 0 30px 0;transition:background .3s,color .3s}
+        .container:not(.container-fluid){width:min(100% - 2rem,1200px);margin-inline:auto;padding-top:20px}
+        .fit-content{width:fit-content;max-width:100%}.fit-content-height{height:fit-content;max-height:100%}
+        :where(p,h1,h2,h3,h4,h5,h6,li){overflow-wrap:anywhere;word-break:normal}img,video,canvas,svg{max-width:100%;height:auto}
+        .table-wrap{max-width:100%;overflow-x:auto}table.table-fit{width:max-content;max-width:100%;border-collapse:collapse}table.table-fit th,table.table-fit td{padding:.5rem .75rem;text-align:left}
+        input,select,textarea,button{max-width:100%}
+        /* Navbar */
+    .navbar{box-shadow:0 2px 5px rgba(0,0,0,.1);border-bottom:1px solid var(--c-border);background:linear-gradient(90deg,#111827,#142033)}.navbar-brand{font-weight:600;font-size:1.3rem}
+    /* High contrast on dark navbar in all modes */
+    .navbar-dark .navbar-brand{color:#f3f4f6}
+    .navbar-dark .nav-link{color:#e5e7eb}
+    .navbar-dark .nav-link:hover{color:#ffffff}
+        .admin-nav-section{margin-left:auto;display:flex;gap:15px}
+        .admin-nav-section .nav-item{background:var(--c-success);color:#fff;padding:5px 10px;border-radius:6px;text-decoration:none;transition:var(--transition);font-weight:600;font-size:.85rem}
+        .admin-nav-section .nav-item:hover{background:var(--c-success-hover);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.18)}
+        .navbar-nav{align-items:center}.navbar-nav .nav-item{margin-right:5px}.navbar-nav .nav-item:last-child{margin-right:0}
+        /* Flash messages */
+        .flashes{margin:20px 0}.flash{padding:12px 20px;margin-bottom:15px;border-radius:8px;font-weight:500;border-left:6px solid transparent;background:var(--c-surface);border:1px solid var(--c-border)}
+        .flash.success{background:rgba(16,185,129,0.12);border-left-color:var(--c-success);color:var(--c-success)}
+        .flash.error{background:rgba(239,68,68,0.15);border-left-color:var(--c-danger);color:var(--c-danger)}
+        .flash.info{background:rgba(59,130,246,0.12);border-left-color:var(--c-accent);color:var(--c-accent)}
+        /* Dropdown */
+        .dropdown-menu{box-shadow:0 8px 24px rgba(0,0,0,.15);border:1px solid var(--c-border);border-radius:10px;padding:8px 0;min-width:200px;margin-top:6px;background:var(--c-surface);color:var(--c-text)}
+        .dropdown-item{padding:10px 16px;font-size:.9rem;color:var(--c-text-soft);transition:var(--transition)}
+        .dropdown-item:hover,.dropdown-item:focus{background:var(--c-surface-alt);color:var(--c-text);transform:translateX(2px)}
+        .dropdown-divider{margin:6px 0;border-color:var(--c-border)}
+        /* Logout */
+        .logout-btn{border-radius:999px;padding:.375rem .85rem;font-weight:600;letter-spacing:.015em;line-height:1.25;transition:var(--transition)}
+        .navbar-dark .logout-btn.btn-outline-danger{color:#ffc9ce;border-color:rgba(220,53,69,.6)}
+        .navbar-dark .logout-btn.btn-outline-danger:hover{color:#fff;background:rgba(220,53,69,.9);border-color:rgba(220,53,69,1);transform:translateY(-1px);box-shadow:0 6px 16px rgba(220,53,69,.25)}
+        /* Scrollbars */
+        *::-webkit-scrollbar{width:12px;height:12px}*::-webkit-scrollbar-track{background:var(--c-scroll-track)}*::-webkit-scrollbar-thumb{background:var(--c-scroll-thumb);border-radius:20px;border:2px solid var(--c-scroll-track)}*::-webkit-scrollbar-thumb:hover{background:var(--c-scroll-thumb-hover)}
+        /* Links */
+        a{color:var(--c-link);text-decoration:none}a:hover{color:var(--c-link-hover)}
+        /* Generic surfaces */
+        .card,.content,.form-card,.item-card,.upload-card{background:var(--c-surface);border:1px solid var(--c-border);box-shadow:var(--c-shadow-sm);color:var(--c-text);border-radius:var(--radius-md)}
+        .item-card:hover{border-color:var(--c-border-strong);box-shadow:var(--c-shadow-md)}
+        .badge{background:var(--c-badge-bg);color:var(--c-badge-text);border:1px solid var(--c-border);font-weight:600;border-radius:var(--radius-sm);padding:.25rem .55rem;font-size:.7rem;letter-spacing:.03em}
+        /* Buttons */
+        .btn,.action-button,.run-backup,.update-system,.actions a.download,.actions a.restore,.upload-actions .primary{background:var(--c-accent);color:#fff !important;border:1px solid var(--c-accent-hover);transition:var(--transition);font-weight:600}
+        .btn:hover,.action-button:hover,.run-backup:hover,.update-system:hover,.actions a.download:hover,.actions a.restore:hover,.upload-actions .primary:hover{background:var(--c-accent-hover)}
+        .btn-danger,.danger-button{background:var(--c-danger);border-color:var(--c-danger-hover)}.btn-danger:hover,.danger-button:hover{background:var(--c-danger-hover)}
+        .ghost{background:transparent;border:1px solid var(--c-border);color:var(--c-text)}.ghost:hover{background:var(--c-surface-alt)}
+        /* Forms */
+        input,select,textarea{background:var(--c-surface-alt);border:1px solid var(--c-border);color:var(--c-text);border-radius:var(--radius-sm);padding:.45rem .65rem}
+        input:focus,select:focus,textarea:focus{border-color:var(--c-accent);box-shadow:var(--c-focus-ring);outline:none}
+        /* Modals */
+        .item-modal{background:var(--c-overlay)}.modal-content{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--radius-lg);box-shadow:var(--c-shadow-lg)}
+        .close-modal{color:var(--c-text-faint)}.close-modal:hover{color:var(--c-text)}
+        /* Status pill */
+        .status-pill{background:var(--c-surface);border:1px solid var(--c-border);color:var(--c-text-soft);padding:.25rem .6rem;border-radius:999px;font-weight:600}
+        .status-pill.on{background:rgba(16,185,129,0.15);border-color:var(--c-success);color:var(--c-success)}
+        .status-pill.off{background:rgba(239,68,68,0.18);border-color:var(--c-danger);color:var(--c-danger)}
+        /* Focus */
+        :focus-visible{outline:none;box-shadow:var(--c-focus-ring)}
+        /* Utility */
+        .text-info{opacity:.85}
+        @media (max-width:768px){.navbar-nav .dropdown-menu{border:none;box-shadow:none;background:rgba(17,24,39,.92);margin-left:15px;margin-top:5px;border-radius:10px}.navbar-nav .dropdown-item{color:#fff}.navbar-nav .dropdown-item:hover,.navbar-nav .dropdown-item:focus{background:rgba(255,255,255,.08);color:#fff;transform:none}.nav-item.dropdown .dropdown-toggle{padding:8px 12px}.dropdown-toggle::after{margin-left:8px}.dropdown-menu-end{background:var(--c-surface);border:1px solid var(--c-border)}.dropdown-menu-end .dropdown-item{color:var(--c-text-soft)}.dropdown-menu-end .dropdown-item:hover{background:var(--c-surface-alt);color:var(--c-text)}}
+    </style>
+    {% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('default') }}">Inventarsystem</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('default') }}">Home</a>
+                    </li>
+                </ul>
+                <div class="d-flex ms-auto">
+                    {% if 'username' in session %}
+                        <a id="logout" class="btn btn-outline-danger btn-sm logout-btn" href="{{ url_for('logout') }}" aria-label="Logout">Logout</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flashes">
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </div>
+    <!-- Mobile compatibility scripts -->
+    <script src="{{ url_for('static', filename='js/mobile_compatibility.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ios_fixes.js') }}"></script>
+</body>
+</html>

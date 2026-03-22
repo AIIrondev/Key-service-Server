@@ -15,7 +15,7 @@ if ! command -v patchelf >/dev/null 2>&1; then
 	exit 1
 fi
 
-pip install -U nuitka ordered-set zstandard flask cryptography
+pip install -U nuitka ordered-set zstandard flask cryptography pyotp qrcode
 python - <<'PY'
 from pathlib import Path
 import json
@@ -40,7 +40,7 @@ if settings_path.is_file():
 version_file.write_text(f"{version}\n", encoding="utf-8")
 print(f"Prepared {version_file} with version: {version}")
 PY
-python -m nuitka --standalone --follow-imports --include-data-dir=Code/templates=templates --include-data-file=licenses.json=licenses.json --assume-yes-for-downloads --output-dir=build --remove-output Code/main.py
+python -m nuitka --standalone --follow-imports --include-data-dir=Code/templates=templates --include-data-dir=Code/static=static --include-data-file=licenses.json=licenses.json --assume-yes-for-downloads --output-dir=build --remove-output Code/main.py
 if [[ -x "./build/main.dist/main.bin" ]]; then
 	./build/main.dist/main.bin
 else
