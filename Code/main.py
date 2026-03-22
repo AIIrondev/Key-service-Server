@@ -1,9 +1,12 @@
 from pathlib import Path
 import sys
-from flask import Flask, render_template, request, jsonify, flash, redirect, url_for, get_flashed_messages, session
+from flask import Flask, render_template, request, jsonify, flash, redirect, url_for, get_flashed_messages, session, send_file
 import verify
+import backup
 import pyotp
 import qrcode
+import json
+from io import BytesIO
 
 def _resolve_template_dir() -> Path:
     candidates = [
@@ -21,7 +24,7 @@ def _resolve_template_dir() -> Path:
 totp_key = "Hsdfisdf4n34234dfiseLoasjfj3asnnvhxbbfgrzzuewwndcodrweokyn"
 
 app = Flask(__name__, template_folder=str(_resolve_template_dir()))
-app.secret_key = "Test123"
+app.secret_key = "ASDfhbsdfseiufhgildsrfrjg874368546987s6e8468f4s"
 
 def _read_app_version() -> str:
     candidates = [
@@ -37,7 +40,7 @@ def _read_app_version() -> str:
     return "unknown"
 
 def generate_totp_qrcode():
-    uri = pyotp.totp.TOTP(totp_key).provisioning_uri(name='',issuer_name='Key Verification Server')
+    uri = pyotp.totp.TOTP(totp_key).provisioning_uri(name='',issuer_name='Inventarsystem Lizenz Verwaltung')
     qrcode.make(uri).save("qr.png")
 
 def check_totp(key):
@@ -62,13 +65,6 @@ def validate__information():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """
-    User login route.
-    Authenticates users and redirects to appropriate homepage based on role.
-    
-    Returns:
-        flask.Response: Rendered template or redirect
-    """
     if 'username' in session:
         return redirect(url_for('default'))
     if request.method == 'POST':
@@ -124,6 +120,52 @@ def logout():
     session.pop('username', None)
     flash('Logged out successfully', 'info')
     return redirect(url_for('login'))
+
+
+@app.route('/download_backup', methods=['GET'])
+def download_backup():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    licenses_data = backup.export_backup()
+    json_str = json.dumps(licenses_data, indent=2)
+    return send_file(
+        BytesIO(json_str.encode('utf-8')),
+        mimetype='application/json',
+        as_attachment=True,
+        download_name='licenses_backup.json'
+    )
+
+
+@app.route('/upload_backup', methods=['POST'])
+def upload_backup():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    if 'file' not in request.files:
+        flash('No file provided', 'error')
+        return redirect(url_for('default'))
+
+    file = request.files['file']
+    
+    if file.filename == '':
+        flash('No file selected', 'error')
+        return redirect(url_for('default'))
+
+    try:
+        content = file.read().decode('utf-8')
+        data = json.loads(content)
+        
+        if backup.import_backup(data):
+            flash('Licenses backup restored successfully', 'success')
+        else:
+            flash('Failed to restore backup - invalid format', 'error')
+    except json.JSONDecodeError:
+        flash('Invalid JSON file', 'error')
+    except Exception as e:
+        flash(f'Error uploading backup: {str(e)}', 'error')
+
+    return redirect(url_for('default'))
 
 
 def main():

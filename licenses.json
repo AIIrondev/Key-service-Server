@@ -13,5 +13,10 @@
     "user_id": "0003",
     "license_key": "H02JSHkh9qtnzU8D5yBVcyej98AU-R6lVhwyYfHA1uM",
     "hwid_uuid": ""
+  },
+  {
+    "user_id": "0004",
+    "license_key": "H02JSHkh9qtnzU8D5yBVcyej98AU-R6lVhwyYfHA1pM",
+    "hwid_uuid": "Test"
   }
 ]

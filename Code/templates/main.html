@@ -8,9 +8,13 @@
         <h2 class="mb-1">All Keys</h2>
         <p class="text-muted mb-0">Overview of license keys and bound HWIDs.</p>
     </div>
-    <form method="POST" action="{{ url_for('generate_new') }}">
-        <button type="submit" class="btn btn-success">Generate New Key</button>
-    </form>
+    <div class="d-flex gap-2">
+        <form method="POST" action="{{ url_for('generate_new') }}" style="display: inline;">
+            <button type="submit" class="btn btn-success">Generate New Key</button>
+        </form>
+        <a href="{{ url_for('download_backup') }}" class="btn btn-info">Download Backup</a>
+        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#uploadModal">Upload Backup</button>
+    </div>
 </div>
 
 <div class="table-wrap">
@@ -48,6 +52,34 @@
             {% endfor %}
         </tbody>
     </table>
+</div>
+
+<!-- Upload Backup Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadModalLabel">Upload Licenses Backup</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('upload_backup') }}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="backupFile" class="form-label">Select JSON backup file</label>
+                        <input class="form-control" type="file" id="backupFile" name="file" accept=".json" required>
+                        <small class="text-muted">Select a previously downloaded licenses_backup.json file</small>
+                    </div>
+                    <div class="alert alert-warning" role="alert">
+                        <strong>Warning:</strong> Uploading a backup will replace all current licenses. This action cannot be undone.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to restore from this backup? Current licenses will be replaced.');">Restore</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 {% endblock %}
