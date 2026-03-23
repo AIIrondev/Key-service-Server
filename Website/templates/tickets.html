@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Support Tickets{% endblock %}
+
+{% block content %}
+<section class="panel">
+    <h1>Support Tickets</h1>
+    <p>Erstellen und verfolgen Sie Ihre Supportanfragen.</p>
+</section>
+
+<section class="ticket-layout">
+    <form method="post" class="ticket-form">
+        <h3>Neues Ticket</h3>
+        <input type="text" name="title" placeholder="Titel" required>
+        <select name="priority">
+            <option>Normal</option>
+            <option>Hoch</option>
+            <option>Kritisch</option>
+        </select>
+        <textarea name="description" rows="5" placeholder="Beschreibung" required></textarea>
+        <button type="submit">Ticket erstellen</button>
+    </form>
+
+    <div class="tickets">
+        {% for item in tickets %}
+        <article class="ticket">
+            <h3>{{ item.title }}</h3>
+            <p><strong>Status:</strong> {{ item.status }} | <strong>Prioritaet:</strong> {{ item.priority }}</p>
+            <p>{{ item.description }}</p>
+            {% if item.admin_response %}
+            <p><strong>Admin Antwort:</strong> {{ item.admin_response }}</p>
+            {% endif %}
+            <small>{{ item.created_at }}</small>
+        </article>
+        {% else %}
+        <article class="ticket"><p>Keine Tickets vorhanden.</p></article>
+        {% endfor %}
+    </div>
+</section>
+
+<style>
+.panel { margin-bottom: 1rem; }
+.ticket-layout { display: grid; grid-template-columns: 320px 1fr; gap: 1rem; }
+.ticket-form, .ticket { background: #fff; border: 1px solid #d8e1e8; border-radius: 14px; padding: 1rem; }
+.ticket-form { display: grid; gap: 0.6rem; align-self: start; }
+input, select, textarea { width: 100%; border: 1px solid #c9d8e3; border-radius: 10px; padding: 0.55rem; font: inherit; }
+button { border: 1px solid #0a4c74; background: linear-gradient(120deg, #0c5a86 0%, #08486c 100%); color: #fff; padding: 0.5rem 1rem; border-radius: 999px; font-weight: 700; }
+.tickets { display: grid; gap: 0.8rem; }
+.ticket p { margin-top: 0.3rem; }
+.ticket small { color: #6f8798; }
+@media (max-width: 960px) { .ticket-layout { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}

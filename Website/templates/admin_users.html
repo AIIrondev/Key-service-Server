@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Admin | Userverwaltung{% endblock %}
+
+{% block content %}
+<section class="panel">
+    <h1>Userverwaltung</h1>
+    <p>Benutzer verwalten, Admin-Rechte vergeben und Konten bereinigen.</p>
+</section>
+
+<section class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Benutzername</th>
+                <th>Name</th>
+                <th>Rolle</th>
+                <th>Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.username }}</td>
+                <td>{{ user.display_name }}</td>
+                <td>{{ 'Admin' if user.is_admin else 'Nutzer' }}</td>
+                <td>
+                    <div class="actions">
+                        {% if not user.is_admin %}
+                        <form method="post">
+                            <input type="hidden" name="username" value="{{ user.username }}">
+                            <input type="hidden" name="action" value="make_admin">
+                            <button type="submit">Zu Admin</button>
+                        </form>
+                        {% else %}
+                        <form method="post">
+                            <input type="hidden" name="username" value="{{ user.username }}">
+                            <input type="hidden" name="action" value="remove_admin">
+                            <button type="submit" class="warn">Admin entziehen</button>
+                        </form>
+                        {% endif %}
+                        <form method="post">
+                            <input type="hidden" name="username" value="{{ user.username }}">
+                            <input type="hidden" name="action" value="delete_user">
+                            <button type="submit" class="danger">Loeschen</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+<style>
+.panel { margin-bottom: 1rem; }
+.table-wrap { background: #fff; border: 1px solid #d8e1e8; border-radius: 14px; padding: 1rem; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 0.7rem; border-bottom: 1px solid #e8eef2; }
+.actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+button { border: 1px solid #bcd0de; background: #fff; padding: 0.4rem 0.65rem; border-radius: 999px; font-weight: 700; cursor: pointer; }
+button.warn { border-color: #efcc95; }
+button.danger { border-color: #f0b7b7; color: #8d2929; }
+</style>
+{% endblock %}

@@ -40,10 +40,10 @@ if settings_path.is_file():
 version_file.write_text(f"{version}\n", encoding="utf-8")
 print(f"Prepared {version_file} with version: {version}")
 PY
-python -m nuitka --standalone --follow-imports --include-data-dir=templates=templates --include-data-dir=static=static --include-data-file=licenses.json=licenses.json --assume-yes-for-downloads --output-dir=Inventarsystem_Lizenz_Verwaltung --remove-output main.py
-if [[ -x "./Inventarsystem_Lizenz_Verwaltung/main.bin" ]]; then
-	./Inventarsystem_Lizenz_Verwaltung/main.bin
+python -m nuitka --standalone --follow-imports --include-data-dir=templates=templates --include-data-dir=static=static --include-data-file=licenses.json=licenses.json --assume-yes-for-downloads --output-dir=build --remove-output main.py
+if [[ -x "./build/main.bin" ]]; then
+	./build/main.bin
 else
-	echo "Build step finished but executable not found at ./Inventarsystem_Lizenz_Verwaltung/main.bin"
+	echo "Build step finished but executable not found at ./build/main.bin"
 	exit 1
 fi

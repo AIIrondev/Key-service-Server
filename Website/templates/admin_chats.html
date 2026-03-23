@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Chat Center{% endblock %}
+
+{% block content %}
+<section class="panel">
+    <h1>Admin Chat Center</h1>
+    <p>Unterhaltungen mit Nutzern einsehen und beantworten.</p>
+</section>
+
+<section class="layout">
+    <aside class="users">
+        <h3>Unterhaltungen</h3>
+        {% for username in conversations %}
+            <a class="user-link {{ 'active' if username == selected_user else '' }}" href="{{ url_for('admin_chats', username=username) }}">{{ username }}</a>
+        {% else %}
+            <p>Keine aktiven Unterhaltungen.</p>
+        {% endfor %}
+    </aside>
+
+    <div class="chat-panel">
+        <div class="messages">
+            {% for msg in messages %}
+            <div class="message {{ msg.sender_role }}">
+                <strong>{{ msg.sender }}</strong>
+                <p>{{ msg.message }}</p>
+                <small>{{ msg.created_at }}</small>
+            </div>
+            {% else %}
+            <p>Keine Nachrichten vorhanden.</p>
+            {% endfor %}
+        </div>
+        {% if selected_user %}
+        <form method="post" class="composer">
+            <input type="hidden" name="username" value="{{ selected_user }}">
+            <textarea name="message" rows="3" required placeholder="Antwort an {{ selected_user }}..."></textarea>
+            <button type="submit">Antwort senden</button>
+        </form>
+        {% endif %}
+    </div>
+</section>
+
+<style>
+.panel { margin-bottom: 1rem; }
+.layout { display: grid; grid-template-columns: 260px 1fr; gap: 1rem; }
+.users, .chat-panel { background: #fff; border: 1px solid #d8e1e8; border-radius: 14px; padding: 1rem; }
+.user-link { display: block; padding: 0.5rem; border-radius: 10px; border: 1px solid transparent; margin-bottom: 0.45rem; }
+.user-link:hover, .user-link.active { border-color: #bcd0de; background: #f4f9fd; }
+.messages { display: grid; gap: 0.6rem; margin-bottom: 0.8rem; max-height: 460px; overflow: auto; }
+.message { border: 1px solid #e4edf3; border-radius: 10px; padding: 0.65rem; }
+.message.admin { background: #f2f8ff; }
+.message.user { background: #fcfdff; }
+.composer { display: grid; gap: 0.6rem; }
+textarea { width: 100%; border: 1px solid #c9d8e3; border-radius: 12px; padding: 0.7rem; font: inherit; }
+button { width: fit-content; border: 1px solid #0a4c74; background: linear-gradient(120deg, #0c5a86 0%, #08486c 100%); color: #fff; padding: 0.5rem 1rem; border-radius: 999px; font-weight: 700; }
+@media (max-width: 960px) { .layout { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}

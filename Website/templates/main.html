@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}IT Loesungen | Modern{% endblock %}
+{% block title %}Inventarlösungen{% endblock %}
 
 {% block head %}
 {{ super() }}
@@ -37,7 +37,7 @@
 		margin-bottom: 0.85rem;
 		padding: 0.3rem 0.65rem;
 		border-radius: 999px;
-		font-size: 0.75rem;
+		font-size: clamp(0.7rem, 0.9vw, 0.85rem);
 		font-weight: 700;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
@@ -46,7 +46,7 @@
 	}
 
 	.hero h1 {
-		font-size: clamp(2rem, 5.1vw, 3.4rem);
+		font-size: clamp(2rem, 5.5vw, 4rem);
 		color: #06293e;
 		text-wrap: balance;
 	}
@@ -54,7 +54,7 @@
 	.hero p {
 		max-width: 56ch;
 		margin-top: 1.1rem;
-		font-size: 1.06rem;
+		font-size: clamp(0.95rem, 1.4vw, 1.2rem);
 	}
 
 	.cta-row {
@@ -101,13 +101,13 @@
 	}
 
 	.hero-card h3 {
-		font-size: 1.15rem;
+		font-size: clamp(1rem, 2vw, 1.4rem);
 		margin-bottom: 0.6rem;
 	}
 
 	.hero-card p {
 		color: #b6d6ea;
-		font-size: 0.96rem;
+		font-size: clamp(0.9rem, 1.1vw, 1.05rem);
 		margin: 0;
 	}
 
@@ -148,7 +148,7 @@
 	}
 
 	.section h2 {
-		font-size: clamp(1.4rem, 2.5vw, 2rem);
+		font-size: clamp(1.5rem, 3.2vw, 2.8rem);
 		margin-bottom: 0.5rem;
 		color: #0f334b;
 	}
@@ -168,13 +168,13 @@
 	}
 
 	.card h3 {
-		font-size: 1.07rem;
+		font-size: clamp(1rem, 1.8vw, 1.3rem);
 		color: #113c58;
 		margin-bottom: 0.45rem;
 	}
 
 	.card p {
-		font-size: 0.96rem;
+		font-size: clamp(0.9rem, 1.1vw, 1rem);
 	}
 
 	.project-list {
@@ -198,10 +198,11 @@
 		display: block;
 		color: #0b3753;
 		margin-bottom: 0.2rem;
+		font-size: clamp(1rem, 1.5vw, 1.15rem);
 	}
 
 	.project span {
-		font-size: 0.88rem;
+		font-size: clamp(0.8rem, 0.95vw, 0.95rem);
 		color: #4a6579;
 		border: 1px solid #bfd0dd;
 		padding: 0.2rem 0.55rem;
@@ -227,12 +228,13 @@
 	.step strong {
 		display: block;
 		margin-bottom: 0.2rem;
-		font-size: 0.98rem;
+		font-size: clamp(0.9rem, 1.2vw, 1.1rem);
 		color: #0f3650;
 	}
 
 	.step small {
 		color: #5f7b8f;
+		font-size: clamp(0.8rem, 0.9vw, 0.95rem);
 	}
 
 	.team-note {
@@ -260,12 +262,13 @@
 
 	.contact h2 {
 		color: #ffffff;
-		font-size: clamp(1.25rem, 2.7vw, 2rem);
+		font-size: clamp(1.4rem, 3.2vw, 2.8rem);
 		margin-bottom: 0.4rem;
 	}
 
 	.contact p {
 		color: #b9d8ec;
+		font-size: clamp(0.95rem, 1.2vw, 1.1rem);
 	}
 
 	.contact .btn-secondary {
@@ -282,6 +285,64 @@
 		justify-content: space-between;
 		gap: 1rem;
 		font-size: 0.95rem;
+	}
+
+	.partnership {
+	    margin-top: 2.2rem;
+	    padding: 2.5rem;
+	    border-radius: 18px;
+	    background: linear-gradient(135deg, #f0f7fc 0%, #e6effa 100%);
+	    border: 2px solid var(--brand);
+	    display: grid;
+	    grid-template-columns: 1fr 1.2fr;
+	    gap: 2rem;
+	    align-items: center;
+	}
+
+	.partnership-icon {
+	    font-size: clamp(4rem, 8vw, 6rem);
+	    text-align: center;
+	    line-height: 1;
+	}
+
+	.partnership-content h3 {
+	    font-size: clamp(1.3rem, 2.5vw, 1.8rem);
+	    color: var(--brand);
+	    margin-bottom: 0.8rem;
+	}
+
+	.partnership-content p {
+	    margin-bottom: 0.8rem;
+	    color: var(--text-soft);
+	    font-size: clamp(0.95rem, 1.1vw, 1.05rem);
+	}
+
+	.partnership-badges {
+	    display: flex;
+	    flex-wrap: wrap;
+	    gap: 0.6rem;
+	    margin-top: 1rem;
+	}
+
+	.badge {
+	    display: inline-block;
+	    padding: 0.4rem 0.85rem;
+	    border-radius: 999px;
+	    background: var(--brand);
+	    color: #ffffff;
+	    font-size: clamp(0.8rem, 0.95vw, 0.95rem);
+	    font-weight: 600;
+	}
+
+	@media (max-width: 700px) {
+	    .partnership {
+	        grid-template-columns: 1fr;
+	        padding: 1.8rem;
+	    }
+
+	    .partnership-icon {
+	        font-size: clamp(3rem, 6vw, 4rem);
+	    }
 	}
 
 	@keyframes rise {
@@ -341,12 +402,10 @@
 {% block content %}
 <section class="hero" id="top">
 	<div>
-		<span class="eyebrow">IT Loesungen mit Haltung</span>
+		<span class="eyebrow">IT Lösungen mit Haltung</span>
 		<h1>Zuhören. Verstehen. Planen. Realisieren.</h1>
 		<p>
-			Wir unterstuetzen Unternehmen ganzheitlich bei Enterprise-Architektur,
-			Projektmanagement und IT-Betrieb. Die Anforderung bleibt im Mittelpunkt,
-			die Umsetzung wird klar, messbar und belastbar.
+			Wir sind spezialisiert auf Schulen aller Art und machen Schulinventur endlich einfach: Unser DSGVO-konformes Inventarsystem sorgt für klare Ordnung, volle Transparenz und schnelle Abläufe im Schulalltag. Jede Lösung wird individuell für Ihre Einrichtung entwickelt, mit passgenauen Features und einer besonders schnellen, unkomplizierten Inbetriebnahme.
 		</p>
 		<div class="cta-row">
 			{% if 'username' in session %}
@@ -359,7 +418,7 @@
 		</div>
 	</div>
 	<aside class="hero-card" aria-label="Kurzfakten">
-		<h3>IT Projekte mit Substanz</h3>
+		<h3>Inventur mit Verstand</h3>
 		<p>
 			Von Infrastruktur bis Governance: Wir verbinden konzeptionelle Tiefe mit
 			pragmatischer Umsetzung im Tagesgeschaeft.
@@ -372,56 +431,72 @@
 	</aside>
 </section>
 
+<section class="partnership" id="entwicklung">
+    <div class="partnership-icon">🤝</div>
+    <div class="partnership-content">
+        <h3>Entwickelt mit Schulen – für Schulen</h3>
+        <p>
+            Unser Inventarsystem wurde nicht theoretisch konzipiert, sondern in enger Zusammenarbeit mit Einzelnen Schulen entwickelt. Wir verstehen die täglichen Herausforderungen im Schulbetrieb und entwickeln Lösungen, die wirklich einen Vorteil für den Schulaltag bringen.
+        </p>
+        <div class="partnership-badges">
+            <span class="badge">✓ Schulgetestet</span>
+            <span class="badge">✓ Praxisorientiert</span>
+            <span class="badge">✓ DSGVO-konform</span>
+            <span class="badge">✓ Einfach zu bedienen</span>
+        </div>
+    </div>
+</section>
+
 <section class="section" id="leistungen" style="animation-delay: 100ms;">
-	<h2>Dienstleistungen</h2>
-	<p>Modulare Leistungen, individuell kombiniert fuer Ihre IT-Roadmap.</p>
+	<h2>Leistungsbereiche</h2>
+	<p>Klare Gliederung in Konnektivitaet, Inventarverwaltung und laufenden Betrieb.</p>
 	<div class="section-grid">
 		<article class="card">
-			<h3>Support und Service</h3>
-			<p>Betriebskritische Systeme stabil halten, proaktiv ueberwachen und schnell reagieren.</p>
+			<h3>Konnektivitaet und Netzwerk</h3>
+			<p>Stabile Anbindung Ihrer Schulstandorte, saubere Netzstruktur und sichere Erreichbarkeit aller relevanten Systeme.</p>
 		</article>
 		<article class="card">
-			<h3>Optimierung und Tuning</h3>
-			<p>Strukturen, Kosten und Performance datenbasiert verbessern statt nur Symptome behandeln.</p>
+			<h3>Inventar und Lizenzmanagement</h3>
+			<p>Zentrale Verwaltung von Geraeten und Lizenzen mit schneller Uebersicht, nachvollziehbaren Prozessen und klaren Zustaendigkeiten.</p>
 		</article>
 		<article class="card">
-			<h3>Health Check und Verify</h3>
-			<p>Technische Due-Diligence, klare Handlungsplaene und belastbare Priorisierung.</p>
+			<h3>Support, Updates und Beratung</h3>
+			<p>Persoenliche Ansprechpartner, kurze Reaktionszeiten und planbare Updates fuer einen zuverlaessigen Betrieb im Schulalltag.</p>
 		</article>
 	</div>
 </section>
 
 <section class="section" id="projekte" style="animation-delay: 180ms;">
-	<h2>Projektfelder</h2>
-	<p>Ausgewählte Schwerpunkte aus laufenden und abgeschlossenen Kundenprojekten.</p>
+	<h2>Module im Ueberblick</h2>
+	<p>Alle Kernbereiche fuer Schulen in einer strukturierten Plattform: Konnektivitaet, Sicherheit und Betrieb.</p>
 	<div class="project-list">
 		<div class="project">
 			<div>
-				<b>Virtualisierung und Hybrid-Cloud</b>
-				Migration in wartbare Plattformen mit planbaren Betriebskosten.
+				<b>Konnektivitaet</b>
+				Sichere Standortanbindung, stabile Verbindungen und klare Netzwerkstruktur fuer einen reibungslosen Zugriff auf alle Inventardaten.
 			</div>
-			<span>Cloud Computing</span>
+			<span>Netzwerk</span>
 		</div>
 		<div class="project">
 			<div>
-				<b>Netzwerk und Sicherheit</b>
-				Segmentierung, Monitoring und Security-Standards auf Enterprise-Niveau.
+	    		<b>Sicherheit und DSGVO</b>
+	    		Datenschutz nach DSGVO, automatisierte Sicherheitspruefungen und klare Compliance-Standards fuer den Einsatz im oeffentlichen Bereich.
 			</div>
 			<span>Security</span>
 		</div>
 		<div class="project">
 			<div>
-				<b>Projektmanagement und EAM</b>
-				Governance, Architekturprinzipien und Umsetzung in einer Linie.
+				<b>Betrieb und Updates</b>
+				Regelmaessige Updates, schnelle Stoerungsbehebung und laufende Optimierung sorgen fuer einen dauerhaft stabilen Schulbetrieb.
 			</div>
-			<span>Transformation</span>
+			<span>Updates</span>
 		</div>
 	</div>
 </section>
 
 <section class="section" id="team" style="animation-delay: 260ms;">
-	<h2>Unsere Arbeitsweise</h2>
-	<p>Klassische Beratungsdisziplin trifft auf moderne Delivery-Kultur.</p>
+	<h2>Zusammenarbeit</h2>
+	<p>Strukturiert, nachvollziehbar und mit festen Ansprechpartnern von der Analyse bis zum Betrieb.</p>
 	<div class="process" aria-label="Prozessschritte">
 		<div class="step"><strong>Zuhoeren</strong><small>Anforderungen erfassen</small></div>
 		<div class="step"><strong>Verstehen</strong><small>Kontext analysieren</small></div>
@@ -430,16 +505,12 @@
 		<div class="step"><strong>Realisieren</strong><small>Loesung liefern</small></div>
 		<div class="step"><strong>Unterstuetzen</strong><small>Betrieb absichern</small></div>
 	</div>
-	<p class="team-note">
-		Aktuell verfuegbar: Ein IT-Infrastruktur-Architekt und ein IT-Governance-Experte
-		mit technischem Hintergrund fuer neue Aufgaben.
-	</p>
 </section>
 
 <section class="contact" id="kontakt">
 	<div>
 		<h2>Bereit fuer das naechste IT-Projekt?</h2>
-		<p>In einem kurzen Erstgespraech klaeren wir Zielbild, Risiken und realistische Umsetzungsschritte.</p>
+		<p>In einem kurzen Erstgespräch klären wir gemeinsam Zielbild, Risiken und realistische Umsetzungsschritte. Erstellen Sie dafür einfach ein Konto über den Button oben rechts und buchen Sie anschließend über die Kalenderfunktion einen Termin mit Ihrem Schulnamen und dem Betreff „Erstgespräch“. Alternativ können Sie uns jederzeit per E-Mail kontaktieren oder unseren Website-Chat nutzen.</p>
 	</div>
 	{% if 'username' in session %}
 		<a class="btn btn-secondary" href="{{ url_for('appointments') }}">Termin anfragen</a>

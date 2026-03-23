@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Meine Rechnungen{% endblock %}
+
+{% block content %}
+<section class="panel">
+    <h1>Rechnungseinsicht</h1>
+    <p>Alle Rechnungen im Ueberblick.</p>
+</section>
+
+<section class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Rechnungsnummer</th>
+                <th>Zeitraum</th>
+                <th>Betrag</th>
+                <th>Faelligkeit</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for invoice in invoices %}
+            <tr>
+                <td>{{ invoice.invoice_number }}</td>
+                <td>{{ invoice.period }}</td>
+                <td>{{ '%.2f'|format(invoice.amount_eur) }} EUR</td>
+                <td>{{ invoice.due_date }}</td>
+                <td>{{ invoice.status }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5">Noch keine Rechnungen vorhanden.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+<style>
+.panel { margin-bottom: 1rem; }
+.table-wrap { background: #fff; border: 1px solid #d8e1e8; border-radius: 14px; padding: 1rem; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 0.7rem; border-bottom: 1px solid #e8eef2; }
+</style>
+{% endblock %}

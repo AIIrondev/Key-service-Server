@@ -9,6 +9,11 @@ from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 import bleach
 from markupsafe import escape
+from pymongo import MongoClient
+from pymongo.errors import PyMongoError
+from bson.objectid import ObjectId
+
+import user as user_store
 
 app = Flask(__name__)
 app.secret_key = "ASDfhbsdfseiufhgildsrfrjg874368546987s6e8468f4s"
@@ -35,10 +40,100 @@ DATA_DIR = BASE_DIR / "data"
 USERS_FILE = DATA_DIR / "users.json"
 APPOINTMENTS_FILE = DATA_DIR / "appointments.json"
 POSTS_FILE = DATA_DIR / "posts.json"
+MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
+MONGO_DB_NAME = os.environ.get("MONGO_DB_NAME", "Inventarsystem")
 
 
 def _issue_access_token() -> str:
     return create_access_token(identity="license-validation-client")
+
+
+def _utc_now_iso() -> str:
+    return datetime.utcnow().isoformat(timespec="seconds") + "Z"
+
+
+def _get_mongo_client() -> MongoClient:
+    return MongoClient(MONGO_URI, serverSelectionTimeoutMS=1200)
+
+
+def _get_mongo_db():
+    client = _get_mongo_client()
+    return client, client[MONGO_DB_NAME]
+
+
+def _normalize_user_doc(doc: dict | None) -> dict | None:
+    if not doc:
+        return None
+    return {
+        "username": doc.get("Username") or doc.get("username"),
+        "display_name": doc.get("name") or doc.get("display_name") or doc.get("Username"),
+        "is_admin": bool(doc.get("Admin") or doc.get("is_admin", False)),
+        "created_at": doc.get("created_at"),
+    }
+
+
+def _get_collection(name: str):
+    client, db = _get_mongo_db()
+    return client, db[name]
+
+
+def _list_users_for_admin() -> list:
+    docs = user_store.get_all_users() or []
+    users = []
+    for doc in docs:
+        normalized = _normalize_user_doc(doc)
+        if normalized and normalized.get("username"):
+            users.append(normalized)
+    users.sort(key=lambda item: (item.get("is_admin", False), item.get("username", "")), reverse=True)
+    return users
+
+
+def _ensure_user_license(username: str, display_name: str) -> None:
+    client = None
+    try:
+        client, licenses = _get_collection("licenses")
+        if licenses.find_one({"username": username}):
+            return
+        licenses.insert_one(
+            {
+                "username": username,
+                "school_name": f"{display_name} Schule",
+                "license_key": f"LIC-{int(datetime.utcnow().timestamp())}-{username[:3].upper()}",
+                "plan": "Standard",
+                "status": "Aktiv",
+                "valid_until": "2027-12-31",
+                "created_at": _utc_now_iso(),
+            }
+        )
+    except PyMongoError:
+        return
+    finally:
+        if client:
+            client.close()
+
+
+def _ensure_user_invoice(username: str) -> None:
+    client = None
+    try:
+        client, invoices = _get_collection("invoices")
+        if invoices.find_one({"username": username}):
+            return
+        invoices.insert_one(
+            {
+                "username": username,
+                "invoice_number": f"INV-{datetime.utcnow().strftime('%Y%m')}-{username[:3].upper()}",
+                "period": datetime.utcnow().strftime("%m/%Y"),
+                "amount_eur": 79.0,
+                "status": "Offen",
+                "due_date": "2026-12-31",
+                "created_at": _utc_now_iso(),
+            }
+        )
+    except PyMongoError:
+        return
+    finally:
+        if client:
+            client.close()
 
 
 def _ensure_data_files() -> None:
@@ -93,14 +188,28 @@ def _validate_username(username: str) -> bool:
 
 
 def _find_user(username: str):
-    username_key = (username or "").strip().lower()
+    username_key = (username or "").strip()
     if not username_key:
         return None
-    users = _read_json(USERS_FILE)
-    for entry in users:
-        if entry.get("username", "").lower() == username_key:
-            return entry
-    return None
+
+    try:
+        # First try an exact lookup using the original username.
+        raw_user = user_store.get_user(username_key)
+        normalized = _normalize_user_doc(raw_user)
+        if normalized:
+            return normalized
+
+        # Fallback: case-insensitive lookup to avoid role-check failures
+        # when session username casing differs from stored Username casing.
+        all_users = user_store.get_all_users() or []
+        for entry in all_users:
+            candidate = (entry.get("Username") or entry.get("username") or "").strip()
+            if candidate.lower() == username_key.lower():
+                return _normalize_user_doc(entry)
+
+        return None
+    except Exception:
+        return None
 
 
 def login_required(view_func):
@@ -154,13 +263,20 @@ def login():
             flash('Bitte Benutzername und Passwort eingeben.', 'error')
             return redirect(url_for('login'))
 
-        stored_user = _find_user(username)
+        try:
+            stored_user_raw = user_store.check_nm_pwd(username, password)
+        except Exception:
+            stored_user_raw = None
 
-        if stored_user and check_password_hash(stored_user.get("password_hash", ""), password):
+        stored_user = _normalize_user_doc(stored_user_raw)
+
+        if stored_user:
             session['username'] = stored_user.get("username")
             session['display_name'] = stored_user.get("display_name") or stored_user.get("username")
             session['is_admin'] = stored_user.get("is_admin", False)
             session['access_token'] = _issue_access_token()
+            _ensure_user_license(session['username'], session['display_name'])
+            _ensure_user_invoice(session['username'])
 
             if request.is_json:
                 return jsonify({"access_token": session['access_token'], "token_type": "Bearer"}), 200
@@ -205,18 +321,18 @@ def register():
 
         display_name = _sanitize_text(display_name, 100)
 
-        users = _read_json(USERS_FILE)
-        is_admin = len(users) == 0
-        users.append(
-            {
-                "username": username,
-                "display_name": display_name,
-                "password_hash": generate_password_hash(password),
-                "is_admin": is_admin,
-                "created_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
-            }
-        )
-        _write_json(USERS_FILE, users)
+        try:
+            existing_users = user_store.get_all_users() or []
+            is_first_user = len(existing_users) == 0
+            if not user_store.add_user(username, password, display_name, ""):
+                flash("Benutzer konnte nicht erstellt werden.", "error")
+                return redirect(url_for("register"))
+            if is_first_user:
+                user_store.make_admin(username)
+        except Exception:
+            flash("MongoDB ist derzeit nicht erreichbar.", "error")
+            return redirect(url_for("register"))
+
         flash("Registrierung erfolgreich. Bitte jetzt einloggen.", "success")
         return redirect(url_for("login"))
 
@@ -439,6 +555,419 @@ def blog_post(post_id):
         return redirect(url_for("blog"))
     
     return render_template("blog_post.html", post=post)
+
+
+@app.route('/my/licenses')
+@login_required
+def my_licenses():
+    licenses = []
+    client = None
+    try:
+        client, col = _get_collection("licenses")
+        licenses = list(col.find({"username": session.get("username")}, {"_id": 0}).sort("created_at", -1))
+    except PyMongoError:
+        flash("Lizenzdaten konnten nicht geladen werden.", "error")
+    finally:
+        if client:
+            client.close()
+    return render_template("my_licenses.html", licenses=licenses)
+
+
+@app.route('/my/invoices')
+@login_required
+def my_invoices():
+    invoices = []
+    client = None
+    try:
+        client, col = _get_collection("invoices")
+        invoices = list(col.find({"username": session.get("username")}, {"_id": 0}).sort("created_at", -1))
+    except PyMongoError:
+        flash("Rechnungen konnten nicht geladen werden.", "error")
+    finally:
+        if client:
+            client.close()
+    return render_template("my_invoices.html", invoices=invoices)
+
+
+@app.route('/chat', methods=['GET', 'POST'])
+@login_required
+def user_chat():
+    client = None
+    if request.method == 'POST':
+        message = _sanitize_text(request.form.get("message") or "", 3000)
+        if not message:
+            flash("Bitte eine Nachricht eingeben.", "error")
+            return redirect(url_for("user_chat"))
+        try:
+            client, col = _get_collection("chat_messages")
+            col.insert_one(
+                {
+                    "username": session.get("username"),
+                    "sender": session.get("display_name"),
+                    "sender_role": "user",
+                    "message": message,
+                    "created_at": _utc_now_iso(),
+                }
+            )
+            flash("Nachricht gesendet.", "success")
+        except PyMongoError:
+            flash("Nachricht konnte nicht gesendet werden.", "error")
+        finally:
+            if client:
+                client.close()
+        return redirect(url_for("user_chat"))
+
+    messages = []
+    try:
+        client, col = _get_collection("chat_messages")
+        messages = list(col.find({"username": session.get("username")}, {"_id": 0}).sort("created_at", 1))
+    except PyMongoError:
+        flash("Chat konnte nicht geladen werden.", "error")
+    finally:
+        if client:
+            client.close()
+    return render_template("chat.html", messages=messages)
+
+
+@app.route('/tickets', methods=['GET', 'POST'])
+@login_required
+def user_tickets():
+    client = None
+    if request.method == 'POST':
+        title = _sanitize_text(request.form.get("title") or "", 200)
+        description = _sanitize_text(request.form.get("description") or "", 5000)
+        priority = _sanitize_text(request.form.get("priority") or "Normal", 30)
+        if not title or not description:
+            flash("Bitte Titel und Beschreibung ausfuellen.", "error")
+            return redirect(url_for("user_tickets"))
+        try:
+            client, col = _get_collection("support_tickets")
+            col.insert_one(
+                {
+                    "username": session.get("username"),
+                    "display_name": session.get("display_name"),
+                    "title": title,
+                    "description": description,
+                    "priority": priority,
+                    "status": "Offen",
+                    "admin_response": "",
+                    "created_at": _utc_now_iso(),
+                    "updated_at": _utc_now_iso(),
+                }
+            )
+            flash("Support-Ticket erstellt.", "success")
+        except PyMongoError:
+            flash("Support-Ticket konnte nicht erstellt werden.", "error")
+        finally:
+            if client:
+                client.close()
+        return redirect(url_for("user_tickets"))
+
+    tickets = []
+    try:
+        client, col = _get_collection("support_tickets")
+        tickets = list(col.find({"username": session.get("username")}).sort("created_at", -1))
+        for ticket in tickets:
+            ticket["id"] = str(ticket.get("_id"))
+    except PyMongoError:
+        flash("Tickets konnten nicht geladen werden.", "error")
+    finally:
+        if client:
+            client.close()
+
+    return render_template("tickets.html", tickets=tickets)
+
+
+@app.route('/admin/users', methods=['GET', 'POST'])
+@admin_required
+def admin_users():
+    if request.method == 'POST':
+        action = _sanitize_text(request.form.get("action") or "", 50)
+        username = _sanitize_text(request.form.get("username") or "", 80)
+
+        if not username:
+            flash("Bitte Benutzername angeben.", "error")
+            return redirect(url_for("admin_users"))
+
+        if action == "make_admin":
+            user_store.make_admin(username)
+            flash("Benutzer zum Admin gemacht.", "success")
+        elif action == "remove_admin":
+            user_store.remove_admin(username)
+            flash("Admin-Rechte entfernt.", "success")
+        elif action == "delete_user":
+            if username == session.get("username"):
+                flash("Sie koennen Ihr eigenes Konto nicht loeschen.", "error")
+                return redirect(url_for("admin_users"))
+            user_store.delete_user(username)
+            flash("Benutzer geloescht.", "success")
+        else:
+            flash("Ungueltige Aktion.", "error")
+        return redirect(url_for("admin_users"))
+
+    users = _list_users_for_admin()
+    return render_template("admin_users.html", users=users)
+
+
+@app.route('/admin/chats', methods=['GET', 'POST'])
+@admin_required
+def admin_chats():
+    client = None
+    selected_user = _sanitize_text(request.args.get("username") or request.form.get("username") or "", 80)
+
+    if request.method == 'POST':
+        message = _sanitize_text(request.form.get("message") or "", 3000)
+        if not selected_user or not message:
+            flash("Bitte Empfaenger und Nachricht angeben.", "error")
+            return redirect(url_for("admin_chats"))
+        try:
+            client, col = _get_collection("chat_messages")
+            col.insert_one(
+                {
+                    "username": selected_user,
+                    "sender": session.get("display_name") or session.get("username"),
+                    "sender_role": "admin",
+                    "message": message,
+                    "created_at": _utc_now_iso(),
+                }
+            )
+            flash("Antwort gesendet.", "success")
+        except PyMongoError:
+            flash("Antwort konnte nicht gesendet werden.", "error")
+        finally:
+            if client:
+                client.close()
+        return redirect(url_for("admin_chats", username=selected_user))
+
+    conversations = []
+    messages = []
+    try:
+        client, col = _get_collection("chat_messages")
+        conversations = sorted(col.distinct("username"))
+        if selected_user:
+            messages = list(col.find({"username": selected_user}, {"_id": 0}).sort("created_at", 1))
+    except PyMongoError:
+        flash("Admin-Chat konnte nicht geladen werden.", "error")
+    finally:
+        if client:
+            client.close()
+
+    return render_template(
+        "admin_chats.html",
+        conversations=conversations,
+        selected_user=selected_user,
+        messages=messages,
+    )
+
+
+@app.route('/admin/tickets', methods=['GET', 'POST'])
+@admin_required
+def admin_tickets():
+    client = None
+    if request.method == 'POST':
+        ticket_id = _sanitize_text(request.form.get("ticket_id") or "", 64)
+        status = _sanitize_text(request.form.get("status") or "", 40)
+        admin_response = _sanitize_text(request.form.get("admin_response") or "", 5000)
+        if not ticket_id:
+            flash("Ticket-ID fehlt.", "error")
+            return redirect(url_for("admin_tickets"))
+
+        try:
+            client, col = _get_collection("support_tickets")
+            col.update_one(
+                {"_id": ObjectId(ticket_id)},
+                {
+                    "$set": {
+                        "status": status or "In Bearbeitung",
+                        "admin_response": admin_response,
+                        "updated_at": _utc_now_iso(),
+                    }
+                },
+            )
+            flash("Ticket aktualisiert.", "success")
+        except Exception:
+            flash("Ticket konnte nicht aktualisiert werden.", "error")
+        finally:
+            if client:
+                client.close()
+        return redirect(url_for("admin_tickets"))
+
+    tickets = []
+    try:
+        client, col = _get_collection("support_tickets")
+        tickets = list(col.find().sort("created_at", -1))
+        for ticket in tickets:
+            ticket["id"] = str(ticket.get("_id"))
+    except PyMongoError:
+        flash("Support-Tickets konnten nicht geladen werden.", "error")
+    finally:
+        if client:
+            client.close()
+
+    return render_template("admin_tickets.html", tickets=tickets)
+
+
+@app.route('/admin/licenses', methods=['GET', 'POST'])
+@admin_required
+def admin_licenses():
+    client = None
+    if request.method == 'POST':
+        action = _sanitize_text(request.form.get("action") or "", 50)
+        license_id = _sanitize_text(request.form.get("license_id") or "", 64)
+
+        try:
+            client, col = _get_collection("licenses")
+
+            if action == "create":
+                username = _sanitize_text(request.form.get("username") or "", 80)
+                school_name = _sanitize_text(request.form.get("school_name") or "", 200)
+                plan = _sanitize_text(request.form.get("plan") or "Standard", 80)
+                status = _sanitize_text(request.form.get("status") or "Aktiv", 40)
+                valid_until = _sanitize_text(request.form.get("valid_until") or "", 40)
+
+                if not username or not school_name:
+                    flash("Bitte Benutzername und Schule angeben.", "error")
+                    return redirect(url_for("admin_licenses"))
+
+                col.insert_one(
+                    {
+                        "username": username,
+                        "school_name": school_name,
+                        "license_key": f"LIC-{int(datetime.utcnow().timestamp())}-{username[:3].upper()}",
+                        "plan": plan,
+                        "status": status,
+                        "valid_until": valid_until or "2027-12-31",
+                        "created_at": _utc_now_iso(),
+                    }
+                )
+                flash("Lizenz angelegt.", "success")
+
+            elif action == "update" and license_id:
+                col.update_one(
+                    {"_id": ObjectId(license_id)},
+                    {
+                        "$set": {
+                            "plan": _sanitize_text(request.form.get("plan") or "Standard", 80),
+                            "status": _sanitize_text(request.form.get("status") or "Aktiv", 40),
+                            "valid_until": _sanitize_text(request.form.get("valid_until") or "", 40),
+                        }
+                    },
+                )
+                flash("Lizenz aktualisiert.", "success")
+
+            elif action == "delete" and license_id:
+                col.delete_one({"_id": ObjectId(license_id)})
+                flash("Lizenz geloescht.", "success")
+            else:
+                flash("Ungueltige Aktion.", "error")
+        except Exception:
+            flash("Lizenzverwaltung fehlgeschlagen.", "error")
+        finally:
+            if client:
+                client.close()
+
+        return redirect(url_for("admin_licenses"))
+
+    licenses = []
+    try:
+        client, col = _get_collection("licenses")
+        licenses = list(col.find().sort("created_at", -1))
+        for item in licenses:
+            item["id"] = str(item.get("_id"))
+    except PyMongoError:
+        flash("Lizenzen konnten nicht geladen werden.", "error")
+    finally:
+        if client:
+            client.close()
+
+    return render_template("admin_licenses.html", licenses=licenses)
+
+
+@app.route('/admin/invoices', methods=['GET', 'POST'])
+@admin_required
+def admin_invoices():
+    client = None
+    if request.method == 'POST':
+        action = _sanitize_text(request.form.get("action") or "", 50)
+        invoice_id = _sanitize_text(request.form.get("invoice_id") or "", 64)
+
+        try:
+            client, col = _get_collection("invoices")
+
+            if action == "create":
+                username = _sanitize_text(request.form.get("username") or "", 80)
+                period = _sanitize_text(request.form.get("period") or "", 20)
+                due_date = _sanitize_text(request.form.get("due_date") or "", 20)
+                status = _sanitize_text(request.form.get("status") or "Offen", 40)
+                amount_text = _sanitize_text(request.form.get("amount_eur") or "0", 20)
+
+                try:
+                    amount = float(amount_text)
+                except ValueError:
+                    amount = 0.0
+
+                if not username or not period:
+                    flash("Bitte Benutzername und Zeitraum angeben.", "error")
+                    return redirect(url_for("admin_invoices"))
+
+                col.insert_one(
+                    {
+                        "username": username,
+                        "invoice_number": f"INV-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
+                        "period": period,
+                        "amount_eur": amount,
+                        "status": status,
+                        "due_date": due_date or "2026-12-31",
+                        "created_at": _utc_now_iso(),
+                    }
+                )
+                flash("Rechnung angelegt.", "success")
+
+            elif action == "update" and invoice_id:
+                amount_text = _sanitize_text(request.form.get("amount_eur") or "0", 20)
+                try:
+                    amount = float(amount_text)
+                except ValueError:
+                    amount = 0.0
+
+                col.update_one(
+                    {"_id": ObjectId(invoice_id)},
+                    {
+                        "$set": {
+                            "status": _sanitize_text(request.form.get("status") or "Offen", 40),
+                            "due_date": _sanitize_text(request.form.get("due_date") or "", 20),
+                            "amount_eur": amount,
+                        }
+                    },
+                )
+                flash("Rechnung aktualisiert.", "success")
+
+            elif action == "delete" and invoice_id:
+                col.delete_one({"_id": ObjectId(invoice_id)})
+                flash("Rechnung geloescht.", "success")
+            else:
+                flash("Ungueltige Aktion.", "error")
+        except Exception:
+            flash("Rechnungsverwaltung fehlgeschlagen.", "error")
+        finally:
+            if client:
+                client.close()
+
+        return redirect(url_for("admin_invoices"))
+
+    invoices = []
+    try:
+        client, col = _get_collection("invoices")
+        invoices = list(col.find().sort("created_at", -1))
+        for item in invoices:
+            item["id"] = str(item.get("_id"))
+    except PyMongoError:
+        flash("Rechnungen konnten nicht geladen werden.", "error")
+    finally:
+        if client:
+            client.close()
+
+    return render_template("admin_invoices.html", invoices=invoices)
 
 
 @app.route('/datenschutz')

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Admin | Lizenzverwaltung{% endblock %}
+
+{% block content %}
+<section class="panel">
+    <h1>Lizenzverwaltung</h1>
+    <p>Lizenzen fuer Nutzer anlegen, bearbeiten und loeschen.</p>
+</section>
+
+<section class="layout">
+    <form method="post" class="form-card">
+        <h3>Neue Lizenz</h3>
+        <input type="hidden" name="action" value="create">
+        <input type="text" name="username" placeholder="Benutzername" required>
+        <input type="text" name="school_name" placeholder="Schulname" required>
+        <input type="text" name="plan" placeholder="Plan (z. B. Standard)">
+        <input type="text" name="status" placeholder="Status (Aktiv, Pausiert)">
+        <input type="text" name="valid_until" placeholder="Gueltig bis (YYYY-MM-DD)">
+        <button type="submit">Lizenz anlegen</button>
+    </form>
+
+    <div class="list">
+        {% for item in licenses %}
+        <article class="entry">
+            <h3>{{ item.username }} - {{ item.school_name }}</h3>
+            <p><strong>Key:</strong> {{ item.license_key }} | <strong>Plan:</strong> {{ item.plan }}</p>
+            <p><strong>Status:</strong> {{ item.status }} | <strong>Gueltig bis:</strong> {{ item.valid_until }}</p>
+            <form method="post" class="inline-form">
+                <input type="hidden" name="action" value="update">
+                <input type="hidden" name="license_id" value="{{ item.id }}">
+                <input type="text" name="plan" value="{{ item.plan }}" placeholder="Plan">
+                <input type="text" name="status" value="{{ item.status }}" placeholder="Status">
+                <input type="text" name="valid_until" value="{{ item.valid_until }}" placeholder="Gueltig bis">
+                <button type="submit">Aktualisieren</button>
+            </form>
+            <form method="post">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="license_id" value="{{ item.id }}">
+                <button type="submit" class="danger">Loeschen</button>
+            </form>
+        </article>
+        {% else %}
+        <article class="entry"><p>Noch keine Lizenzen vorhanden.</p></article>
+        {% endfor %}
+    </div>
+</section>
+
+<style>
+.panel { margin-bottom: 1rem; }
+.layout { display: grid; grid-template-columns: 320px 1fr; gap: 1rem; }
+.form-card, .entry { background: #fff; border: 1px solid #d8e1e8; border-radius: 14px; padding: 1rem; }
+.form-card { display: grid; gap: 0.6rem; align-self: start; }
+.list { display: grid; gap: 0.8rem; }
+.inline-form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.45rem; margin-top: 0.6rem; }
+input { width: 100%; border: 1px solid #c9d8e3; border-radius: 10px; padding: 0.52rem; font: inherit; }
+button { border: 1px solid #0a4c74; background: linear-gradient(120deg, #0c5a86 0%, #08486c 100%); color: #fff; padding: 0.45rem 0.8rem; border-radius: 999px; font-weight: 700; }
+button.danger { border-color: #d04a49; background: #fff; color: #922e2e; margin-top: 0.55rem; }
+@media (max-width: 980px) { .layout { grid-template-columns: 1fr; } .inline-form { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Chat mit Admin{% endblock %}
+
+{% block content %}
+<section class="panel">
+    <h1>Chat mit den Administratoren</h1>
+    <p>Stellen Sie Fragen direkt im Chat. Antworten erscheinen in derselben Unterhaltung.</p>
+</section>
+
+<section class="chat-box">
+    <div class="messages">
+        {% for msg in messages %}
+        <div class="message {{ 'admin' if msg.sender_role == 'admin' else 'user' }}">
+            <strong>{{ msg.sender }}</strong>
+            <p>{{ msg.message }}</p>
+            <small>{{ msg.created_at }}</small>
+        </div>
+        {% else %}
+        <p>Noch keine Nachrichten vorhanden.</p>
+        {% endfor %}
+    </div>
+    <form method="post" class="composer">
+        <textarea name="message" rows="3" placeholder="Ihre Nachricht..." required></textarea>
+        <button type="submit">Senden</button>
+    </form>
+</section>
+
+<style>
+.panel { margin-bottom: 1rem; }
+.chat-box { background: #fff; border: 1px solid #d8e1e8; border-radius: 14px; padding: 1rem; }
+.messages { display: grid; gap: 0.6rem; margin-bottom: 0.8rem; max-height: 440px; overflow: auto; }
+.message { border: 1px solid #e4edf3; border-radius: 10px; padding: 0.65rem; background: #f9fcff; }
+.message.admin { background: #f2f8ff; border-color: #c8def1; }
+.message.user { background: #fcfdff; }
+.message p { margin-top: 0.3rem; }
+.message small { color: #6f8798; }
+.composer { display: grid; gap: 0.6rem; }
+textarea { width: 100%; border: 1px solid #c9d8e3; border-radius: 12px; padding: 0.7rem; font: inherit; }
+button { width: fit-content; border: 1px solid #0a4c74; background: linear-gradient(120deg, #0c5a86 0%, #08486c 100%); color: #fff; padding: 0.5rem 1rem; border-radius: 999px; font-weight: 700; }
+</style>
+{% endblock %}
