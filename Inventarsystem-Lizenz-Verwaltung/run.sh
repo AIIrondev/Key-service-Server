@@ -22,7 +22,7 @@ import json
 
 root = Path.cwd()
 settings_path = root / "settings.json"
-version_file = root / "Code" / "version.txt"
+version_file = root  / "version.txt"
 
 version = "0.1.0"
 if settings_path.is_file():
@@ -40,10 +40,10 @@ if settings_path.is_file():
 version_file.write_text(f"{version}\n", encoding="utf-8")
 print(f"Prepared {version_file} with version: {version}")
 PY
-python -m nuitka --standalone --follow-imports --include-data-dir=Code/templates=templates --include-data-dir=Code/static=static --include-data-file=licenses.json=licenses.json --assume-yes-for-downloads --output-dir=Inventarsystem_Lizenz_Verwaltung --remove-output Code/main.py
-if [[ -x "./build/main.dist/main.bin" ]]; then
-	./build/main.dist/main.bin
+python -m nuitka --standalone --follow-imports --include-data-dir=templates=templates --include-data-dir=static=static --include-data-file=licenses.json=licenses.json --assume-yes-for-downloads --output-dir=Inventarsystem_Lizenz_Verwaltung --remove-output main.py
+if [[ -x "./Inventarsystem_Lizenz_Verwaltung/main.bin" ]]; then
+	./Inventarsystem_Lizenz_Verwaltung/main.bin
 else
-	echo "Build step finished but executable not found at ./build/main.dist/main.bin"
+	echo "Build step finished but executable not found at ./Inventarsystem_Lizenz_Verwaltung/main.bin"
 	exit 1
 fi

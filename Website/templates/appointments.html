@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block title %}Termin anfragen{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+    .appointments-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 1rem;
+        align-items: start;
+    }
+
+    .panel {
+        background: #ffffff;
+        border: 1px solid #d4e0e9;
+        border-radius: 16px;
+        padding: 1.2rem;
+        box-shadow: 0 14px 32px rgba(20, 39, 55, 0.06);
+    }
+
+    .calendar-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.8rem;
+        margin-bottom: 0.9rem;
+    }
+
+    .calendar-header h1 {
+        font-size: 1.5rem;
+        color: #133f5d;
+    }
+
+    .month-nav {
+        display: inline-flex;
+        gap: 0.4rem;
+    }
+
+    .month-nav a {
+        border-radius: 999px;
+        border: 1px solid #bfd1de;
+        padding: 0.38rem 0.7rem;
+        color: #185170;
+        font-weight: 700;
+        background: #ffffff;
+    }
+
+    .weekday-row,
+    .day-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 0.3rem;
+    }
+
+    .weekday {
+        text-align: center;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #587689;
+        padding-bottom: 0.2rem;
+    }
+
+    .day {
+        min-height: 74px;
+        border: 1px solid #d8e3ec;
+        border-radius: 10px;
+        background: #f9fcff;
+        color: #0f3f5d;
+        cursor: pointer;
+        font-weight: 700;
+        transition: all 0.15s ease;
+    }
+
+    .day:hover {
+        border-color: #9ec0d6;
+        transform: translateY(-1px);
+    }
+
+    .day.empty {
+        background: #f2f6f9;
+        border-style: dashed;
+        cursor: default;
+    }
+
+    .day.today {
+        border-color: #2d7fab;
+    }
+
+    .day.selected {
+        background: linear-gradient(140deg, #0d5c88 0%, #0a4464 100%);
+        border-color: #0d5c88;
+        color: #ffffff;
+    }
+
+    .booking-form h2,
+    .appointment-list h2 {
+        font-size: 1.2rem;
+        color: #143f5e;
+        margin: 0 0 0.8rem;
+    }
+
+    .selected-date-badge {
+        display: inline-block;
+        margin-bottom: 0.8rem;
+        border-radius: 999px;
+        padding: 0.28rem 0.6rem;
+        border: 1px solid #bfd2df;
+        color: #23526c;
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+
+    .field {
+        margin-bottom: 0.8rem;
+    }
+
+    .field label {
+        display: block;
+        margin-bottom: 0.3rem;
+        font-weight: 700;
+        color: #1f4b65;
+    }
+
+    .field input,
+    .field textarea {
+        width: 100%;
+        border: 1px solid #c4d4e0;
+        border-radius: 10px;
+        padding: 0.65rem 0.72rem;
+        font: inherit;
+        color: #143f5d;
+        background: #ffffff;
+    }
+
+    .field textarea {
+        min-height: 86px;
+        resize: vertical;
+    }
+
+    .submit-btn {
+        width: 100%;
+        border: none;
+        border-radius: 999px;
+        padding: 0.74rem;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #ffffff;
+        background: linear-gradient(120deg, #0a5f8f 0%, #0b4567 100%);
+        cursor: pointer;
+    }
+
+    .entry {
+        border: 1px solid #d7e2ea;
+        border-radius: 12px;
+        padding: 0.72rem;
+        margin-bottom: 0.55rem;
+        background: #f9fbfd;
+    }
+
+    .entry strong {
+        color: #113d59;
+    }
+
+    .entry p {
+        margin-top: 0.18rem;
+        font-size: 0.92rem;
+    }
+
+    .status {
+        display: inline-block;
+        margin-top: 0.45rem;
+        border-radius: 999px;
+        border: 1px solid #c9d7e2;
+        padding: 0.15rem 0.55rem;
+        font-size: 0.8rem;
+        color: #2f5f79;
+        font-weight: 700;
+        background: #eef4f8;
+    }
+
+    @media (max-width: 960px) {
+        .appointments-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="appointments-grid">
+    <article class="panel">
+        <div class="calendar-header">
+            <h1>{{ month_name }} {{ year }}</h1>
+            <div class="month-nav">
+                <a href="{{ url_for('appointments', month=previous_month, year=previous_year) }}">Zurueck</a>
+                <a href="{{ url_for('appointments', month=next_month, year=next_year) }}">Weiter</a>
+            </div>
+        </div>
+
+        <div class="weekday-row" aria-hidden="true">
+            <div class="weekday">Mo</div>
+            <div class="weekday">Di</div>
+            <div class="weekday">Mi</div>
+            <div class="weekday">Do</div>
+            <div class="weekday">Fr</div>
+            <div class="weekday">Sa</div>
+            <div class="weekday">So</div>
+        </div>
+
+        <div class="day-grid" id="dayGrid">
+            {% for week in month_grid %}
+                {% for day in week %}
+                    {% if day == 0 %}
+                        <button type="button" class="day empty" disabled></button>
+                    {% else %}
+                        {% set day_iso = "%04d-%02d-%02d"|format(year, month, day) %}
+                        <button
+                            type="button"
+                            class="day {% if day_iso == today_iso %}today{% endif %}"
+                            data-date="{{ day_iso }}"
+                        >
+                            {{ day }}
+                        </button>
+                    {% endif %}
+                {% endfor %}
+            {% endfor %}
+        </div>
+    </article>
+
+    <aside class="panel booking-form">
+        <h2>Termin anfragen</h2>
+        <span class="selected-date-badge" id="selectedDateBadge">Kein Datum gewaehlt</span>
+        <form method="POST" action="{{ url_for('appointments', month=month, year=year) }}">
+            <input type="hidden" id="selectedDateInput" name="selected_date" required>
+            <div class="field">
+                <label for="appointment_time">Uhrzeit</label>
+                <input id="appointment_time" name="appointment_time" type="time" required>
+            </div>
+            <div class="field">
+                <label for="subject">Betreff</label>
+                <input id="subject" name="subject" type="text" placeholder="z. B. Projekt Kickoff" required>
+            </div>
+            <div class="field">
+                <label for="note">Notiz (optional)</label>
+                <textarea id="note" name="note" placeholder="Kurzbeschreibung der Anfrage"></textarea>
+            </div>
+            <button class="submit-btn" type="submit">Termin anfragen</button>
+        </form>
+    </aside>
+</section>
+
+<section class="panel appointment-list" style="margin-top: 1rem;">
+    <h2>Meine Terminanfragen</h2>
+    {% if user_appointments %}
+        {% for item in user_appointments %}
+            <article class="entry">
+                <strong>{{ item.date }} um {{ item.time }} - {{ item.subject }}</strong>
+                {% if item.note %}
+                    <p>{{ item.note }}</p>
+                {% endif %}
+                {% if item.response %}
+                    <p><strong>Admin-Antwort:</strong> {{ item.response }}</p>
+                {% endif %}
+                <span class="status">{{ item.status }}</span>
+            </article>
+        {% endfor %}
+    {% else %}
+        <p>Noch keine Anfragen vorhanden.</p>
+    {% endif %}
+</section>
+
+<script>
+    (function () {
+        const dayGrid = document.getElementById("dayGrid");
+        const selectedDateInput = document.getElementById("selectedDateInput");
+        const selectedDateBadge = document.getElementById("selectedDateBadge");
+
+        function setSelection(dateValue, button) {
+            selectedDateInput.value = dateValue;
+            selectedDateBadge.textContent = "Ausgewaehlt: " + dateValue;
+
+            dayGrid.querySelectorAll(".day").forEach(function (node) {
+                node.classList.remove("selected");
+            });
+
+            if (button) {
+                button.classList.add("selected");
+            }
+        }
+
+        dayGrid.addEventListener("click", function (event) {
+            const target = event.target.closest(".day[data-date]");
+            if (!target) {
+                return;
+            }
+            setSelection(target.dataset.date, target);
+        });
+    })();
+</script>
+{% endblock %}

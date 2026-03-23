@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Datenschutz | Invario{% endblock %}
+
+{% block content %}
+<div class="legal-page">
+    <div class="legal-header">
+        <h1>Datenschutzerklärung</h1>
+        <p>Gültig ab: 1. Januar 2026</p>
+    </div>
+
+    <div class="legal-content">
+        <section>
+            <h2>1. Verantwortlicher</h2>
+            <p>Verantwortlich für die Datenverarbeitung ist:</p>
+            <p>
+                Invario GmbH<br>
+                Musterstraße 123<br>
+                12345 Musterstadt<br>
+                Deutschland<br>
+                E-Mail: info@invario.de
+            </p>
+        </section>
+
+        <section>
+            <h2>2. Datenschutzbeauftragter</h2>
+            <p>Unseren Datenschutzbeauftragten erreichen Sie unter:</p>
+            <p>
+                datenschutz@invario.de
+            </p>
+        </section>
+
+        <section>
+            <h2>3. Erhobene Daten</h2>
+            <p>Wir erheben und verarbeiten folgende Kategorien von personenbezogenen Daten:</p>
+            <ul>
+                <li><strong>Registrierungsdaten:</strong> Benutzername, Display-Name, E-Mail (falls vorhanden), Passwort-Hash</li>
+                <li><strong>Termin- und Buchungsdaten:</strong> Datum, Uhrzeit, Betreff, Notizen, Status der Termine</li>
+                <li><strong>Blog-Daten:</strong> Veröffentlichte Artikel, Autoreninformationen</li>
+                <li><strong>Technische Daten:</strong> IP-Adresse, Browser-Informationen, Cookie-Daten, Zeitstempel</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>4. Zweck der Datenverarbeitung</h2>
+            <p>Wir verarbeiten Ihre Daten zu folgenden Zwecken:</p>
+            <ul>
+                <li>Bereitstellung und Verwaltung Ihres Benutzerkontos</li>
+                <li>Abwicklung von Terminbuchungen und Anfragen</li>
+                <li>Kommunikation mit Ihnen zu Ihren Anfragen</li>
+                <li>Bereitstellung personalisierter Inhalte</li>
+                <li>Sicherheit und Schutz vor Missbrauch</li>
+                <li>Verbesserung unserer Dienstleistungen</li>
+                <li>Erfüllung gesetzlicher Verpflichtungen</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>5. Rechtsgrundlagen</h2>
+            <p>Die Verarbeitung personenbezogener Daten erfolgt auf Grundlage von:</p>
+            <ul>
+                <li><strong>Artikel 6 Abs. 1 lit. b) DSGVO:</strong> Abwicklung von Verträgen und Anfragen</li>
+                <li><strong>Artikel 6 Abs. 1 lit. a) DSGVO:</strong> Ihre ausdrückliche Einwilligung</li>
+                <li><strong>Artikel 6 Abs. 1 lit. c) DSGVO:</strong> Erfüllung rechtlicher Verpflichtungen</li>
+                <li><strong>Artikel 6 Abs. 1 lit. f) DSGVO:</strong> Berechtigte Interessen zur Sicherheit und Verbesserung</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>6. Speicherdauer</h2>
+            <p>Wir speichern Ihre Daten so lange, wie dies erforderlich ist:</p>
+            <ul>
+                <li>Kontodaten: Solange Ihr Konto aktiv ist, danach 12 Monate</li>
+                <li>Terminbuchungen: Bis 3 Jahre nach Abwicklung</li>
+                <li>Blog-Kommentare und Inhalte: Bis zur Löschung des Inhalts</li>
+                <li>Technische Logs: Maximal 90 Tage</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>7. Empfänger von Daten</h2>
+            <p>Wir geben Ihre Daten nicht an Dritte weiter, außer:</p>
+            <ul>
+                <li>Unsere technischen Dienstanbieter (Webhoting, Cloud-Services)</li>
+                <li>Behörden und Gerichte bei gesetzlicher Verpflichtung</li>
+                <li>Mit Ihrer ausdrücklichen Einwilligung</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>8. Ihre Rechte</h2>
+            <p>Sie haben folgende Rechte bezügliche Ihrer personenbezogenen Daten:</p>
+            <ul>
+                <li><strong>Auskunftsrecht:</strong> Recht auf Auskunft über Ihre Daten (Artikel 15 DSGVO)</li>
+                <li><strong>Berichtigungsrecht:</strong> Recht auf Korrektur unrichtiger Daten (Artikel 16 DSGVO)</li>
+                <li><strong>Löschungsrecht:</strong> Recht auf Löschung Ihrer Daten (Artikel 17 DSGVO)</li>
+                <li><strong>Einschränkungsrecht:</strong> Recht auf Einschränkung der Verarbeitung (Artikel 18 DSGVO)</li>
+                <li><strong>Recht auf Datenportabilität:</strong> Recht auf Übertragung Ihrer Daten (Artikel 20 DSGVO)</li>
+                <li><strong>Widerspruchsrecht:</strong> Recht auf Widerspruch gegen Verarbeitung (Artikel 21 DSGVO)</li>
+                <li><strong>Recht auf Beschwerde:</strong> Beschwerde bei einer Aufsichtsbehörde</li>
+            </ul>
+            <p>Um Ihre Rechte auszuüben, kontaktieren Sie uns unter: datenschutz@invario.de</p>
+        </section>
+
+        <section>
+            <h2>9. Cookies</h2>
+            <p>Wir verwenden Cookies zur Verwaltung von Sitzungen und Authentifizierung:</p>
+            <ul>
+                <li><strong>Session-Cookies:</strong> Erforderlich für die Anmeldung und Funktionalität</li>
+                <li><strong>Sicherheits-Cookies:</strong> Schutz vor CSRF und XSS-Angriffen</li>
+                <li><strong>Analytik-Cookies:</strong> Optional, zur Verbesserung unserer Dienste</li>
+            </ul>
+            <p>Sie können Cookies in den Einstellungen Ihres Browsers deaktivieren. Dies kann jedoch die Funktionalität beeinträchtigen.</p>
+        </section>
+
+        <section>
+            <h2>10. Sicherheit</h2>
+            <p>Wir schützen Ihre Daten durch:</p>
+            <ul>
+                <li>Verschlüsselte Übertragung (SSL/TLS)</li>
+                <li>Sichere Passwortspeicherung (Hashing)</li>
+                <li>Firewalls und Zugriffskontrollen</li>
+                <li>Regelmäßige Sicherheitsupdates</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>11. Externe Links</h2>
+            <p>Diese Website enthält möglicherweise Links zu externen Websites. Wir sind nicht verantwortlich für deren Datenschutzpraktiken. Bitte lesen Sie deren Datenschutzerklärungen.</p>
+        </section>
+
+        <section>
+            <h2>12. Änderungen dieser Datenschutzerklärung</h2>
+            <p>Wir können diese Datenschutzerklärung jederzeit aktualisieren. Die aktuelle Version ist immer auf unserer Website verfügbar. Bei wesentlichen Änderungen werden Sie benachrichtigt.</p>
+        </section>
+
+        <section>
+            <h2>13. Kontakt</h2>
+            <p>Bei Fragen zur Datenschutzerklärung kontaktieren Sie uns unter:</p>
+            <p>
+                E-Mail: datenschutz@invario.de<br>
+                Telefon: +49 (0) 123 456789<br>
+                Adresse: Musterstraße 123, 12345 Musterstadt
+            </p>
+        </section>
+    </div>
+</div>
+
+<style>
+    .legal-page {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .legal-header {
+        margin-bottom: 3rem;
+        padding-bottom: 2rem;
+        border-bottom: 2px solid var(--line);
+    }
+
+    .legal-header h1 {
+        font-size: 2.2rem;
+        margin-bottom: 0.5rem;
+        color: var(--brand);
+    }
+
+    .legal-header p {
+        color: var(--text-soft);
+        font-size: 0.95rem;
+    }
+
+    .legal-content {
+        display: flex;
+        flex-direction: column;
+        gap: 2.5rem;
+    }
+
+    section {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    section h2 {
+        font-size: 1.3rem;
+        color: var(--brand);
+        margin-bottom: 0.5rem;
+    }
+
+    section p {
+        line-height: 1.7;
+        color: var(--text-soft);
+    }
+
+    section ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    section ul li {
+        padding-left: 1.5rem;
+        position: relative;
+        color: var(--text-soft);
+        line-height: 1.6;
+    }
+
+    section ul li:before {
+        content: "→";
+        position: absolute;
+        left: 0;
+        color: var(--accent);
+        font-weight: 700;
+    }
+
+    section strong {
+        color: var(--text-main);
+        font-weight: 600;
+    }
+
+    @media (max-width: 700px) {
+        .legal-header h1 {
+            font-size: 1.6rem;
+        }
+
+        section h2 {
+            font-size: 1.1rem;
+        }
+
+        .legal-content {
+            gap: 1.8rem;
+        }
+    }
+</style>
+{% endblock %}

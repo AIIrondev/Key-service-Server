@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+    .post-container {
+        max-width: 760px;
+        margin: 0 auto;
+        background: #ffffff;
+        border: 1px solid #d4e0e9;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 14px 32px rgba(20, 39, 55, 0.06);
+    }
+
+    .post-header {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.2rem;
+        border-bottom: 1px solid #e8f0f6;
+    }
+
+    .post-header h1 {
+        font-size: 2.2rem;
+        color: #0f354d;
+        margin: 0 0 0.6rem;
+    }
+
+    .post-header-meta {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        color: #7a8fa2;
+        font-size: 0.9rem;
+    }
+
+    .author-badge {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 0.25rem 0.6rem;
+        background: #eef4f8;
+        border: 1px solid #bcd0de;
+        color: #185170;
+        font-weight: 700;
+    }
+
+    .post-content {
+        line-height: 1.8;
+        color: #2f4556;
+        font-size: 1.05rem;
+    }
+
+    .post-content h2 {
+        font-size: 1.5rem;
+        color: #113d59;
+        margin: 1.5rem 0 0.8rem;
+    }
+
+    .post-content h3 {
+        font-size: 1.2rem;
+        color: #113d59;
+        margin: 1.2rem 0 0.6rem;
+    }
+
+    .post-content p {
+        margin: 0 0 1rem;
+    }
+
+    .post-content ul,
+    .post-content ol {
+        margin: 0 0 1rem 1.5rem;
+    }
+
+    .post-content li {
+        margin-bottom: 0.5rem;
+    }
+
+    .back-link {
+        display: inline-block;
+        margin-top: 1rem;
+        padding: 0.6rem 1rem;
+        border-radius: 999px;
+        border: 1px solid #bcd0de;
+        color: #0a5c88;
+        font-weight: 700;
+        text-decoration: none;
+        transition: transform 0.15s ease;
+    }
+
+    .back-link:hover {
+        transform: translateY(-1px);
+    }
+
+    @media (max-width: 768px) {
+        .post-container {
+            padding: 1.4rem;
+        }
+
+        .post-header h1 {
+            font-size: 1.6rem;
+        }
+
+        .post-content {
+            font-size: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<article class="post-container">
+    <header class="post-header">
+        <h1>{{ post.title }}</h1>
+        <div class="post-header-meta">
+            <span class="author-badge">{{ post.author }}</span>
+            <span>{{ post.created_at[:10] }}</span>
+        </div>
+    </header>
+
+    <section class="post-content">
+        {{ post.content }}
+    </section>
+
+    <a href="{{ url_for('blog') }}" class="back-link">← Zurueck zum Blog</a>
+</article>
+{% endblock %}

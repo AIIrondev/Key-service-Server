@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Blog{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+    .blog-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .blog-header h1 {
+        font-size: 2.4rem;
+        color: #0f354d;
+        margin-bottom: 0.5rem;
+    }
+
+    .blog-header p {
+        font-size: 1.05rem;
+        color: #5a7a8f;
+    }
+
+    .posts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.2rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .post-link {
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .post-item {
+        background: #ffffff;
+        border: 1px solid #d4e0e9;
+        border-radius: 14px;
+        padding: 1.2rem;
+        box-shadow: 0 10px 28px rgba(20, 40, 55, 0.05);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .post-link:hover .post-item {
+        transform: translateY(-3px);
+        box-shadow: 0 16px 40px rgba(20, 40, 55, 0.12);
+    }
+
+    .post-item h2 {
+        font-size: 1.2rem;
+        color: #113d59;
+        margin: 0 0 0.5rem;
+    }
+
+    .post-item p {
+        margin: 0;
+        color: #5a7a8f;
+        font-size: 0.95rem;
+        flex: 1;
+    }
+
+    .post-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 0.8rem;
+        padding-top: 0.8rem;
+        border-top: 1px solid #e8f0f6;
+        font-size: 0.8rem;
+        color: #7a8fa2;
+    }
+
+    .read-more {
+        color: #0a5c88;
+        font-weight: 700;
+    }
+
+    @media (max-width: 768px) {
+        .posts-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .blog-header h1 {
+            font-size: 1.8rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="blog-header">
+    <h1>Blog</h1>
+    <p>Neuigkeiten und Insights rund um IT-Loesungen und Projekte</p>
+</section>
+
+{% if posts %}
+    <section class="posts-grid">
+        {% for post in posts %}
+            <a href="{{ url_for('blog_post', post_id=post.id) }}" class="post-link">
+                <article class="post-item">
+                    <h2>{{ post.title }}</h2>
+                    <p>{{ post.excerpt }}</p>
+                    <div class="post-meta">
+                        <span>{{ post.created_at[:10] }}</span>
+                        <span class="read-more">Zum Beitrag →</span>
+                    </div>
+                </article>
+            </a>
+        {% endfor %}
+    </section>
+{% else %}
+    <p style="text-align: center; color: #5a7a8f; padding: 2rem 0;">Noch keine Beitraege veroeffentlicht.</p>
+{% endif %}
+{% endblock %}

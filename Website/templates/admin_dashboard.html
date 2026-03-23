@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+    .admin-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.2rem;
+    }
+
+    .stat-card {
+        background: #ffffff;
+        border: 1px solid #d4e0e9;
+        border-radius: 14px;
+        padding: 1.2rem;
+        box-shadow: 0 10px 28px rgba(20, 40, 55, 0.05);
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #0a5c88;
+        margin-bottom: 0.3rem;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        color: #5a7a8f;
+        font-weight: 600;
+    }
+
+    .appointments-section {
+        background: #ffffff;
+        border: 1px solid #d4e0e9;
+        border-radius: 16px;
+        padding: 1.4rem;
+        box-shadow: 0 14px 32px rgba(20, 39, 55, 0.06);
+    }
+
+    .appointments-section h2 {
+        font-size: 1.3rem;
+        color: #0f354d;
+        margin-bottom: 0.8rem;
+    }
+
+    .appointment-card {
+        border: 1px solid #d8e3ec;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 0.8rem;
+        background: #f9fbfd;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .appointment-info > strong {
+        display: block;
+        color: #113d59;
+        margin-bottom: 0.25rem;
+    }
+
+    .appointment-info p {
+        margin: 0.15rem 0;
+        font-size: 0.9rem;
+    }
+
+    .appointment-status {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 0.25rem 0.6rem;
+        font-size: 0.8rem;
+        font-weight: 700;
+        margin-top: 0.35rem;
+    }
+
+    .status-pending {
+        border: 1px solid #fba316;
+        background: #fffbf0;
+        color: #b8730f;
+    }
+
+    .status-confirmed {
+        border: 1px solid #0e9f6e;
+        background: #f0fdf4;
+        color: #0b5c47;
+    }
+
+    .status-rejected {
+        border: 1px solid #d3413e;
+        background: #fdf5f5;
+        color: #8b2a27;
+    }
+
+    .appointment-actions {
+        display: flex;
+        gap: 0.4rem;
+    }
+
+    .action-form {
+        display: grid;
+        gap: 0.6rem;
+    }
+
+    .response-input {
+        width: 100%;
+        min-height: 60px;
+        border: 1px solid #c4d4e0;
+        border-radius: 8px;
+        padding: 0.5rem;
+        font-family: inherit;
+        font-size: 0.85rem;
+        resize: vertical;
+    }
+
+    .action-btn {
+        border: none;
+        border-radius: 6px;
+        padding: 0.4rem 0.7rem;
+        font-size: 0.85rem;
+        font-weight: 700;
+        cursor: pointer;
+        color: #ffffff;
+    }
+
+    .confirm-btn {
+        background: linear-gradient(120deg, #0a7c4e 0%, #065f3f 100%);
+    }
+
+    .reject-btn {
+        background: linear-gradient(120deg, #a74444 0%, #8a3535 100%);
+    }
+
+    @media (max-width: 980px) {
+        .admin-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .admin-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .appointment-card {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 style="font-size: 2rem; color: #0f354d; margin-bottom: 1rem;">Admin Dashboard</h1>
+
+<section class="admin-grid">
+    <article class="stat-card">
+        <div class="stat-value">{{ status_counts.Angefragt }}</div>
+        <div class="stat-label">Neue Anfragen</div>
+    </article>
+    <article class="stat-card">
+        <div class="stat-value">{{ status_counts.Bestaetigt }}</div>
+        <div class="stat-label">Bestaetigt</div>
+    </article>
+    <article class="stat-card">
+        <div class="stat-value">{{ total_posts }}</div>
+        <div class="stat-label">Blog-Beitraege</div>
+    </article>
+</section>
+
+<section class="appointments-section">
+    <h2>Terminanfragen verwalten</h2>
+    {% if appointments %}
+        {% for appointment in appointments %}
+            <article class="appointment-card">
+                <div class="appointment-info">
+                    <strong>{{ appointment.display_name }} - {{ appointment.subject }}</strong>
+                    <p><strong>Datum:</strong> {{ appointment.date }} um {{ appointment.time }}</p>
+                    <p><strong>Angefragt:</strong> {{ appointment.created_at[:10] }}</p>
+                    {% if appointment.note %}
+                        <p><strong>Notiz:</strong> {{ appointment.note }}</p>
+                    {% endif %}
+                    {% if appointment.response %}
+                        <p><strong>Antwort:</strong> {{ appointment.response }}</p>
+                    {% endif %}
+                    <span class="appointment-status status-{{ appointment.status|lower|replace('Ä', 'ae')|replace('ö', 'oe')|replace('ü', 'ue') if appointment.status == 'Angefragt' else 'confirmed' if appointment.status == 'Bestaetigt' else 'rejected' }}">{{ appointment.status }}</span>
+                </div>
+                {% if appointment.status == 'Angefragt' %}
+                    <div class="appointment-actions">
+                        <form method="POST" action="{{ url_for('update_appointment', appointment_id=appointment.id) }}" class="action-form" style="min-width: 280px;">
+                            <textarea class="response-input" name="response" placeholder="Antwort (optional)"></textarea>
+                            <div style="display: flex; gap: 0.4rem;">
+                                <button type="submit" name="action" value="confirm" class="confirm-btn action-btn">Bestaetigen</button>
+                                <button type="submit" name="action" value="reject" class="reject-btn action-btn">Ablehnen</button>
+                            </div>
+                        </form>
+                    </div>
+                {% endif %}
+            </article>
+        {% endfor %}
+    {% else %}
+        <p>Keine Terminanfragen vorhanden.</p>
+    {% endif %}
+</section>
+
+<section style="margin-top: 1.5rem;">
+    <a href="{{ url_for('admin_blog') }}" style="color: #ffffff; background: linear-gradient(120deg, #0b5b89 0%, #0b4262 100%); padding: 0.68rem 1.15rem; border-radius: 999px; font-weight: 700; display: inline-block; text-decoration: none;">Blog verwalten</a>
+</section>
+{% endblock %}

@@ -1,0 +1,110 @@
+<!--
+   Copyright 2025 Maximilian Gründinger
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+{% extends "base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+  .auth-wrap {
+    max-width: 520px;
+    margin: 2rem auto;
+    padding: 2rem;
+    border-radius: 18px;
+    border: 1px solid #d4e0e9;
+    background: #ffffff;
+    box-shadow: 0 20px 44px rgba(14, 32, 48, 0.08);
+  }
+
+  .auth-wrap h1 {
+    font-size: 2rem;
+    color: #0f344d;
+    margin-bottom: 0.4rem;
+  }
+
+  .auth-wrap p {
+    margin-bottom: 1.3rem;
+  }
+
+  .field {
+    margin-bottom: 0.9rem;
+  }
+
+  .field label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-weight: 700;
+    color: #19445f;
+  }
+
+  .field input {
+    width: 100%;
+    padding: 0.68rem 0.78rem;
+    border-radius: 10px;
+    border: 1px solid #c4d5e2;
+    font-size: 1rem;
+    color: #12384f;
+  }
+
+  .field input:focus {
+    outline: none;
+    border-color: #2f79a7;
+    box-shadow: 0 0 0 3px rgba(58, 133, 180, 0.2);
+  }
+
+  .auth-btn {
+    width: 100%;
+    border: none;
+    border-radius: 999px;
+    padding: 0.72rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #ffffff;
+    background: linear-gradient(120deg, #0a5f8f 0%, #0b4567 100%);
+    cursor: pointer;
+  }
+
+  .auth-meta {
+    margin-top: 1rem;
+    color: #547184;
+  }
+
+  .auth-meta a {
+    color: #0a5f8f;
+    font-weight: 700;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="auth-wrap">
+  <h1>Login</h1>
+  <p>Bitte melden Sie sich mit Ihrem Konto an, um Termine anzufragen.</p>
+  <form method="POST" action="{{ url_for('login') }}">
+    <div class="field">
+      <label for="username">Benutzername</label>
+      <input id="username" name="username" type="text" autocomplete="username" required>
+    </div>
+    <div class="field">
+      <label for="password">Passwort</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+    </div>
+    <button class="auth-btn" type="submit">Login</button>
+  </form>
+  <p class="auth-meta">Noch kein Konto? <a href="{{ url_for('register') }}">Jetzt registrieren</a></p>
+</section>
+{% endblock %}

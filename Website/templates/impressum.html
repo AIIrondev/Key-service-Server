@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}Impressum | Invario{% endblock %}
+
+{% block content %}
+<div class="legal-page">
+    <div class="legal-header">
+        <h1>Impressum</h1>
+        <p>Angaben gemäß TMG (Telemediengesetz) und MDStV (Mediendienstestaatsvertrag)</p>
+    </div>
+
+    <div class="legal-content">
+        <section>
+            <h2>1. Betreiber der Website</h2>
+            <p>
+                <strong>Invario GmbH</strong><br>
+                Musterstraße 123<br>
+                12345 Musterstadt<br>
+                Deutschland
+            </p>
+        </section>
+
+        <section>
+            <h2>2. Registergericht und Registernummer</h2>
+            <p>
+                <strong>Registergericht:</strong> Amtsgericht Musterstadt<br>
+                <strong>Registernummer:</strong> HRB 123456<br>
+                <strong>USt-ID:</strong> DE 123 456 789
+            </p>
+        </section>
+
+        <section>
+            <h2>3. Geschäftsführung</h2>
+            <p>
+                <strong>Geschäftsführer:</strong> Max Mustermann und Erika Musterfrau
+            </p>
+        </section>
+
+        <section>
+            <h2>4. Kontaktinformationen</h2>
+            <p>
+                <strong>Telefon:</strong> +49 (0) 123 / 456789<br>
+                <strong>E-Mail:</strong> info@invario.de<br>
+                <strong>Website:</strong> www.invario.de
+            </p>
+        </section>
+
+        <section>
+            <h2>5. Verantwortliche Redaktion</h2>
+            <p>
+                <strong>Verantwortlich nach § 55 Abs. 2 RStV:</strong><br>
+                Max Mustermann<br>
+                Invario GmbH<br>
+                Musterstraße 123<br>
+                12345 Musterstadt
+            </p>
+        </section>
+
+        <section>
+            <h2>6. Haftungsausschluss</h2>
+            <p>
+                <strong>Haftung für Inhalte:</strong><br>
+                Trotz sorgfältiger Überprüfung übernehmen wir keine Haftung für die Inhalte externer Links. 
+                Die auf dieser Website verlinkten Seiten sind ausschließlich Verantwortung des jeweiligen Betreibers. 
+                Zum Zeitpunkt der Link-Erstellung waren keine illegalen Inhalte erkennbar.
+            </p>
+            <p>
+                <strong>Haftung für Links:</strong><br>
+                Sollte eine Seite, auf die wir verlinken, in Zukunft illegale oder sittenwidrige Inhalte enthalten, 
+                werden wir den Link entfernen, sobald wir davon Kenntnis erlangen. Die Funktionsfähigkeit der Website 
+                wird trotz gründlicher Prüfung nicht garantiert.
+            </p>
+            <p>
+                <strong>Haftung für Dienste und Angebote:</strong><br>
+                Alle unterbreiteten Informationen sind freibleibend und unverbindlich. Wir behalten uns ausdrücklich vor, 
+                Teile der Website oder das gesamte Angebot ohne separate Ankündigung zu verändern, zu ergänzen, zu löschen oder 
+                die Veröffentlichung zeitweise oder endgültig einzustellen.
+            </p>
+        </section>
+
+        <section>
+            <h2>7. Urheberrecht und Nutzungsrechte</h2>
+            <p>
+                Die auf dieser Website veröffentlichten Inhalte und Werke unterliegen dem deutschen Urheberrecht. 
+                Eine Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechts 
+                bedürfen der schriftlichen Zustimmung des Urhebers oder Erstellers. Downloads und Kopien dieser 
+                Seite sind nur für den privaten, nicht kommerziellen Gebrauch gestattet.
+            </p>
+            <p>
+                <strong>© 2026 Invario GmbH. Alle Rechte vorbehalten.</strong>
+            </p>
+        </section>
+
+        <section>
+            <h2>8. Besonderheiten in Bezug auf Inhalte</h2>
+            <p>
+                <strong>Blog und Benutzergenerierte Inhalte:</strong><br>
+                Für Inhalte, die von Benutzern oder Administratoren veröffentlicht werden, trägt der jeweilige Autor/Verfasser 
+                die Verantwortung. Wir überprüfen regelmäßig alle Inhalte auf der Website. Sollten Sie der Meinung sein, 
+                dass gegen Ihr Urheberrecht verstoßen wird oder illegale Inhalte vorliegen, teilen Sie uns dies bitte 
+                umgehend mit.
+            </p>
+        </section>
+
+        <section>
+            <h2>9. Zahlungsarten und Geschäftsbedingungen</h2>
+            <p>
+                Die Nutzung unserer Dienstleistungen unterliegt den auf dieser Website veröffentlichten Nutzungsbedingungen 
+                und unseren allgemeinen Geschäftsbedingungen. Diese finden Sie unter 
+                <a href="{{ url_for('nutzungsbedingungen') }}">Nutzungsbedingungen</a>.
+            </p>
+        </section>
+
+        <section>
+            <h2>10. Datenschutz</h2>
+            <p>
+                Weitere Informationen zur Verarbeitung Ihrer personenbezogenen Daten finden Sie in unserer 
+                <a href="{{ url_for('datenschutz') }}">Datenschutzerklärung</a>.
+            </p>
+        </section>
+
+        <section>
+            <h2>11. Außergerichtliche Streitbeilegung</h2>
+            <p>
+                Der Europäischen Kommission steht ein Online-Portal zur Beilegung von Streitigkeiten 
+                (Plattform zur Online-Streitbeilegung - OS) zur Verfügung: 
+                <a href="https://ec.europa.eu/consumers/odr/" target="_blank">https://ec.europa.eu/consumers/odr/</a>
+            </p>
+            <p>
+                Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.
+            </p>
+        </section>
+
+        <section>
+            <h2>12. Geltendes Recht</h2>
+            <p>
+                Für alle Rechtsbeziehungen zwischen dem Nutzer und uns gilt ausschließlich deutsches Recht. 
+                Es gilt das TMG und das MDStV in ihrer jeweils aktuellen Fassung. Erfüllungsort ist Musterstadt.
+            </p>
+        </section>
+
+        <section>
+            <h2>13. Kontakt zum Datenschutzbeauftragten</h2>
+            <p>
+                <strong>Datenschutzbeauftragter:</strong><br>
+                E-Mail: datenschutz@invario.de<br>
+                Telefon: +49 (0) 123 / 456789
+            </p>
+        </section>
+
+        <section>
+            <h2>14. Zu beachtende Gebote in Bezug auf Konten</h2>
+            <ul>
+                <li>Die Anmeldung erfordert einen gültigen Benutzernamen und ein Passwort</li>
+                <li>Sie sind verantwortlich für die Geheimhaltung des Passworts</li>
+                <li>Sie haften für alle Aktivitäten in Ihrem Konto</li>
+                <li>Missbrauch und Sicherheitslücken müssen uns sofort mitgeteilt werden</li>
+                <li>Eine Konto-Weitergabe ist nicht gestattet</li>
+            </ul>
+        </section>
+
+        <div class="last-updated">
+            <p><strong>Zuletzt aktualisiert:</strong> 1. Januar 2026</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .legal-page {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .legal-header {
+        margin-bottom: 3rem;
+        padding-bottom: 2rem;
+        border-bottom: 2px solid var(--line);
+    }
+
+    .legal-header h1 {
+        font-size: 2.2rem;
+        margin-bottom: 0.5rem;
+        color: var(--brand);
+    }
+
+    .legal-header p {
+        color: var(--text-soft);
+        font-size: 0.95rem;
+    }
+
+    .legal-content {
+        display: flex;
+        flex-direction: column;
+        gap: 2.5rem;
+    }
+
+    section {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    section h2 {
+        font-size: 1.3rem;
+        color: var(--brand);
+        margin-bottom: 0.5rem;
+    }
+
+    section p {
+        line-height: 1.7;
+        color: var(--text-soft);
+    }
+
+    section p a {
+        color: var(--brand);
+        text-decoration: underline;
+    }
+
+    section p a:hover {
+        color: var(--accent);
+    }
+
+    section ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    section ul li {
+        padding-left: 1.5rem;
+        position: relative;
+        color: var(--text-soft);
+        line-height: 1.6;
+    }
+
+    section ul li:before {
+        content: "→";
+        position: absolute;
+        left: 0;
+        color: var(--accent);
+        font-weight: 700;
+    }
+
+    section strong {
+        color: var(--text-main);
+        font-weight: 600;
+    }
+
+    .last-updated {
+        background: var(--bg-soft);
+        padding: 1.5rem;
+        border-radius: var(--radius-md);
+        margin-top: 2rem;
+    }
+
+    .last-updated p {
+        margin: 0;
+        text-align: center;
+        color: var(--text-soft);
+    }
+
+    @media (max-width: 700px) {
+        .legal-header h1 {
+            font-size: 1.6rem;
+        }
+
+        section h2 {
+            font-size: 1.1rem;
+        }
+
+        .legal-content {
+            gap: 1.8rem;
+        }
+    }
+</style>
+{% endblock %}

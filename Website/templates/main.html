@@ -1,0 +1,450 @@
+{% extends "base.html" %}
+
+{% block title %}IT Loesungen | Modern{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+	.hero {
+		margin-top: 1.2rem;
+		padding: 3.8rem;
+		border-radius: 24px;
+		background: linear-gradient(135deg, #f8fcff 0%, #e1ecf3 70%, #d4e3ed 100%);
+		border: 1px solid #cfdbe4;
+		display: grid;
+		grid-template-columns: 1.2fr 1fr;
+		gap: 2rem;
+		position: relative;
+		overflow: hidden;
+		box-shadow: 0 25px 55px rgba(17, 35, 50, 0.1);
+	}
+
+	.hero::after {
+		content: "";
+		position: absolute;
+		right: -80px;
+		bottom: -90px;
+		width: 280px;
+		height: 280px;
+		border-radius: 999px;
+		background: radial-gradient(circle at center, #0b5b89 0%, #0b5b89 40%, transparent 70%);
+		opacity: 0.12;
+		pointer-events: none;
+	}
+
+	.eyebrow {
+		display: inline-block;
+		margin-bottom: 0.85rem;
+		padding: 0.3rem 0.65rem;
+		border-radius: 999px;
+		font-size: 0.75rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: #0c4f78;
+		background: #d9ebf6;
+	}
+
+	.hero h1 {
+		font-size: clamp(2rem, 5.1vw, 3.4rem);
+		color: #06293e;
+		text-wrap: balance;
+	}
+
+	.hero p {
+		max-width: 56ch;
+		margin-top: 1.1rem;
+		font-size: 1.06rem;
+	}
+
+	.cta-row {
+		margin-top: 1.8rem;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+	}
+
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 999px;
+		border: 1px solid transparent;
+		padding: 0.68rem 1.15rem;
+		font-weight: 700;
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	.btn:hover {
+		transform: translateY(-1px);
+	}
+
+	.btn-primary {
+		color: #ffffff;
+		background: linear-gradient(120deg, #0c5a86 0%, #08486c 100%);
+		box-shadow: 0 8px 20px rgba(11, 87, 128, 0.26);
+	}
+
+	.btn-secondary {
+		color: #0d4567;
+		background: #ffffff;
+		border-color: #b8cddc;
+	}
+
+	.hero-card {
+		align-self: end;
+		background: #0e2f44;
+		color: #dcf0ff;
+		border-radius: 18px;
+		padding: 1.2rem;
+		border: 1px solid #194b68;
+	}
+
+	.hero-card h3 {
+		font-size: 1.15rem;
+		margin-bottom: 0.6rem;
+	}
+
+	.hero-card p {
+		color: #b6d6ea;
+		font-size: 0.96rem;
+		margin: 0;
+	}
+
+	.stats {
+		margin-top: 1rem;
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 0.55rem;
+	}
+
+	.stats div {
+		padding: 0.55rem 0.65rem;
+		border-radius: 12px;
+		background: #153a52;
+		border: 1px solid #2a5673;
+	}
+
+	.stats strong {
+		display: block;
+		font-family: "Space Grotesk", system-ui, sans-serif;
+		color: #ffffff;
+		font-size: 1.08rem;
+	}
+
+	.stats span {
+		color: #9ec5dc;
+		font-size: 0.8rem;
+	}
+
+	.section {
+		margin-top: 2.2rem;
+		padding: 2rem;
+		border-radius: 18px;
+		border: 1px solid #d4dde5;
+		background: #ffffff;
+		box-shadow: 0 15px 35px rgba(20, 40, 55, 0.05);
+		animation: rise 700ms ease both;
+	}
+
+	.section h2 {
+		font-size: clamp(1.4rem, 2.5vw, 2rem);
+		margin-bottom: 0.5rem;
+		color: #0f334b;
+	}
+
+	.section-grid {
+		margin-top: 1.1rem;
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 0.9rem;
+	}
+
+	.card {
+		padding: 1rem;
+		border-radius: 14px;
+		border: 1px solid #d9e2ea;
+		background: linear-gradient(160deg, #fbfdff 0%, #f4f8fb 100%);
+	}
+
+	.card h3 {
+		font-size: 1.07rem;
+		color: #113c58;
+		margin-bottom: 0.45rem;
+	}
+
+	.card p {
+		font-size: 0.96rem;
+	}
+
+	.project-list {
+		margin-top: 1.1rem;
+		display: grid;
+		gap: 0.8rem;
+	}
+
+	.project {
+		padding: 0.95rem 1rem;
+		border-radius: 14px;
+		border: 1px solid #cfdae4;
+		background: #f8fbfd;
+		display: flex;
+		gap: 1rem;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.project b {
+		display: block;
+		color: #0b3753;
+		margin-bottom: 0.2rem;
+	}
+
+	.project span {
+		font-size: 0.88rem;
+		color: #4a6579;
+		border: 1px solid #bfd0dd;
+		padding: 0.2rem 0.55rem;
+		border-radius: 999px;
+		white-space: nowrap;
+	}
+
+	.process {
+		margin-top: 1.2rem;
+		display: grid;
+		grid-template-columns: repeat(6, minmax(0, 1fr));
+		gap: 0.6rem;
+	}
+
+	.step {
+		padding: 0.8rem 0.65rem;
+		text-align: center;
+		border-radius: 12px;
+		border: 1px solid #ccdae5;
+		background: #f7fafc;
+	}
+
+	.step strong {
+		display: block;
+		margin-bottom: 0.2rem;
+		font-size: 0.98rem;
+		color: #0f3650;
+	}
+
+	.step small {
+		color: #5f7b8f;
+	}
+
+	.team-note {
+		margin-top: 0.85rem;
+		padding: 0.9rem 1rem;
+		border-radius: 12px;
+		border: 1px solid #f0c18b;
+		background: linear-gradient(120deg, #fffaf3 0%, #ffeed8 100%);
+		color: #7d4f14;
+		font-weight: 600;
+	}
+
+	.contact {
+		margin-top: 2rem;
+		border-radius: 20px;
+		padding: 2.3rem;
+		border: 1px solid #0f496f;
+		background: linear-gradient(120deg, #114e75 0%, #0a3d5c 100%);
+		color: #d2ebfa;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.contact h2 {
+		color: #ffffff;
+		font-size: clamp(1.25rem, 2.7vw, 2rem);
+		margin-bottom: 0.4rem;
+	}
+
+	.contact p {
+		color: #b9d8ec;
+	}
+
+	.contact .btn-secondary {
+		border-color: rgba(255, 255, 255, 0.35);
+		background: rgba(255, 255, 255, 0.14);
+		color: #ffffff;
+	}
+
+	.site-footer {
+		margin-top: 2rem;
+		padding: 1rem 0 0.3rem;
+		color: #6a8192;
+		display: flex;
+		justify-content: space-between;
+		gap: 1rem;
+		font-size: 0.95rem;
+	}
+
+	@keyframes rise {
+		from {
+			opacity: 0;
+			transform: translateY(16px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@media (max-width: 980px) {
+		.hero {
+			grid-template-columns: 1fr;
+			padding: 2rem;
+		}
+
+		.section-grid {
+			grid-template-columns: 1fr 1fr;
+		}
+
+		.process {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+	}
+
+	@media (max-width: 700px) {
+		.section-grid {
+			grid-template-columns: 1fr;
+		}
+
+		.project {
+			flex-direction: column;
+			align-items: flex-start;
+		}
+
+		.process {
+			grid-template-columns: 1fr 1fr;
+		}
+
+		.contact {
+			flex-direction: column;
+			align-items: flex-start;
+			padding: 1.55rem;
+		}
+
+		.site-footer {
+			flex-direction: column;
+			padding-bottom: 1.2rem;
+		}
+	}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="hero" id="top">
+	<div>
+		<span class="eyebrow">IT Loesungen mit Haltung</span>
+		<h1>Zuhören. Verstehen. Planen. Realisieren.</h1>
+		<p>
+			Wir unterstuetzen Unternehmen ganzheitlich bei Enterprise-Architektur,
+			Projektmanagement und IT-Betrieb. Die Anforderung bleibt im Mittelpunkt,
+			die Umsetzung wird klar, messbar und belastbar.
+		</p>
+		<div class="cta-row">
+			{% if 'username' in session %}
+				<a class="btn btn-primary" href="{{ url_for('appointments') }}">Termin anfragen</a>
+			{% else %}
+				<a class="btn btn-primary" href="{{ url_for('login') }}">Termin anfragen</a>
+			{% endif %}
+			<a class="btn btn-primary" href="#kontakt">Kontakt aufnehmen</a>
+			<a class="btn btn-secondary" href="#leistungen">Dienstleistungen ansehen</a>
+		</div>
+	</div>
+	<aside class="hero-card" aria-label="Kurzfakten">
+		<h3>IT Projekte mit Substanz</h3>
+		<p>
+			Von Infrastruktur bis Governance: Wir verbinden konzeptionelle Tiefe mit
+			pragmatischer Umsetzung im Tagesgeschaeft.
+		</p>
+		<div class="stats">
+			<div><strong>25+</strong><span>aktive Mandate</span></div>
+			<div><strong>98%</strong><span>Zieltermine erreicht</span></div>
+			<div><strong>24/7</strong><span>Servicebereit</span></div>
+		</div>
+	</aside>
+</section>
+
+<section class="section" id="leistungen" style="animation-delay: 100ms;">
+	<h2>Dienstleistungen</h2>
+	<p>Modulare Leistungen, individuell kombiniert fuer Ihre IT-Roadmap.</p>
+	<div class="section-grid">
+		<article class="card">
+			<h3>Support und Service</h3>
+			<p>Betriebskritische Systeme stabil halten, proaktiv ueberwachen und schnell reagieren.</p>
+		</article>
+		<article class="card">
+			<h3>Optimierung und Tuning</h3>
+			<p>Strukturen, Kosten und Performance datenbasiert verbessern statt nur Symptome behandeln.</p>
+		</article>
+		<article class="card">
+			<h3>Health Check und Verify</h3>
+			<p>Technische Due-Diligence, klare Handlungsplaene und belastbare Priorisierung.</p>
+		</article>
+	</div>
+</section>
+
+<section class="section" id="projekte" style="animation-delay: 180ms;">
+	<h2>Projektfelder</h2>
+	<p>Ausgewählte Schwerpunkte aus laufenden und abgeschlossenen Kundenprojekten.</p>
+	<div class="project-list">
+		<div class="project">
+			<div>
+				<b>Virtualisierung und Hybrid-Cloud</b>
+				Migration in wartbare Plattformen mit planbaren Betriebskosten.
+			</div>
+			<span>Cloud Computing</span>
+		</div>
+		<div class="project">
+			<div>
+				<b>Netzwerk und Sicherheit</b>
+				Segmentierung, Monitoring und Security-Standards auf Enterprise-Niveau.
+			</div>
+			<span>Security</span>
+		</div>
+		<div class="project">
+			<div>
+				<b>Projektmanagement und EAM</b>
+				Governance, Architekturprinzipien und Umsetzung in einer Linie.
+			</div>
+			<span>Transformation</span>
+		</div>
+	</div>
+</section>
+
+<section class="section" id="team" style="animation-delay: 260ms;">
+	<h2>Unsere Arbeitsweise</h2>
+	<p>Klassische Beratungsdisziplin trifft auf moderne Delivery-Kultur.</p>
+	<div class="process" aria-label="Prozessschritte">
+		<div class="step"><strong>Zuhoeren</strong><small>Anforderungen erfassen</small></div>
+		<div class="step"><strong>Verstehen</strong><small>Kontext analysieren</small></div>
+		<div class="step"><strong>Besprechen</strong><small>Optionen priorisieren</small></div>
+		<div class="step"><strong>Planen</strong><small>Roadmap festlegen</small></div>
+		<div class="step"><strong>Realisieren</strong><small>Loesung liefern</small></div>
+		<div class="step"><strong>Unterstuetzen</strong><small>Betrieb absichern</small></div>
+	</div>
+	<p class="team-note">
+		Aktuell verfuegbar: Ein IT-Infrastruktur-Architekt und ein IT-Governance-Experte
+		mit technischem Hintergrund fuer neue Aufgaben.
+	</p>
+</section>
+
+<section class="contact" id="kontakt">
+	<div>
+		<h2>Bereit fuer das naechste IT-Projekt?</h2>
+		<p>In einem kurzen Erstgespraech klaeren wir Zielbild, Risiken und realistische Umsetzungsschritte.</p>
+	</div>
+	{% if 'username' in session %}
+		<a class="btn btn-secondary" href="{{ url_for('appointments') }}">Termin anfragen</a>
+	{% else %}
+		<a class="btn btn-secondary" href="{{ url_for('login') }}">Termin anfragen</a>
+	{% endif %}
+</section>
+{% endblock %}

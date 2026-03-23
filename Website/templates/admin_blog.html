@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Blog verwalten{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+    .blog-admin-grid {
+        display: grid;
+        grid-template-columns: 0.7fr 1.3fr;
+        gap: 1.2rem;
+    }
+
+    .new-post-form {
+        background: #ffffff;
+        border: 1px solid #d4e0e9;
+        border-radius: 16px;
+        padding: 1.4rem;
+        box-shadow: 0 14px 32px rgba(20, 39, 55, 0.06);
+        height: fit-content;
+        position: sticky;
+        top: 100px;
+    }
+
+    .new-post-form h2 {
+        font-size: 1.2rem;
+        color: #0f354d;
+        margin: 0 0 0.9rem;
+    }
+
+    .field {
+        margin-bottom: 0.9rem;
+    }
+
+    .field label {
+        display: block;
+        margin-bottom: 0.3rem;
+        font-weight: 700;
+        color: #1f4b65;
+        font-size: 0.9rem;
+    }
+
+    .field input,
+    .field textarea {
+        width: 100%;
+        border: 1px solid #c4d4e0;
+        border-radius: 10px;
+        padding: 0.65rem 0.72rem;
+        font: inherit;
+        color: #143f5d;
+        background: #ffffff;
+    }
+
+    .field textarea {
+        min-height: 120px;
+        resize: vertical;
+    }
+
+    .field input:focus,
+    .field textarea:focus {
+        outline: none;
+        border-color: #2f79a7;
+        box-shadow: 0 0 0 3px rgba(58, 133, 180, 0.2);
+    }
+
+    .submit-btn {
+        width: 100%;
+        border: none;
+        border-radius: 999px;
+        padding: 0.72rem;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #ffffff;
+        background: linear-gradient(120deg, #0a5f8f 0%, #0b4567 100%);
+        cursor: pointer;
+    }
+
+    .posts-list {
+        display: grid;
+        gap: 0.8rem;
+    }
+
+    .post-card {
+        background: #ffffff;
+        border: 1px solid #d4e0e9;
+        border-radius: 14px;
+        padding: 1.1rem;
+        box-shadow: 0 10px 28px rgba(20, 40, 55, 0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .post-info h3 {
+        font-size: 1.05rem;
+        color: #113d59;
+        margin: 0 0 0.25rem;
+    }
+
+    .post-info p {
+        margin: 0.2rem 0;
+        font-size: 0.9rem;
+        color: #5a7a8f;
+    }
+
+    .post-meta {
+        font-size: 0.8rem;
+        color: #7a8fa2;
+        margin-top: 0.3rem;
+    }
+
+    .delete-form {
+        display: flex;
+    }
+
+    .delete-btn {
+        border: none;
+        border-radius: 6px;
+        padding: 0.4rem 0.7rem;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #ffffff;
+        background: linear-gradient(120deg, #a74444 0%, #8a3535 100%);
+        cursor: pointer;
+    }
+
+    @media (max-width: 980px) {
+        .blog-admin-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .new-post-form {
+            position: static;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 style="font-size: 2rem; color: #0f354d; margin-bottom: 1.2rem;">Blog verwalten</h1>
+
+<section class="blog-admin-grid">
+    <aside class="new-post-form">
+        <h2>Neuer Beitrag</h2>
+        <form method="POST" action="{{ url_for('admin_blog') }}">
+            <div class="field">
+                <label for="title">Titel</label>
+                <input
+                    id="title"
+                    name="title"
+                    type="text"
+                    placeholder="Beitragstitel"
+                    required
+                />
+            </div>
+            <div class="field">
+                <label for="excerpt">Zusammenfassung</label>
+                <textarea
+                    id="excerpt"
+                    name="excerpt"
+                    placeholder="Optionale Kurzbeschreibung"
+                ></textarea>
+            </div>
+            <div class="field">
+                <label for="content">Inhalt</label>
+                <textarea
+                    id="content"
+                    name="content"
+                    placeholder="Beitrag schreiben..."
+                    required
+                ></textarea>
+            </div>
+            <input type="hidden" name="action" value="create" />
+            <button type="submit" class="submit-btn">Veroeffentlichen</button>
+        </form>
+    </aside>
+
+    <article>
+        <h2 style="font-size: 1.2rem; color: #0f354d; margin: 0 0 0.8rem;">Veroeffentlichte Beitraege</h2>
+        <section class="posts-list">
+            {% if posts %}
+                {% for post in posts %}
+                    <article class="post-card">
+                        <div class="post-info">
+                            <h3>{{ post.title }}</h3>
+                            <p>{{ post.excerpt }}</p>
+                            <div class="post-meta">
+                                <strong>Autor:</strong> {{ post.author }}<br />
+                                <strong>Veroeffentlicht:</strong> {{ post.created_at[:10] }}
+                            </div>
+                        </div>
+                        <form method="POST" action="{{ url_for('admin_blog') }}" class="delete-form">
+                            <input type="hidden" name="action" value="delete" />
+                            <input type="hidden" name="post_id" value="{{ post.id }}" />
+                            <button type="submit" class="delete-btn" onclick="return confirm('Sicher?')">Loeschen</button>
+                        </form>
+                    </article>
+                {% endfor %}
+            {% else %}
+                <p>Noch keine Beitraege veroeffentlicht.</p>
+            {% endif %}
+        </section>
+    </article>
+</section>
+{% endblock %}
