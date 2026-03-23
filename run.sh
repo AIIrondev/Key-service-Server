@@ -15,7 +15,7 @@ if ! command -v patchelf >/dev/null 2>&1; then
 	exit 1
 fi
 
-pip install -U nuitka ordered-set zstandard flask cryptography pyotp qrcode
+pip install -U nuitka ordered-set zstandard flask flask-jwt-extended cryptography pyotp qrcode
 python - <<'PY'
 from pathlib import Path
 import json
