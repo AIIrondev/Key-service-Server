@@ -239,6 +239,75 @@
         .flash.error { border-left: 5px solid #d3413e; }
         .flash.info { border-left: 5px solid var(--brand); }
 
+        .cookie-banner {
+            position: fixed;
+            left: 50%;
+            bottom: 1rem;
+            transform: translateX(-50%);
+            width: min(900px, calc(100% - 1.5rem));
+            border: 1px solid #c0d4e2;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 16px 32px rgba(16, 44, 62, 0.2);
+            padding: 0.95rem;
+            z-index: 70;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.8rem;
+            animation: cookieEnter 0.35s ease;
+        }
+
+        .cookie-banner p {
+            margin: 0;
+            color: #274f68;
+            font-size: 0.92rem;
+        }
+
+        .cookie-banner a {
+            color: #0c537c;
+            text-decoration: underline;
+            font-weight: 700;
+        }
+
+        .cookie-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .cookie-btn {
+            border: 1px solid #0a4c74;
+            border-radius: 999px;
+            background: linear-gradient(120deg, #0b5b89 0%, #0b4262 100%);
+            color: #ffffff;
+            font-weight: 700;
+            padding: 0.45rem 0.85rem;
+            cursor: pointer;
+        }
+
+        .cookie-btn.secondary {
+            border-color: #c9d9e4;
+            background: #ffffff;
+            color: #2b536b;
+        }
+
+        .cookie-banner.hidden {
+            display: none;
+        }
+
+        @keyframes cookieEnter {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(14px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
         @media (max-width: 820px) {
             .site-nav-inner {
                 min-height: 64px;
@@ -261,6 +330,19 @@
                 right: auto;
                 left: 0;
                 min-width: 200px;
+            }
+
+            .cookie-banner {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .cookie-actions {
+                width: 100%;
+            }
+
+            .cookie-btn {
+                width: 100%;
             }
         }
     </style>
@@ -364,34 +446,6 @@
                 margin-top: auto;
                 padding: 3rem 0 1.5rem;
                 border-top: 1px solid var(--line);
-                position: relative;
-                overflow: hidden;
-                animation: footerEnter 0.7s ease both;
-                will-change: transform, opacity;
-                transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.45s ease, box-shadow 0.45s ease;
-            }
-
-            body.footer-scroll-mode .site-footer {
-                opacity: 0.9;
-                transform: translateY(26px);
-                box-shadow: 0 -8px 22px rgba(5, 27, 41, 0.14);
-            }
-
-            body.footer-scroll-mode.footer-reveal .site-footer {
-                opacity: 1;
-                transform: translateY(0);
-                box-shadow: 0 -14px 34px rgba(5, 27, 41, 0.2);
-            }
-
-            .site-footer::before {
-                content: "";
-                position: absolute;
-                inset: -40% -10% auto -10%;
-                height: 180px;
-                background: radial-gradient(circle at 20% 50%, rgba(242, 140, 40, 0.25) 0%, rgba(242, 140, 40, 0) 62%);
-                transform: translateX(-12%);
-                animation: footerGlow 7s ease-in-out infinite;
-                pointer-events: none;
             }
 
             .footer-inner {
@@ -412,15 +466,6 @@
                 display: flex;
                 flex-direction: column;
                 gap: 0.75rem;
-                animation: footerSectionRise 0.65s ease both;
-            }
-
-            .footer-section:nth-child(2) {
-                animation-delay: 0.08s;
-            }
-
-            .footer-section:nth-child(3) {
-                animation-delay: 0.16s;
             }
 
             .footer-section h4 {
@@ -446,12 +491,10 @@
             .footer-links a {
                 color: rgba(255, 255, 255, 0.8);
                 font-size: 0.95rem;
-                transition: color 0.2s ease, transform 0.2s ease;
             }
 
             .footer-links a:hover {
                 color: #ffffff;
-                transform: translateX(4px);
             }
 
             .footer-bottom {
@@ -466,57 +509,6 @@
                 margin: 0;
             }
 
-            @keyframes footerEnter {
-                from {
-                    opacity: 0;
-                    transform: translateY(22px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
-
-            @keyframes footerSectionRise {
-                from {
-                    opacity: 0;
-                    transform: translateY(10px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
-
-            @keyframes footerGlow {
-                0%,
-                100% {
-                    transform: translateX(-12%);
-                    opacity: 0.65;
-                }
-                50% {
-                    transform: translateX(12%);
-                    opacity: 0.95;
-                }
-            }
-
-            @media (prefers-reduced-motion: reduce) {
-                .site-footer,
-                .site-footer::before,
-                .footer-section,
-                .footer-links a {
-                    animation: none;
-                    transition: none;
-                }
-
-                body.footer-scroll-mode .site-footer,
-                body.footer-scroll-mode.footer-reveal .site-footer {
-                    opacity: 1;
-                    transform: none;
-                    box-shadow: none;
-                }
-            }
-
             @media (max-width: 700px) {
                 .footer-inner {
                     gap: 1.5rem;
@@ -529,59 +521,48 @@
             }
         </style>
     </footer>
+    <div class="cookie-banner hidden" id="cookieBanner" role="dialog" aria-live="polite" aria-label="Cookie Hinweis">
+        <p>Wir verwenden Cookies, um die Website sicher und benutzerfreundlich zu betreiben. Mit "Accept Cookies" stimmen Sie der Nutzung zu. Details in <a href="{{ url_for('datenschutz') }}">Datenschutz</a>.</p>
+        <div class="cookie-actions">
+            <button type="button" class="cookie-btn" id="cookieAcceptBtn">Accept Cookies</button>
+            <button type="button" class="cookie-btn secondary" id="cookieDeclineBtn">Ablehnen und zu Ecosia</button>
+        </div>
+    </div>
     <!-- Mobile compatibility scripts -->
     <script src="{{ url_for('static', filename='js/mobile_compatibility.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ios_fixes.js') }}"></script>
     <script>
         (function () {
-            var footer = document.querySelector(".site-footer");
-            if (!footer) {
+            var banner = document.getElementById("cookieBanner");
+            var acceptBtn = document.getElementById("cookieAcceptBtn");
+            var declineBtn = document.getElementById("cookieDeclineBtn");
+            if (!banner || !acceptBtn || !declineBtn) {
                 return;
             }
 
-            var body = document.body;
-            var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-            var ticking = false;
+            var consentKey = "cookie_consent_v1";
 
-            function updateFooterMode() {
-                ticking = false;
-                var maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-
-                body.classList.remove("footer-scroll-mode", "footer-reveal");
-
-                if (reduceMotion.matches || maxScroll < 140) {
-                    return;
-                }
-
-                body.classList.add("footer-scroll-mode");
-
-                var currentScroll = window.scrollY || window.pageYOffset || 0;
-                var distanceToBottom = maxScroll - currentScroll;
-                var progress = maxScroll > 0 ? currentScroll / maxScroll : 1;
-                var shouldReveal = progress >= 0.78 || distanceToBottom <= 320;
-
-                body.classList.toggle("footer-reveal", shouldReveal);
+            function hasConsent() {
+                return window.localStorage.getItem(consentKey) === "accepted" || document.cookie.indexOf("cookie_consent=accepted") !== -1;
             }
 
-            function requestUpdate() {
-                if (ticking) {
-                    return;
-                }
-                ticking = true;
-                window.requestAnimationFrame(updateFooterMode);
+            function setConsent() {
+                window.localStorage.setItem(consentKey, "accepted");
+                document.cookie = "cookie_consent=accepted; Max-Age=" + (60 * 60 * 24 * 365) + "; Path=/; SameSite=Strict";
             }
 
-            window.addEventListener("scroll", requestUpdate, { passive: true });
-            window.addEventListener("resize", requestUpdate);
-            window.addEventListener("load", requestUpdate);
-
-            if (typeof reduceMotion.addEventListener === "function") {
-                reduceMotion.addEventListener("change", requestUpdate);
-            } else if (typeof reduceMotion.addListener === "function") {
-                reduceMotion.addListener(requestUpdate);
+            if (!hasConsent()) {
+                banner.classList.remove("hidden");
             }
 
-            requestUpdate();
+            acceptBtn.addEventListener("click", function () {
+                setConsent();
+                banner.classList.add("hidden");
+            });
+
+            declineBtn.addEventListener("click", function () {
+                window.location.href = "https://www.ecosia.org";
+            });
         })();
     </script>
 </body>
