@@ -1,10 +1,8 @@
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 from flask import Flask, render_template, request, jsonify, flash, redirect, url_for, get_flashed_messages, session
 import os
-import json
 import calendar
 from datetime import timedelta, datetime, date
-from pathlib import Path
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -36,14 +34,10 @@ def set_security_headers(response):
     response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com; img-src 'self' data:; connect-src 'self';"
     return response
 
-BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / "data"
-INVOICE_UPLOAD_DIR = BASE_DIR / "static" / "uploads" / "invoices"
-USERS_FILE = DATA_DIR / "users.json"
-APPOINTMENTS_FILE = DATA_DIR / "appointments.json"
-POSTS_FILE = DATA_DIR / "posts.json"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+INVOICE_UPLOAD_DIR = os.path.join(BASE_DIR, "static", "uploads", "invoices")
 MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
-MONGO_DB_NAME = os.environ.get("MONGO_DB_NAME", "Inventarsystem")
+MONGO_DB_NAME = os.environ.get("MONGO_DB_NAME", "Invario_Website")
 
 
 def _issue_access_token() -> str:
@@ -64,10 +58,10 @@ def _save_invoice_pdf(file_obj, invoice_number: str) -> str | None:
     original_name = secure_filename(file_obj.filename)
     if not _is_allowed_invoice_filename(original_name):
         return None
-    INVOICE_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    os.makedirs(INVOICE_UPLOAD_DIR, exist_ok=True)
     safe_invoice = secure_filename(invoice_number or "invoice")
     unique_name = f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{safe_invoice}_{original_name}"
-    target = INVOICE_UPLOAD_DIR / unique_name
+    target = os.path.join(INVOICE_UPLOAD_DIR, unique_name)
     file_obj.save(target)
     return f"uploads/invoices/{unique_name}"
 
@@ -108,84 +102,80 @@ def _list_users_for_admin() -> list:
     return users
 
 
-def _ensure_user_license(username: str, display_name: str) -> None:
-    client = None
-    try:
-        client, licenses = _get_collection("licenses")
-        if licenses.find_one({"username": username}):
-            return
-        licenses.insert_one(
-            {
-                "username": username,
-                "school_name": f"{display_name} Schule",
-                "license_key": f"LIC-{int(datetime.utcnow().timestamp())}-{username[:3].upper()}",
-                "plan": "Standard",
-                "status": "Aktiv",
-                "valid_until": "2027-12-31",
-                "created_at": _utc_now_iso(),
-            }
-        )
-    except PyMongoError:
-        return
-    finally:
-        if client:
-            client.close()
-
-
-def _ensure_user_invoice(username: str) -> None:
-    client = None
-    try:
-        client, invoices = _get_collection("invoices")
-        if invoices.find_one({"username": username}):
-            return
-        invoices.insert_one(
-            {
-                "username": username,
-                "invoice_number": f"INV-{datetime.utcnow().strftime('%Y%m')}-{username[:3].upper()}",
-                "period": datetime.utcnow().strftime("%m/%Y"),
-                "amount_eur": 79.0,
-                "status": "Offen",
-                "due_date": "2026-12-31",
-                "pdf_path": "",
-                "created_at": _utc_now_iso(),
-            }
-        )
-    except PyMongoError:
-        return
-    finally:
-        if client:
-            client.close()
-
-
-def _ensure_data_files() -> None:
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    if not USERS_FILE.exists():
-        USERS_FILE.write_text("[]", encoding="utf-8")
-    if not APPOINTMENTS_FILE.exists():
-        APPOINTMENTS_FILE.write_text("[]", encoding="utf-8")
-    if not POSTS_FILE.exists():
-        POSTS_FILE.write_text("[]", encoding="utf-8")
-
-
-def _read_json(file_path: Path) -> list:
-    _ensure_data_files()
-    try:
-        return json.loads(file_path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return []
-
-
-def _write_json(file_path: Path, payload: list) -> None:
-    _ensure_data_files()
-    file_path.write_text(json.dumps(payload, indent=2, ensure_ascii=True), encoding="utf-8")
-
-
 def _sanitize_text(text: str, max_length: int = 255) -> str:
     """Sanitize user text input: strip, limit length, and escape HTML."""
     text = (text or "").strip()
     if len(text) > max_length:
         text = text[:max_length]
     return text
+
+
+def _with_public_id(doc: dict | None) -> dict | None:
+    if not doc:
+        return doc
+    if not doc.get("id") and doc.get("_id") is not None:
+        doc["id"] = str(doc.get("_id"))
+    return doc
+
+
+def _appointment_query_from_id(appointment_id: str) -> dict | None:
+    lookup = (appointment_id or "").strip()
+    if not lookup:
+        return None
+    if lookup.startswith("a-"):
+        return {"id": lookup}
+    try:
+        return {"_id": ObjectId(lookup)}
+    except Exception:
+        return {"id": lookup}
+
+
+def _post_query_from_id(post_id: str) -> dict | None:
+    lookup = (post_id or "").strip()
+    if not lookup:
+        return None
+    if lookup.startswith("p-"):
+        return {"id": lookup}
+    try:
+        return {"_id": ObjectId(lookup)}
+    except Exception:
+        return {"id": lookup}
+
+
+def _get_blocked_days() -> list:
+    client = None
+    entries = []
+    try:
+        client, col = _get_collection("blocked_days")
+        entries = list(col.find({}, {"_id": 0}).sort("date", 1))
+    except PyMongoError:
+        return []
+    finally:
+        if client:
+            client.close()
+
+    normalized = []
+    for item in entries:
+        day = (item.get("date") or "").strip()
+        if not day:
+            continue
+        normalized.append(
+            {
+                "date": day,
+                "reason": (item.get("reason") or "").strip()[:200],
+                "blocked_by": (item.get("blocked_by") or "").strip()[:80],
+                "created_at": item.get("created_at") or "",
+            }
+        )
+    normalized.sort(key=lambda value: value.get("date", ""))
+    return normalized
+
+
+def _get_blocked_day_map() -> dict:
+    blocked = {}
+    for item in _get_blocked_days():
+        blocked[item.get("date", "")] = item
+    return blocked
 
 
 def _sanitize_html(html_content: str, max_length: int = 50000) -> str:
@@ -321,8 +311,6 @@ def login():
             session['display_name'] = stored_user.get("display_name") or stored_user.get("username")
             session['is_admin'] = stored_user.get("is_admin", False)
             session['access_token'] = _issue_access_token()
-            _ensure_user_license(session['username'], session['display_name'])
-            _ensure_user_invoice(session['username'])
 
             if request.is_json:
                 return jsonify({"access_token": session['access_token'], "token_type": "Bearer"}), 200
@@ -400,6 +388,11 @@ def appointments():
         appointment_time = (request.form.get("appointment_time") or "").strip()
         subject = (request.form.get("subject") or "").strip()
         note = (request.form.get("note") or "").strip()
+        meeting_type = (request.form.get("meeting_type") or "digital").strip().lower()
+        location_name = _sanitize_text(request.form.get("location_name") or "", 200)
+        location_maps_url = _sanitize_text(request.form.get("location_maps_url") or "", 1000)
+
+        blocked_day_map = _get_blocked_day_map()
 
         try:
             date.fromisoformat(selected_date)
@@ -407,28 +400,55 @@ def appointments():
             flash("Bitte einen gueltigen Termin im Kalender auswaehlen.", "error")
             return redirect(url_for("appointments", month=month, year=year))
 
+        if selected_date in blocked_day_map:
+            flash("Dieser Tag ist im Kalender gesperrt. Bitte einen anderen Termin waehlen.", "error")
+            return redirect(url_for("appointments", month=month, year=year))
+
         if not appointment_time or not subject:
             flash("Bitte Uhrzeit und Betreff ausfuellen.", "error")
             return redirect(url_for("appointments", month=month, year=year))
 
+        if meeting_type not in ["digital", "vor_ort"]:
+            flash("Bitte eine gueltige Terminart waehlen.", "error")
+            return redirect(url_for("appointments", month=month, year=year))
+
+        if meeting_type == "vor_ort" and not location_name:
+            flash("Bei Vor-Ort-Terminen ist ein Ort erforderlich.", "error")
+            return redirect(url_for("appointments", month=month, year=year))
+
+        if meeting_type == "digital":
+            location_name = ""
+            location_maps_url = ""
+
         subject = _sanitize_text(subject, 200)
         note = _sanitize_text(note, 2000)
 
-        entries = _read_json(APPOINTMENTS_FILE)
-        entries.append(
-            {
-                "id": f"a-{int(datetime.utcnow().timestamp() * 1000)}",
-                "username": session.get("username"),
-                "display_name": session.get("display_name"),
-                "date": selected_date,
-                "time": appointment_time,
-                "subject": subject,
-                "note": note,
-                "status": "Angefragt",
-                "created_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
-            }
-        )
-        _write_json(APPOINTMENTS_FILE, entries)
+        client = None
+        try:
+            client, col = _get_collection("appointments")
+            col.insert_one(
+                {
+                    "id": f"a-{int(datetime.utcnow().timestamp() * 1000)}",
+                    "username": session.get("username"),
+                    "display_name": session.get("display_name"),
+                    "date": selected_date,
+                    "time": appointment_time,
+                    "subject": subject,
+                    "meeting_type": meeting_type,
+                    "meeting_label": "Digital" if meeting_type == "digital" else "Vor Ort",
+                    "location_name": location_name,
+                    "location_maps_url": location_maps_url,
+                    "note": note,
+                    "status": "Angefragt",
+                    "created_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+                }
+            )
+        except PyMongoError:
+            flash("Termin konnte nicht gespeichert werden.", "error")
+            return redirect(url_for("appointments", month=month, year=year))
+        finally:
+            if client:
+                client.close()
 
         flash("Termin erfolgreich angefragt.", "success")
         selected = date.fromisoformat(selected_date)
@@ -450,9 +470,20 @@ def appointments():
         next_month = 1
         next_year += 1
 
-    all_appointments = _read_json(APPOINTMENTS_FILE)
-    user_appointments = [item for item in all_appointments if item.get("username") == session.get("username")]
-    user_appointments.sort(key=lambda item: (item.get("date", ""), item.get("time", "")), reverse=False)
+    user_appointments = []
+    client = None
+    try:
+        client, col = _get_collection("appointments")
+        user_appointments = list(col.find({"username": session.get("username")}).sort([("date", 1), ("time", 1)]))
+        for item in user_appointments:
+            _with_public_id(item)
+    except PyMongoError:
+        flash("Termine konnten nicht geladen werden.", "error")
+    finally:
+        if client:
+            client.close()
+
+    blocked_day_map = _get_blocked_day_map()
 
     return render_template(
         "appointments.html",
@@ -465,6 +496,7 @@ def appointments():
         previous_year=previous_year,
         next_month=next_month,
         next_year=next_year,
+        blocked_day_map=blocked_day_map,
         user_appointments=user_appointments,
     )
 
@@ -472,8 +504,20 @@ def appointments():
 @app.route('/admin/dashboard')
 @admin_required
 def admin_dashboard():
-    all_appointments = _read_json(APPOINTMENTS_FILE)
-    all_appointments.sort(key=lambda x: (x.get("date", ""), x.get("time", "")), reverse=True)
+    all_appointments = []
+    client = None
+    try:
+        client, col = _get_collection("appointments")
+        all_appointments = list(col.find().sort([("date", -1), ("time", -1)]))
+        for item in all_appointments:
+            _with_public_id(item)
+    except PyMongoError:
+        flash("Terminanfragen konnten nicht geladen werden.", "error")
+    finally:
+        if client:
+            client.close()
+
+    blocked_days = _get_blocked_days()
     
     status_counts = {
         "Angefragt": len([a for a in all_appointments if a.get("status") == "Angefragt"]),
@@ -481,15 +525,73 @@ def admin_dashboard():
         "Abgelehnt": len([a for a in all_appointments if a.get("status") == "Abgelehnt"]),
     }
     
-    posts = _read_json(POSTS_FILE)
-    total_posts = len(posts)
+    total_posts = 0
+    client = None
+    try:
+        client, col = _get_collection("posts")
+        total_posts = col.count_documents({})
+    except PyMongoError:
+        total_posts = 0
+    finally:
+        if client:
+            client.close()
     
     return render_template(
         "admin_dashboard.html",
         appointments=all_appointments,
+        blocked_days=blocked_days,
         status_counts=status_counts,
         total_posts=total_posts,
     )
+
+
+@app.route('/admin/appointments/block-day', methods=['POST'])
+@admin_required
+def admin_block_day():
+    action = _sanitize_text(request.form.get("action") or "", 30)
+    block_date = (request.form.get("block_date") or "").strip()
+    reason = _sanitize_text(request.form.get("reason") or "", 200)
+
+    client = None
+    try:
+        client, col = _get_collection("blocked_days")
+
+        if action == "add":
+            try:
+                date.fromisoformat(block_date)
+            except ValueError:
+                flash("Bitte ein gueltiges Datum zum Sperren waehlen.", "error")
+                return redirect(url_for("admin_dashboard"))
+
+            if col.find_one({"date": block_date}):
+                flash("Der Tag ist bereits gesperrt.", "error")
+                return redirect(url_for("admin_dashboard"))
+
+            col.insert_one(
+                {
+                    "date": block_date,
+                    "reason": reason,
+                    "blocked_by": session.get("username") or "admin",
+                    "created_at": _utc_now_iso(),
+                }
+            )
+            flash("Tag im Kalender gesperrt.", "success")
+        elif action == "remove":
+            result = col.delete_one({"date": block_date})
+            if not result.deleted_count:
+                flash("Sperrtag nicht gefunden.", "error")
+                return redirect(url_for("admin_dashboard"))
+            flash("Sperrtag entfernt.", "success")
+        else:
+            flash("Ungueltige Aktion fuer Kalendersperre.", "error")
+            return redirect(url_for("admin_dashboard"))
+    except PyMongoError:
+        flash("Kalendersperre konnte nicht gespeichert werden.", "error")
+    finally:
+        if client:
+            client.close()
+
+    return redirect(url_for("admin_dashboard"))
 
 
 @app.route('/admin/appointment/<appointment_id>', methods=['POST'])
@@ -502,27 +604,37 @@ def update_appointment(appointment_id):
         flash("Ungueltige Aktion.", "error")
         return redirect(url_for("admin_dashboard"))
     
-    all_appointments = _read_json(APPOINTMENTS_FILE)
-    appointment = None
-    for item in all_appointments:
-        if item.get("id") == appointment_id:
-            appointment = item
-            break
-    
-    if not appointment:
+    query = _appointment_query_from_id(appointment_id)
+    if not query:
         flash("Termin nicht gefunden.", "error")
         return redirect(url_for("admin_dashboard"))
-    
-    if action == "confirm":
-        appointment["status"] = "Bestaetigt"
-    else:
-        appointment["status"] = "Abgelehnt"
-    
-    appointment["response"] = response_text
-    appointment["responded_at"] = datetime.utcnow().isoformat(timespec="seconds") + "Z"
-    appointment["responded_by"] = session.get("username")
-    
-    _write_json(APPOINTMENTS_FILE, all_appointments)
+
+    new_status = "Bestaetigt" if action == "confirm" else "Abgelehnt"
+
+    client = None
+    try:
+        client, col = _get_collection("appointments")
+        result = col.update_one(
+            query,
+            {
+                "$set": {
+                    "status": new_status,
+                    "response": response_text,
+                    "responded_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+                    "responded_by": session.get("username"),
+                }
+            },
+        )
+        if result.matched_count == 0:
+            flash("Termin nicht gefunden.", "error")
+            return redirect(url_for("admin_dashboard"))
+    except PyMongoError:
+        flash("Termin konnte nicht aktualisiert werden.", "error")
+        return redirect(url_for("admin_dashboard"))
+    finally:
+        if client:
+            client.close()
+
     flash(f"Termin wurde {('bestaetigt' if action == 'confirm' else 'abgelehnt')}.", "success")
     return redirect(url_for("admin_dashboard"))
 
@@ -541,61 +653,106 @@ def admin_blog():
             if not title or not content:
                 flash("Bitte Titel und inhalt ausfuellen.", "error")
                 return redirect(url_for("admin_blog"))
-            
-            posts = _read_json(POSTS_FILE)
-            posts.append({
-                "id": f"p-{int(datetime.utcnow().timestamp() * 1000)}",
-                "title": title,
-                "excerpt": excerpt or (content[:150] + "...") if len(content) > 150 else content,
-                "content": content,
-                "author": session.get("username"),
-                "created_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
-                "published": True,
-            })
-            _write_json(POSTS_FILE, posts)
+            client = None
+            try:
+                client, col = _get_collection("posts")
+                col.insert_one(
+                    {
+                        "id": f"p-{int(datetime.utcnow().timestamp() * 1000)}",
+                        "title": title,
+                        "excerpt": excerpt or (content[:150] + "...") if len(content) > 150 else content,
+                        "content": content,
+                        "author": session.get("username"),
+                        "created_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+                        "published": True,
+                    }
+                )
+            except PyMongoError:
+                flash("Beitrag konnte nicht gespeichert werden.", "error")
+                return redirect(url_for("admin_blog"))
+            finally:
+                if client:
+                    client.close()
+
             flash("Beitrag veroeffentlicht.", "success")
             return redirect(url_for("admin_blog"))
         
         elif action == "delete":
             post_id = (request.form.get("post_id") or "").strip()
-            if not post_id or not post_id.startswith("p-"):
+            query = _post_query_from_id(post_id)
+            if not query:
                 flash("Ungueltige Beitrag-ID.", "error")
                 return redirect(url_for("admin_blog"))
-            posts = _read_json(POSTS_FILE)
-            original_count = len(posts)
-            posts = [p for p in posts if p.get("id") != post_id]
-            if len(posts) == original_count:
+            client = None
+            try:
+                client, col = _get_collection("posts")
+                result = col.delete_one(query)
+            except PyMongoError:
+                flash("Beitrag konnte nicht geloescht werden.", "error")
+                return redirect(url_for("admin_blog"))
+            finally:
+                if client:
+                    client.close()
+
+            if not result.deleted_count:
                 flash("Beitrag nicht gefunden.", "error")
                 return redirect(url_for("admin_blog"))
-            _write_json(POSTS_FILE, posts)
+
             flash("Beitrag geloescht.", "success")
             return redirect(url_for("admin_blog"))
-    
-    posts = _read_json(POSTS_FILE)
-    posts.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+
+    posts = []
+    client = None
+    try:
+        client, col = _get_collection("posts")
+        posts = list(col.find().sort("created_at", -1))
+        for item in posts:
+            _with_public_id(item)
+    except PyMongoError:
+        flash("Blogbeitraege konnten nicht geladen werden.", "error")
+    finally:
+        if client:
+            client.close()
+
     return render_template("admin_blog.html", posts=posts)
 
 
 @app.route('/blog')
 def blog():
-    posts = _read_json(POSTS_FILE)
-    posts.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+    posts = []
+    client = None
+    try:
+        client, col = _get_collection("posts")
+        posts = list(col.find({"published": True}).sort("created_at", -1))
+        for item in posts:
+            _with_public_id(item)
+    except PyMongoError:
+        posts = []
+    finally:
+        if client:
+            client.close()
+
     return render_template("blog.html", posts=posts)
 
 
 @app.route('/blog/<post_id>')
 def blog_post(post_id):
-    if not post_id or not post_id.startswith("p-"):
+    query = _post_query_from_id(post_id)
+    if not query:
         flash("Ungueltige Beitrag-ID.", "error")
         return redirect(url_for("blog"))
-    
-    posts = _read_json(POSTS_FILE)
+    client = None
     post = None
-    for p in posts:
-        if p.get("id") == post_id:
-            post = p
-            break
-    
+    try:
+        client, col = _get_collection("posts")
+        post = col.find_one(query)
+        _with_public_id(post)
+    except PyMongoError:
+        post = None
+    finally:
+        if client:
+            client.close()
+
     if not post:
         flash("Beitrag nicht gefunden.", "error")
         return redirect(url_for("blog"))
@@ -607,40 +764,7 @@ def blog_post(post_id):
 @login_required
 def my_licenses():
     if request.method == 'POST':
-        action = _sanitize_text(request.form.get("action") or "", 30)
-        license_id = _sanitize_text(request.form.get("license_id") or "", 64)
-        target_username = _sanitize_text(request.form.get("target_username") or "", 80)
-
-        if action != "transfer" or not license_id or not target_username:
-            flash("Ungueltige Weitergabe-Angaben.", "error")
-            return redirect(url_for("my_licenses"))
-
-        if target_username == session.get("username"):
-            flash("Bitte einen anderen Nutzer waehlen.", "error")
-            return redirect(url_for("my_licenses"))
-
-        client = None
-        try:
-            client, col = _get_collection("licenses")
-            result = col.update_one(
-                {"_id": ObjectId(license_id), "username": session.get("username")},
-                {
-                    "$set": {
-                        "username": target_username,
-                        "transferred_at": _utc_now_iso(),
-                        "transferred_by": session.get("username"),
-                    }
-                },
-            )
-            if result.modified_count:
-                flash("Lizenz wurde erfolgreich weitergegeben.", "success")
-            else:
-                flash("Lizenz konnte nicht weitergegeben werden.", "error")
-        except Exception:
-            flash("Weitergabe fehlgeschlagen.", "error")
-        finally:
-            if client:
-                client.close()
+        flash("Weitergabe von Lizenzen ist deaktiviert.", "error")
         return redirect(url_for("my_licenses"))
 
     licenses = []
@@ -656,8 +780,7 @@ def my_licenses():
         if client:
             client.close()
 
-    transfer_users = [u for u in _list_users_for_admin() if u.get("username") != session.get("username")]
-    return render_template("my_licenses.html", licenses=licenses, transfer_users=transfer_users)
+    return render_template("my_licenses.html", licenses=licenses)
 
 
 @app.route('/my/invoices')
@@ -944,24 +1067,6 @@ def admin_licenses():
                     },
                 )
                 flash("Lizenz aktualisiert.", "success")
-
-            elif action == "transfer" and license_id:
-                target_username = _sanitize_text(request.form.get("target_username") or "", 80)
-                if not target_username:
-                    flash("Bitte Zielnutzer waehlen.", "error")
-                    return redirect(url_for("admin_licenses"))
-
-                col.update_one(
-                    {"_id": ObjectId(license_id)},
-                    {
-                        "$set": {
-                            "username": target_username,
-                            "transferred_at": _utc_now_iso(),
-                            "transferred_by": session.get("username"),
-                        }
-                    },
-                )
-                flash("Lizenz weitergegeben.", "success")
 
             elif action == "delete" and license_id:
                 col.delete_one({"_id": ObjectId(license_id)})

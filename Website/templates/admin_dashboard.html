@@ -48,6 +48,76 @@
         margin-bottom: 0.8rem;
     }
 
+    .block-days-section {
+        margin-bottom: 1.2rem;
+        padding: 1rem;
+        border: 1px solid #d8e3ec;
+        border-radius: 12px;
+        background: #f9fbfd;
+    }
+
+    .block-days-section h3 {
+        margin: 0 0 0.6rem;
+        color: #143a55;
+        font-size: 1.05rem;
+    }
+
+    .block-form {
+        display: grid;
+        grid-template-columns: 180px 1fr auto;
+        gap: 0.5rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .block-form input {
+        width: 100%;
+        border: 1px solid #c4d4e0;
+        border-radius: 8px;
+        padding: 0.45rem 0.55rem;
+        font: inherit;
+    }
+
+    .block-btn,
+    .unblock-btn {
+        border: none;
+        border-radius: 8px;
+        padding: 0.45rem 0.65rem;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .block-btn {
+        color: #ffffff;
+        background: linear-gradient(120deg, #0b5b89 0%, #0b4262 100%);
+    }
+
+    .blocked-list {
+        display: grid;
+        gap: 0.45rem;
+    }
+
+    .blocked-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.6rem;
+        border: 1px solid #d5dee6;
+        border-radius: 9px;
+        padding: 0.5rem 0.65rem;
+        background: #ffffff;
+    }
+
+    .blocked-item p {
+        margin: 0;
+        font-size: 0.88rem;
+    }
+
+    .unblock-btn {
+        color: #7e2d2d;
+        background: #fff3f3;
+        border: 1px solid #e8b8b8;
+    }
+
     .appointment-card {
         border: 1px solid #d8e3ec;
         border-radius: 12px;
@@ -141,6 +211,10 @@
         .admin-grid {
             grid-template-columns: 1fr 1fr;
         }
+
+        .block-form {
+            grid-template-columns: 1fr;
+        }
     }
 
     @media (max-width: 600px) {
@@ -175,12 +249,49 @@
 
 <section class="appointments-section">
     <h2>Terminanfragen verwalten</h2>
+    <div class="block-days-section">
+        <h3>Kalender-Tage sperren</h3>
+        <form method="POST" action="{{ url_for('admin_block_day') }}" class="block-form">
+            <input type="hidden" name="action" value="add">
+            <input type="date" name="block_date" required>
+            <input type="text" name="reason" placeholder="Grund (optional)">
+            <button type="submit" class="block-btn">Tag sperren</button>
+        </form>
+        <div class="blocked-list">
+            {% if blocked_days %}
+                {% for blocked in blocked_days %}
+                    <div class="blocked-item">
+                        <p>
+                            <strong>{{ blocked.date }}</strong>
+                            {% if blocked.reason %}
+                                - {{ blocked.reason }}
+                            {% endif %}
+                        </p>
+                        <form method="POST" action="{{ url_for('admin_block_day') }}">
+                            <input type="hidden" name="action" value="remove">
+                            <input type="hidden" name="block_date" value="{{ blocked.date }}">
+                            <button type="submit" class="unblock-btn">Entsperren</button>
+                        </form>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>Aktuell sind keine Tage gesperrt.</p>
+            {% endif %}
+        </div>
+    </div>
     {% if appointments %}
         {% for appointment in appointments %}
             <article class="appointment-card">
                 <div class="appointment-info">
                     <strong>{{ appointment.display_name }} - {{ appointment.subject }}</strong>
                     <p><strong>Datum:</strong> {{ appointment.date }} um {{ appointment.time }}</p>
+                    <p><strong>Terminart:</strong> {{ appointment.meeting_label or ('Vor Ort' if appointment.meeting_type == 'vor_ort' else 'Digital') }}</p>
+                    {% if appointment.location_name %}
+                        <p><strong>Ort:</strong> {{ appointment.location_name }}</p>
+                    {% endif %}
+                    {% if appointment.location_maps_url %}
+                        <p><strong>Maps:</strong> <a href="{{ appointment.location_maps_url }}" target="_blank" rel="noopener noreferrer">Link öffnen</a></p>
+                    {% endif %}
                     <p><strong>Angefragt:</strong> {{ appointment.created_at[:10] }}</p>
                     {% if appointment.note %}
                         <p><strong>Notiz:</strong> {{ appointment.note }}</p>

@@ -45,19 +45,6 @@
                 <input type="text" name="valid_until" value="{{ item.valid_until }}" placeholder="Gültig bis">
                 <button type="submit">Aktualisieren</button>
             </form>
-            <form method="post" class="inline-form" style="margin-top:0.45rem;">
-                <input type="hidden" name="action" value="transfer">
-                <input type="hidden" name="license_id" value="{{ item.id }}">
-                <select name="target_username" required>
-                    <option value="">Lizenz weitergeben an...</option>
-                    {% for user in users %}
-                    {% if user.username != item.username %}
-                    <option value="{{ user.username }}">{{ user.username }} ({{ user.display_name }})</option>
-                    {% endif %}
-                    {% endfor %}
-                </select>
-                <button type="submit">Weitergeben</button>
-            </form>
             <form method="post">
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="license_id" value="{{ item.id }}">

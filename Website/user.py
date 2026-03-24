@@ -43,7 +43,7 @@ def check_nm_pwd(username, password):
         dict: User document if credentials are valid, None otherwise
     """
     client = MongoClient('localhost', 27017)
-    db = client['Inventarsystem']
+    db = client['Invario_Website']
     users = db['users']
     hashed_password = hashlib.sha512(password.encode()).hexdigest()
     user = users.find_one({'Username': username, 'Password': hashed_password})
@@ -63,7 +63,7 @@ def add_user(username, password, name, last_name):
         bool: True if user was added successfully, False if password was too weak
     """
     client = MongoClient('localhost', 27017)
-    db = client['Inventarsystem']
+    db = client['Invario_Website']
     users = db['users']
     if not check_password_strength(password):
         return False
@@ -83,7 +83,7 @@ def make_admin(username):
         bool: True if user was promoted successfully
     """
     client = MongoClient('localhost', 27017)
-    db = client['Inventarsystem']
+    db = client['Invario_Website']
     users = db['users']
     users.update_one({'Username': username}, {'$set': {'Admin': True}})
     client.close()
@@ -100,7 +100,7 @@ def remove_admin(username):
         bool: True if user was demoted successfully
     """
     client = MongoClient('localhost', 27017)
-    db = client['Inventarsystem']
+    db = client['Invario_Website']
     users = db['users']
     users.update_one({'Username': username}, {'$set': {'Admin': False}})
     client.close()
@@ -117,7 +117,7 @@ def get_user(username):
         dict: User document or None if not found
     """
     client = MongoClient('localhost', 27017)
-    db = client['Inventarsystem']
+    db = client['Invario_Website']
     users = db['users']
     users_return = users.find_one({'Username': username})
     client.close()
@@ -135,7 +135,7 @@ def check_admin(username):
         bool: True if user is an administrator, False otherwise
     """
     client = MongoClient('localhost', 27017)
-    db = client['Inventarsystem']
+    db = client['Invario_Website']
     users = db['users']
     user = users.find_one({'Username': username})
     client.close()
@@ -153,7 +153,7 @@ def delete_user(username):
         bool: True if user was deleted successfully, False otherwise
     """
     client = MongoClient('localhost', 27017)
-    db = client['Inventarsystem']
+    db = client['Invario_Website']
     users = db['users']
     result = users.delete_one({'username': username})
     client.close()
@@ -175,7 +175,7 @@ def get_name(username):
         str: String of name
     """
     client = MongoClient('localhost', 27017)
-    db = client['Inventarsystem']
+    db = client['Invario_Website']
     users = db['users']
     user = users.find_one({'Username': username})
     name = user.get("name")
@@ -189,7 +189,7 @@ def get_last_name(username):
         str: String of last_name
     """
     client = MongoClient('localhost', 27017)
-    db = client['Inventarsystem']
+    db = client['Invario_Website']
     users = db['users']
     user = users.find_one({'Username': username})
     name = user.get("last_name")
@@ -206,7 +206,7 @@ def get_all_users():
     """
     try:
         client = MongoClient('localhost', 27017)
-        db = client['Inventarsystem']
+        db = client['Invario_Website']
         users = db['users']
         all_users = list(users.find())
         client.close()
@@ -230,7 +230,7 @@ def update_password(username, new_password):
             return False
             
         client = MongoClient('localhost', 27017)
-        db = client['Inventarsystem']
+        db = client['Invario_Website']
         users = db['users']
         
         # Hash the new password
@@ -262,7 +262,7 @@ def update_user_name(username, name, last_name):
     """
     try:
         client = MongoClient('localhost', 27017)
-        db = client['Inventarsystem']
+        db = client['Invario_Website']
         users = db['users']
         
         result = users.update_one(

@@ -17,17 +17,6 @@
             <p><strong>Lizenzschlüssel:</strong> {{ item.license_key }}</p>
             <p><strong>Status:</strong> {{ item.status }}</p>
             <p><strong>Gültig bis:</strong> {{ item.valid_until }}</p>
-            <form method="post" class="transfer-form">
-                <input type="hidden" name="action" value="transfer">
-                <input type="hidden" name="license_id" value="{{ item.id }}">
-                <select name="target_username" required>
-                    <option value="">Lizenz weitergeben an...</option>
-                    {% for user in transfer_users %}
-                    <option value="{{ user.username }}">{{ user.username }} ({{ user.display_name }})</option>
-                    {% endfor %}
-                </select>
-                <button type="submit">Weitergeben</button>
-            </form>
         </article>
         {% endfor %}
     {% else %}
@@ -43,8 +32,5 @@
 .grid { display: grid; gap: 0.8rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 .card { background: #fff; border: 1px solid #d8e1e8; border-radius: 14px; padding: 1rem; }
 .card p { margin-top: 0.35rem; }
-.transfer-form { margin-top: 0.8rem; display: grid; gap: 0.45rem; }
-select, button { border: 1px solid #c9d8e3; border-radius: 10px; padding: 0.52rem; font: inherit; }
-button { border-radius: 999px; color: #fff; background: linear-gradient(120deg, #0c5a86 0%, #08486c 100%); border-color: #0a4c74; font-weight: 700; }
 </style>
 {% endblock %}

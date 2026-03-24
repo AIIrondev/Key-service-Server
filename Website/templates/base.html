@@ -42,6 +42,12 @@
                         var(--bg-main);
         }
 
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
         h1 {
             margin: 0;
             font-family: "Space Grotesk", system-ui, sans-serif;
@@ -210,6 +216,7 @@
         }
 
         .main-wrap {
+            flex: 1 0 auto;
             padding: 2rem 0 3.4rem;
         }
 
@@ -354,22 +361,66 @@
             .site-footer {
                 background: linear-gradient(135deg, var(--brand-strong) 0%, #0a4c74 100%);
                 color: #ffffff;
-                margin-top: 4rem;
+                margin-top: auto;
                 padding: 3rem 0 1.5rem;
                 border-top: 1px solid var(--line);
+                position: relative;
+                overflow: hidden;
+                animation: footerEnter 0.7s ease both;
+                will-change: transform, opacity;
+                transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.45s ease, box-shadow 0.45s ease;
+            }
+
+            body.footer-scroll-mode .site-footer {
+                opacity: 0.9;
+                transform: translateY(26px);
+                box-shadow: 0 -8px 22px rgba(5, 27, 41, 0.14);
+            }
+
+            body.footer-scroll-mode.footer-reveal .site-footer {
+                opacity: 1;
+                transform: translateY(0);
+                box-shadow: 0 -14px 34px rgba(5, 27, 41, 0.2);
+            }
+
+            .site-footer::before {
+                content: "";
+                position: absolute;
+                inset: -40% -10% auto -10%;
+                height: 180px;
+                background: radial-gradient(circle at 20% 50%, rgba(242, 140, 40, 0.25) 0%, rgba(242, 140, 40, 0) 62%);
+                transform: translateX(-12%);
+                animation: footerGlow 7s ease-in-out infinite;
+                pointer-events: none;
             }
 
             .footer-inner {
+                position: relative;
+                z-index: 1;
+                display: grid;
+                gap: 2rem;
+                margin-bottom: 2rem;
+            }
+
+            .footer-content {
                 display: grid;
                 grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
                 gap: 2rem;
-                margin-bottom: 2rem;
             }
 
             .footer-section {
                 display: flex;
                 flex-direction: column;
                 gap: 0.75rem;
+                animation: footerSectionRise 0.65s ease both;
+            }
+
+            .footer-section:nth-child(2) {
+                animation-delay: 0.08s;
+            }
+
+            .footer-section:nth-child(3) {
+                animation-delay: 0.16s;
             }
 
             .footer-section h4 {
@@ -395,11 +446,12 @@
             .footer-links a {
                 color: rgba(255, 255, 255, 0.8);
                 font-size: 0.95rem;
-                transition: color 0.2s ease;
+                transition: color 0.2s ease, transform 0.2s ease;
             }
 
             .footer-links a:hover {
                 color: #ffffff;
+                transform: translateX(4px);
             }
 
             .footer-bottom {
@@ -414,8 +466,63 @@
                 margin: 0;
             }
 
+            @keyframes footerEnter {
+                from {
+                    opacity: 0;
+                    transform: translateY(22px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            @keyframes footerSectionRise {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            @keyframes footerGlow {
+                0%,
+                100% {
+                    transform: translateX(-12%);
+                    opacity: 0.65;
+                }
+                50% {
+                    transform: translateX(12%);
+                    opacity: 0.95;
+                }
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .site-footer,
+                .site-footer::before,
+                .footer-section,
+                .footer-links a {
+                    animation: none;
+                    transition: none;
+                }
+
+                body.footer-scroll-mode .site-footer,
+                body.footer-scroll-mode.footer-reveal .site-footer {
+                    opacity: 1;
+                    transform: none;
+                    box-shadow: none;
+                }
+            }
+
             @media (max-width: 700px) {
                 .footer-inner {
+                    gap: 1.5rem;
+                }
+
+                .footer-content {
                     grid-template-columns: 1fr;
                     gap: 1.5rem;
                 }
@@ -425,5 +532,57 @@
     <!-- Mobile compatibility scripts -->
     <script src="{{ url_for('static', filename='js/mobile_compatibility.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ios_fixes.js') }}"></script>
+    <script>
+        (function () {
+            var footer = document.querySelector(".site-footer");
+            if (!footer) {
+                return;
+            }
+
+            var body = document.body;
+            var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+            var ticking = false;
+
+            function updateFooterMode() {
+                ticking = false;
+                var maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+
+                body.classList.remove("footer-scroll-mode", "footer-reveal");
+
+                if (reduceMotion.matches || maxScroll < 140) {
+                    return;
+                }
+
+                body.classList.add("footer-scroll-mode");
+
+                var currentScroll = window.scrollY || window.pageYOffset || 0;
+                var distanceToBottom = maxScroll - currentScroll;
+                var progress = maxScroll > 0 ? currentScroll / maxScroll : 1;
+                var shouldReveal = progress >= 0.78 || distanceToBottom <= 320;
+
+                body.classList.toggle("footer-reveal", shouldReveal);
+            }
+
+            function requestUpdate() {
+                if (ticking) {
+                    return;
+                }
+                ticking = true;
+                window.requestAnimationFrame(updateFooterMode);
+            }
+
+            window.addEventListener("scroll", requestUpdate, { passive: true });
+            window.addEventListener("resize", requestUpdate);
+            window.addEventListener("load", requestUpdate);
+
+            if (typeof reduceMotion.addEventListener === "function") {
+                reduceMotion.addEventListener("change", requestUpdate);
+            } else if (typeof reduceMotion.addListener === "function") {
+                reduceMotion.addListener(requestUpdate);
+            }
+
+            requestUpdate();
+        })();
+    </script>
 </body>
 </html>

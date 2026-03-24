@@ -94,6 +94,18 @@
         color: #ffffff;
     }
 
+    .day.blocked {
+        background: #f3f4f7;
+        color: #8b96a1;
+        border-color: #d2d8de;
+        cursor: not-allowed;
+    }
+
+    .day.blocked:hover {
+        transform: none;
+        border-color: #d2d8de;
+    }
+
     .booking-form h2,
     .appointment-list h2 {
         font-size: 1.2rem;
@@ -124,7 +136,8 @@
     }
 
     .field input,
-    .field textarea {
+    .field textarea,
+    .field select {
         width: 100%;
         border: 1px solid #c4d4e0;
         border-radius: 10px;
@@ -180,6 +193,41 @@
         background: #eef4f8;
     }
 
+    .meeting-note {
+        margin: 0 0 0.75rem;
+        color: #27526d;
+        font-weight: 600;
+    }
+
+    .helper-line {
+        margin-top: 0.35rem;
+        font-size: 0.84rem;
+        color: #4f6f83;
+    }
+
+    .maps-tools {
+        display: flex;
+        gap: 0.45rem;
+        margin-top: 0.45rem;
+    }
+
+    .maps-btn {
+        border: 1px solid #8fb1c8;
+        background: #f6fbff;
+        color: #1d5575;
+        border-radius: 999px;
+        padding: 0.35rem 0.7rem;
+        font-size: 0.84rem;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .entry-meta {
+        margin-top: 0.2rem;
+        color: #345e78;
+        font-size: 0.9rem;
+    }
+
     @media (max-width: 960px) {
         .appointments-grid {
             grid-template-columns: 1fr;
@@ -216,10 +264,15 @@
                         <button type="button" class="day empty" disabled></button>
                     {% else %}
                         {% set day_iso = "%04d-%02d-%02d"|format(year, month, day) %}
+                        {% set blocked_day = blocked_day_map.get(day_iso) %}
                         <button
                             type="button"
-                            class="day {% if day_iso == today_iso %}today{% endif %}"
+                            class="day {% if day_iso == today_iso %}today{% endif %} {% if blocked_day %}blocked{% endif %}"
                             data-date="{{ day_iso }}"
+                            {% if blocked_day %}
+                                disabled
+                                title="Gesperrt{% if blocked_day.reason %}: {{ blocked_day.reason }}{% endif %}"
+                            {% endif %}
                         >
                             {{ day }}
                         </button>
@@ -231,6 +284,7 @@
 
     <aside class="panel booking-form">
         <h2>Termin anfragen</h2>
+        <p class="meeting-note">Persoenliches Gespraechstermin: Digital oder Vor Ort.</p>
         <span class="selected-date-badge" id="selectedDateBadge">Kein Datum gewählt</span>
         <form method="POST" action="{{ url_for('appointments', month=month, year=year) }}">
             <input type="hidden" id="selectedDateInput" name="selected_date" required>
@@ -239,8 +293,24 @@
                 <input id="appointment_time" name="appointment_time" type="time" required>
             </div>
             <div class="field">
+                <label for="meeting_type">Terminart</label>
+                <select id="meeting_type" name="meeting_type" required>
+                    <option value="digital">Digital</option>
+                    <option value="vor_ort">Vor Ort</option>
+                </select>
+            </div>
+            <div class="field">
                 <label for="subject">Betreff</label>
                 <input id="subject" name="subject" type="text" placeholder="z. B. Projekt Kickoff" required>
+            </div>
+            <div class="field" id="locationField" style="display: none;">
+                <label for="location_name">Ort (bei Vor-Ort Pflicht)</label>
+                <input id="location_name" name="location_name" type="text" placeholder="Adresse oder Ort">
+                <div class="maps-tools">
+                    <button type="button" id="mapsSearchBtn" class="maps-btn">In Google Maps suchen</button>
+                </div>
+                <div class="helper-line">Optional: Google-Maps-Link eintragen.</div>
+                <input id="location_maps_url" name="location_maps_url" type="url" placeholder="https://maps.google.com/..." style="margin-top: 0.4rem;">
             </div>
             <div class="field">
                 <label for="note">Notiz (optional)</label>
@@ -260,6 +330,13 @@
                 {% if item.note %}
                     <p>{{ item.note }}</p>
                 {% endif %}
+                <p class="entry-meta"><strong>Terminart:</strong> {{ item.meeting_label or ('Vor Ort' if item.meeting_type == 'vor_ort' else 'Digital') }}</p>
+                {% if item.location_name %}
+                    <p class="entry-meta"><strong>Ort:</strong> {{ item.location_name }}</p>
+                {% endif %}
+                {% if item.location_maps_url %}
+                    <p class="entry-meta"><a href="{{ item.location_maps_url }}" target="_blank" rel="noopener noreferrer">Google Maps anzeigen</a></p>
+                {% endif %}
                 {% if item.response %}
                     <p><strong>Admin-Antwort:</strong> {{ item.response }}</p>
                 {% endif %}
@@ -276,6 +353,10 @@
         const dayGrid = document.getElementById("dayGrid");
         const selectedDateInput = document.getElementById("selectedDateInput");
         const selectedDateBadge = document.getElementById("selectedDateBadge");
+        const meetingType = document.getElementById("meeting_type");
+        const locationField = document.getElementById("locationField");
+        const locationNameInput = document.getElementById("location_name");
+        const mapsSearchBtn = document.getElementById("mapsSearchBtn");
 
         function setSelection(dateValue, button) {
             selectedDateInput.value = dateValue;
@@ -290,6 +371,16 @@
             }
         }
 
+        function updateLocationRequirement() {
+            const isOnsite = meetingType.value === "vor_ort";
+            locationField.style.display = isOnsite ? "block" : "none";
+            locationNameInput.required = isOnsite;
+            if (!isOnsite) {
+                locationNameInput.value = "";
+                document.getElementById("location_maps_url").value = "";
+            }
+        }
+
         dayGrid.addEventListener("click", function (event) {
             const target = event.target.closest(".day[data-date]");
             if (!target) {
@@ -297,6 +388,16 @@
             }
             setSelection(target.dataset.date, target);
         });
+
+        meetingType.addEventListener("change", updateLocationRequirement);
+
+        mapsSearchBtn.addEventListener("click", function () {
+            const query = (locationNameInput.value || "").trim();
+            const base = "https://www.google.com/maps/search/?api=1&query=";
+            window.open(base + encodeURIComponent(query || "meeting location"), "_blank", "noopener");
+        });
+
+        updateLocationRequirement();
     })();
 </script>
 {% endblock %}
