@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Team | Invario{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <h1>Unser Team</h1>
+    <p>Wir verbinden technische Expertise, Projekterfahrung und starke Referenzen im Bildungsumfeld.</p>
+</section>
+
+<section class="grid">
+    <article class="member">
+        <h2>Leitung & Strategie</h2>
+        <p>Verantwortlich für Projektsteuerung, Qualitätsstandards und die Ausrichtung unserer Lösungen auf den Schulbetrieb.</p>
+        <p><strong>Referenzen:</strong> Schulträgerprojekte mit mehr als 30 Standorten, Prozessstandardisierung im laufenden Betrieb.</p>
+    </article>
+    <article class="member">
+        <h2>Entwicklung</h2>
+        <p>Konzipiert und entwickelt unsere Plattform mit Fokus auf Zuverlässigkeit, Sicherheit und einfache Bedienung.</p>
+        <p><strong>Referenzen:</strong> Einführung modularer Inventarsysteme, automatisierte Verwaltungsabläufe, DSGVO-konforme Datenhaltung.</p>
+    </article>
+    <article class="member">
+        <h2>Support & Betrieb</h2>
+        <p>Sorgt für stabile Systeme, schnelle Unterstützung und nachvollziehbare Kommunikation mit Einrichtungen.</p>
+        <p><strong>Referenzen:</strong> 24/7 Betreuung für Bildungseinrichtungen, SLA-basierte Reaktionszeiten und strukturierte Ticketprozesse.</p>
+    </article>
+</section>
+
+<section class="references">
+    <h2>Ausgewählte Referenzen</h2>
+    <ul>
+        <li>Einführung zentraler Inventurprozesse in Schulverbünden</li>
+        <li>Beratung zur IT-Governance für Schulleitungen und Träger</li>
+        <li>Sicherheits- und Compliance-Begleitung bei Systemumstellungen</li>
+        <li>Operative Stabilisierung von Support- und Terminprozessen</li>
+    </ul>
+</section>
+
+<style>
+.page-hero { margin-bottom: 1.2rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.9rem; }
+.member, .references { background: #fff; border: 1px solid #d8e1e8; border-radius: 14px; padding: 1rem; }
+.member h2, .references h2 { color: #0f334b; margin-bottom: 0.45rem; font-size: clamp(1.05rem, 1.8vw, 1.4rem); }
+.references { margin-top: 0.9rem; }
+.references ul { margin: 0; padding-left: 1rem; color: #466176; display: grid; gap: 0.5rem; }
+</style>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Dienstleistungen | Invario{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <h1>Unsere Dienstleistungen</h1>
+    <p>Praxisnahe IT-Lösungen für Schulen mit klaren Prozessen, direkter Betreuung und zuverlässiger Umsetzung.</p>
+</section>
+
+<section class="cards">
+    <article class="card">
+        <h2>Inventarsystem</h2>
+        <p>Strukturierte Verwaltung von Geräten, Zubehör und Standorten mit nachvollziehbaren Zuständigkeiten und sauberer Historie.</p>
+    </article>
+    <article class="card">
+        <h2>Lizenzverwaltung</h2>
+        <p>Zentrale Übersicht über aktive, pausierte und abgelaufene Lizenzen inklusive Laufzeiten, Zuständen und Übergaben.</p>
+    </article>
+    <article class="card">
+        <h2>24/7 Support</h2>
+        <p>Schnelle Reaktionszeiten bei Störungen, klare Eskalationspfade und direkte Hilfe bei betriebskritischen Themen.</p>
+    </article>
+    <article class="card">
+        <h2>Beratung</h2>
+        <p>Strategische und technische Beratung für Schulträger und Schulleitungen von der Planung bis zum laufenden Betrieb.</p>
+    </article>
+    <article class="card">
+        <h2>Sicherheitskonzepte</h2>
+        <p>DSGVO-konforme Abläufe, Zugriffsrollen und dokumentierte Sicherheitsstandards für sensible Schuldaten.</p>
+    </article>
+    <article class="card">
+        <h2>Einführung & Schulung</h2>
+        <p>Geordnete Einführung im Team, kurze Lernkurve und praxisorientierte Schulung für Verwaltung und Kollegium.</p>
+    </article>
+</section>
+
+<style>
+.page-hero { margin-bottom: 1.2rem; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.9rem; }
+.card { background: #fff; border: 1px solid #d8e1e8; border-radius: 14px; padding: 1rem; }
+.card h2 { color: #0f334b; margin-bottom: 0.45rem; font-size: clamp(1.05rem, 1.8vw, 1.4rem); }
+</style>
+{% endblock %}

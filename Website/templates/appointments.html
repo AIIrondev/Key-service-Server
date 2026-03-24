@@ -194,7 +194,7 @@
         <div class="calendar-header">
             <h1>{{ month_name }} {{ year }}</h1>
             <div class="month-nav">
-                <a href="{{ url_for('appointments', month=previous_month, year=previous_year) }}">Zurueck</a>
+                <a href="{{ url_for('appointments', month=previous_month, year=previous_year) }}">Zurück</a>
                 <a href="{{ url_for('appointments', month=next_month, year=next_year) }}">Weiter</a>
             </div>
         </div>
@@ -231,7 +231,7 @@
 
     <aside class="panel booking-form">
         <h2>Termin anfragen</h2>
-        <span class="selected-date-badge" id="selectedDateBadge">Kein Datum gewaehlt</span>
+        <span class="selected-date-badge" id="selectedDateBadge">Kein Datum gewählt</span>
         <form method="POST" action="{{ url_for('appointments', month=month, year=year) }}">
             <input type="hidden" id="selectedDateInput" name="selected_date" required>
             <div class="field">
@@ -279,7 +279,7 @@
 
         function setSelection(dateValue, button) {
             selectedDateInput.value = dateValue;
-            selectedDateBadge.textContent = "Ausgewaehlt: " + dateValue;
+            selectedDateBadge.textContent = "Ausgewählt: " + dateValue;
 
             dayGrid.querySelectorAll(".day").forEach(function (node) {
                 node.classList.remove("selected");

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Projekte | Invario{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <h1>Projekte und Kunden</h1>
+    <p>Einblick in aktuelle und vergangene Zusammenarbeit mit Schulen und Bildungsträgern.</p>
+</section>
+
+<section class="split">
+    <article class="panel">
+        <h2>Aktuelle Projekte</h2>
+        <ul>
+            <li><strong>Schulverbund Nord:</strong> Rollout Inventarsystem für 12 Standorte, inklusive Gerätehistorie und Lizenzmonitoring.</li>
+            <li><strong>Berufskolleg West:</strong> Einführung zentraler Termin- und Supportprozesse mit Admin-Dashboard.</li>
+            <li><strong>Gymnasium am Park:</strong> Migration von Altbeständen und strukturierte Rechtevergabe für Fachbereiche.</li>
+        </ul>
+    </article>
+
+    <article class="panel">
+        <h2>Aktuelle Kunden</h2>
+        <ul>
+            <li>Städtischer Schulträger Musterstadt</li>
+            <li>Campus Bildung Rhein-Main</li>
+            <li>Verbundschule Süd</li>
+            <li>Fachoberschule Technikzentrum</li>
+        </ul>
+    </article>
+</section>
+
+<section class="split" style="margin-top:0.9rem;">
+    <article class="panel">
+        <h2>Vergangene Projekte</h2>
+        <ul>
+            <li><strong>Realschule Mitte:</strong> Digitalisierung der Inventurabläufe und Schulung des Verwaltungsteams.</li>
+            <li><strong>Bildungswerk Ost:</strong> Aufbau eines Lizenz- und Rechnungsworkflows mit Dokumentenablage.</li>
+            <li><strong>Campus Linden:</strong> Sicherheitsreview und Stabilisierung der laufenden IT-Prozesse.</li>
+        </ul>
+    </article>
+
+    <article class="panel">
+        <h2>Vergangene Kunden</h2>
+        <ul>
+            <li>Privatschulzentrum Amberg</li>
+            <li>Schulträger Kreis Süd</li>
+            <li>Akademie für Gesundheit Nord</li>
+            <li>Campus Schöneck</li>
+        </ul>
+    </article>
+</section>
+
+<style>
+.page-hero { margin-bottom: 1.2rem; }
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+.panel { background: #fff; border: 1px solid #d8e1e8; border-radius: 14px; padding: 1rem; }
+.panel h2 { color: #0f334b; margin-bottom: 0.45rem; font-size: clamp(1.05rem, 1.8vw, 1.4rem); }
+.panel ul { margin: 0; padding-left: 1rem; color: #466176; display: grid; gap: 0.55rem; }
+@media (max-width: 900px) { .split { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}

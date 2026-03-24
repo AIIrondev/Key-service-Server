@@ -165,11 +165,11 @@
     </article>
     <article class="stat-card">
         <div class="stat-value">{{ status_counts.Bestaetigt }}</div>
-        <div class="stat-label">Bestaetigt</div>
+        <div class="stat-label">Bestätigt</div>
     </article>
     <article class="stat-card">
         <div class="stat-value">{{ total_posts }}</div>
-        <div class="stat-label">Blog-Beitraege</div>
+        <div class="stat-label">Blog-Beiträge</div>
     </article>
 </section>
 
@@ -195,7 +195,7 @@
                         <form method="POST" action="{{ url_for('update_appointment', appointment_id=appointment.id) }}" class="action-form" style="min-width: 280px;">
                             <textarea class="response-input" name="response" placeholder="Antwort (optional)"></textarea>
                             <div style="display: flex; gap: 0.4rem;">
-                                <button type="submit" name="action" value="confirm" class="confirm-btn action-btn">Bestaetigen</button>
+                                <button type="submit" name="action" value="confirm" class="confirm-btn action-btn">Bestätigen</button>
                                 <button type="submit" name="action" value="reject" class="reject-btn action-btn">Ablehnen</button>
                             </div>
                         </form>

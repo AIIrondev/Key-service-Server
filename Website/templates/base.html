@@ -7,7 +7,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>{% block title %}IT Loesungen{% endblock %}</title>
+    <title>{% block title %}IT Lösungen{% endblock %}</title>
     {% block head %}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -264,10 +264,10 @@
         <div class="site-shell site-nav-inner">
             <a class="brand" href="{{ url_for('default') }}">Invario</a>
             <div class="nav-links" aria-label="Main Navigation">
-                <a href="{{ url_for('default') }}#leistungen">Dienstleistungen</a>
-                <a href="{{ url_for('default') }}#projekte">Projekte</a>
-                <a href="{{ url_for('default') }}#team">Team</a>
-                <a href="{{ url_for('default') }}#kontakt">Kontakt</a>
+                <a href="{{ url_for('dienstleistungen') }}">Dienstleistungen</a>
+                <a href="{{ url_for('projekte') }}">Projekte</a>
+                <a href="{{ url_for('team') }}">Team</a>
+                <a href="{{ url_for('kontakt') }}">Kontakt</a>
             </div>
             <div class="nav-actions">
                 {% if 'username' in session %}
@@ -280,13 +280,6 @@
                             <a href="{{ url_for('my_invoices') }}">Meine Rechnungen</a>
                             <a href="{{ url_for('user_chat') }}">Chat mit Admin</a>
                             <a href="{{ url_for('user_tickets') }}">Support Tickets</a>
-                        </div>
-                    </details>
-
-                    <details class="nav-dropdown">
-                        <summary class="nav-btn">Inhalte</summary>
-                        <div class="dropdown-menu">
-                            <a href="{{ url_for('blog') }}">Blog</a>
                         </div>
                     </details>
 
@@ -331,7 +324,7 @@
             <div class="footer-content">
                 <div class="footer-section">
                     <h4>Über uns</h4>
-                    <p>Wir bieten professionelle IT-Lösungen und Dienstleistungen für Ihr Unternehmen.</p>
+                    <p>Wir bieten professionelle IT-Lösungen für Ihre Inventur.</p>
                 </div>
                 <div class="footer-section">
                     <h4>Schnelllinks</h4>

@@ -172,12 +172,12 @@
                 ></textarea>
             </div>
             <input type="hidden" name="action" value="create" />
-            <button type="submit" class="submit-btn">Veroeffentlichen</button>
+            <button type="submit" class="submit-btn">Veröffentlichen</button>
         </form>
     </aside>
 
     <article>
-        <h2 style="font-size: 1.2rem; color: #0f354d; margin: 0 0 0.8rem;">Veroeffentlichte Beitraege</h2>
+        <h2 style="font-size: 1.2rem; color: #0f354d; margin: 0 0 0.8rem;">Veröffentlichte Beiträge</h2>
         <section class="posts-list">
             {% if posts %}
                 {% for post in posts %}
@@ -187,18 +187,18 @@
                             <p>{{ post.excerpt }}</p>
                             <div class="post-meta">
                                 <strong>Autor:</strong> {{ post.author }}<br />
-                                <strong>Veroeffentlicht:</strong> {{ post.created_at[:10] }}
+                                <strong>Veröffentlicht:</strong> {{ post.created_at[:10] }}
                             </div>
                         </div>
                         <form method="POST" action="{{ url_for('admin_blog') }}" class="delete-form">
                             <input type="hidden" name="action" value="delete" />
                             <input type="hidden" name="post_id" value="{{ post.id }}" />
-                            <button type="submit" class="delete-btn" onclick="return confirm('Sicher?')">Loeschen</button>
+                            <button type="submit" class="delete-btn" onclick="return confirm('Sicher?')">Löschen</button>
                         </form>
                     </article>
                 {% endfor %}
             {% else %}
-                <p>Noch keine Beitraege veroeffentlicht.</p>
+                <p>Noch keine Beiträge veröffentlicht.</p>
             {% endif %}
         </section>
     </article>

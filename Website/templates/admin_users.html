@@ -25,26 +25,19 @@
                 <td>{{ user.display_name }}</td>
                 <td>{{ 'Admin' if user.is_admin else 'Nutzer' }}</td>
                 <td>
-                    <div class="actions">
-                        {% if not user.is_admin %}
-                        <form method="post">
-                            <input type="hidden" name="username" value="{{ user.username }}">
-                            <input type="hidden" name="action" value="make_admin">
-                            <button type="submit">Zu Admin</button>
-                        </form>
-                        {% else %}
-                        <form method="post">
-                            <input type="hidden" name="username" value="{{ user.username }}">
-                            <input type="hidden" name="action" value="remove_admin">
-                            <button type="submit" class="warn">Admin entziehen</button>
-                        </form>
-                        {% endif %}
-                        <form method="post">
-                            <input type="hidden" name="username" value="{{ user.username }}">
-                            <input type="hidden" name="action" value="delete_user">
-                            <button type="submit" class="danger">Loeschen</button>
-                        </form>
-                    </div>
+                    <form method="post" class="actions">
+                        <input type="hidden" name="username" value="{{ user.username }}">
+                        <select name="action" required>
+                            <option value="">Aktion wählen</option>
+                            {% if not user.is_admin %}
+                            <option value="make_admin">Zu Admin machen</option>
+                            {% else %}
+                            <option value="remove_admin">Admin-Rechte entziehen</option>
+                            {% endif %}
+                            <option value="delete_user">Benutzer löschen</option>
+                        </select>
+                        <button type="submit">Ausführen</button>
+                    </form>
                 </td>
             </tr>
             {% endfor %}
@@ -57,9 +50,8 @@
 .table-wrap { background: #fff; border: 1px solid #d8e1e8; border-radius: 14px; padding: 1rem; overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 0.7rem; border-bottom: 1px solid #e8eef2; }
-.actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+select { border: 1px solid #bcd0de; background: #fff; padding: 0.4rem 0.55rem; border-radius: 10px; font: inherit; }
 button { border: 1px solid #bcd0de; background: #fff; padding: 0.4rem 0.65rem; border-radius: 999px; font-weight: 700; cursor: pointer; }
-button.warn { border-color: #efcc95; }
-button.danger { border-color: #f0b7b7; color: #8d2929; }
 </style>
 {% endblock %}

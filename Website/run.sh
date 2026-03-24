@@ -17,7 +17,10 @@ start_mongodb_if_needed() {
 
     mkdir -p "$MONGO_DBPATH"
     echo "Starting MongoDB with dbPath: $MONGO_DBPATH"
-    mongod --dbpath "$MONGO_DBPATH" --bind_ip 127.0.0.1 --port 27017
+    mongod --dbpath "$MONGO_DBPATH" --bind_ip 127.0.0.1 --port 27017 --fork --logpath "$SCRIPT_DIR/mongodb.log" || {
+        echo "Failed to start MongoDB. Check $SCRIPT_DIR/mongodb.log for details."
+        exit 1
+    }
 }
 
 start_mongodb_if_needed
@@ -95,12 +98,12 @@ if ! command -v patchelf >/dev/null 2>&1; then
 fi
 
 pip install --upgrade pip
-pip install -U nuitka ordered-set zstandard flask flask-jwt-extended cryptography pyotp qrcode bleach
+pip install -U nuitka ordered-set zstandard flask flask-jwt-extended cryptography pyotp qrcode bleach pymongo
 
 python -m nuitka --standalone --follow-imports --include-data-dir=templates=templates --include-data-dir=static=static --include-data-dir=data=data --assume-yes-for-downloads --output-dir=build --remove-output main.py
-if [[ -x "./build/main.bin" ]]; then
-	./build/main.bin
+if [[ -x "./build/main.dist/main.bin" ]]; then
+	./build/main.dist/main.bin
 else
-	echo "Build step finished but executable not found at ./build/main.bin"
+	echo "Build step finished but executable not found at ./build/main.dist/main.bin"
 	exit 1
 fi

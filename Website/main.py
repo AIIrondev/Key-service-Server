@@ -7,6 +7,7 @@ from datetime import timedelta, datetime, date
 from pathlib import Path
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 import bleach
 from markupsafe import escape
 from pymongo import MongoClient
@@ -37,6 +38,7 @@ def set_security_headers(response):
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
+INVOICE_UPLOAD_DIR = BASE_DIR / "static" / "uploads" / "invoices"
 USERS_FILE = DATA_DIR / "users.json"
 APPOINTMENTS_FILE = DATA_DIR / "appointments.json"
 POSTS_FILE = DATA_DIR / "posts.json"
@@ -50,6 +52,24 @@ def _issue_access_token() -> str:
 
 def _utc_now_iso() -> str:
     return datetime.utcnow().isoformat(timespec="seconds") + "Z"
+
+
+def _is_allowed_invoice_filename(filename: str) -> bool:
+    return bool(filename) and filename.lower().endswith(".pdf")
+
+
+def _save_invoice_pdf(file_obj, invoice_number: str) -> str | None:
+    if not file_obj or not file_obj.filename:
+        return None
+    original_name = secure_filename(file_obj.filename)
+    if not _is_allowed_invoice_filename(original_name):
+        return None
+    INVOICE_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    safe_invoice = secure_filename(invoice_number or "invoice")
+    unique_name = f"{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{safe_invoice}_{original_name}"
+    target = INVOICE_UPLOAD_DIR / unique_name
+    file_obj.save(target)
+    return f"uploads/invoices/{unique_name}"
 
 
 def _get_mongo_client() -> MongoClient:
@@ -126,6 +146,7 @@ def _ensure_user_invoice(username: str) -> None:
                 "amount_eur": 79.0,
                 "status": "Offen",
                 "due_date": "2026-12-31",
+                "pdf_path": "",
                 "created_at": _utc_now_iso(),
             }
         )
@@ -245,6 +266,26 @@ def admin_required(view_func):
 @app.route("/", methods=["GET", "POST"])
 def default():
     return render_template("main.html")
+
+
+@app.route('/dienstleistungen')
+def dienstleistungen():
+    return render_template("dienstleistungen.html")
+
+
+@app.route('/projekte')
+def projekte():
+    return render_template("projekte.html")
+
+
+@app.route('/team')
+def team():
+    return render_template("team.html")
+
+
+@app.route('/kontakt')
+def kontakt():
+    return render_template("kontakt.html")
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -557,20 +598,61 @@ def blog_post(post_id):
     return render_template("blog_post.html", post=post)
 
 
-@app.route('/my/licenses')
+@app.route('/my/licenses', methods=['GET', 'POST'])
 @login_required
 def my_licenses():
+    if request.method == 'POST':
+        action = _sanitize_text(request.form.get("action") or "", 30)
+        license_id = _sanitize_text(request.form.get("license_id") or "", 64)
+        target_username = _sanitize_text(request.form.get("target_username") or "", 80)
+
+        if action != "transfer" or not license_id or not target_username:
+            flash("Ungueltige Weitergabe-Angaben.", "error")
+            return redirect(url_for("my_licenses"))
+
+        if target_username == session.get("username"):
+            flash("Bitte einen anderen Nutzer waehlen.", "error")
+            return redirect(url_for("my_licenses"))
+
+        client = None
+        try:
+            client, col = _get_collection("licenses")
+            result = col.update_one(
+                {"_id": ObjectId(license_id), "username": session.get("username")},
+                {
+                    "$set": {
+                        "username": target_username,
+                        "transferred_at": _utc_now_iso(),
+                        "transferred_by": session.get("username"),
+                    }
+                },
+            )
+            if result.modified_count:
+                flash("Lizenz wurde erfolgreich weitergegeben.", "success")
+            else:
+                flash("Lizenz konnte nicht weitergegeben werden.", "error")
+        except Exception:
+            flash("Weitergabe fehlgeschlagen.", "error")
+        finally:
+            if client:
+                client.close()
+        return redirect(url_for("my_licenses"))
+
     licenses = []
     client = None
     try:
         client, col = _get_collection("licenses")
-        licenses = list(col.find({"username": session.get("username")}, {"_id": 0}).sort("created_at", -1))
+        licenses = list(col.find({"username": session.get("username")}).sort("created_at", -1))
+        for item in licenses:
+            item["id"] = str(item.get("_id"))
     except PyMongoError:
         flash("Lizenzdaten konnten nicht geladen werden.", "error")
     finally:
         if client:
             client.close()
-    return render_template("my_licenses.html", licenses=licenses)
+
+    transfer_users = [u for u in _list_users_for_admin() if u.get("username") != session.get("username")]
+    return render_template("my_licenses.html", licenses=licenses, transfer_users=transfer_users)
 
 
 @app.route('/my/invoices')
@@ -821,6 +903,7 @@ def admin_licenses():
             if action == "create":
                 username = _sanitize_text(request.form.get("username") or "", 80)
                 school_name = _sanitize_text(request.form.get("school_name") or "", 200)
+                license_key = _sanitize_text(request.form.get("license_key") or "", 120)
                 plan = _sanitize_text(request.form.get("plan") or "Standard", 80)
                 status = _sanitize_text(request.form.get("status") or "Aktiv", 40)
                 valid_until = _sanitize_text(request.form.get("valid_until") or "", 40)
@@ -833,7 +916,7 @@ def admin_licenses():
                     {
                         "username": username,
                         "school_name": school_name,
-                        "license_key": f"LIC-{int(datetime.utcnow().timestamp())}-{username[:3].upper()}",
+                        "license_key": license_key or f"LIC-{int(datetime.utcnow().timestamp())}-{username[:3].upper()}",
                         "plan": plan,
                         "status": status,
                         "valid_until": valid_until or "2027-12-31",
@@ -847,6 +930,8 @@ def admin_licenses():
                     {"_id": ObjectId(license_id)},
                     {
                         "$set": {
+                            "school_name": _sanitize_text(request.form.get("school_name") or "", 200),
+                            "license_key": _sanitize_text(request.form.get("license_key") or "", 120),
                             "plan": _sanitize_text(request.form.get("plan") or "Standard", 80),
                             "status": _sanitize_text(request.form.get("status") or "Aktiv", 40),
                             "valid_until": _sanitize_text(request.form.get("valid_until") or "", 40),
@@ -854,6 +939,24 @@ def admin_licenses():
                     },
                 )
                 flash("Lizenz aktualisiert.", "success")
+
+            elif action == "transfer" and license_id:
+                target_username = _sanitize_text(request.form.get("target_username") or "", 80)
+                if not target_username:
+                    flash("Bitte Zielnutzer waehlen.", "error")
+                    return redirect(url_for("admin_licenses"))
+
+                col.update_one(
+                    {"_id": ObjectId(license_id)},
+                    {
+                        "$set": {
+                            "username": target_username,
+                            "transferred_at": _utc_now_iso(),
+                            "transferred_by": session.get("username"),
+                        }
+                    },
+                )
+                flash("Lizenz weitergegeben.", "success")
 
             elif action == "delete" and license_id:
                 col.delete_one({"_id": ObjectId(license_id)})
@@ -880,7 +983,8 @@ def admin_licenses():
         if client:
             client.close()
 
-    return render_template("admin_licenses.html", licenses=licenses)
+    users = _list_users_for_admin()
+    return render_template("admin_licenses.html", licenses=licenses, users=users)
 
 
 @app.route('/admin/invoices', methods=['GET', 'POST'])
@@ -896,10 +1000,13 @@ def admin_invoices():
 
             if action == "create":
                 username = _sanitize_text(request.form.get("username") or "", 80)
+                invoice_number = _sanitize_text(request.form.get("invoice_number") or "", 120)
                 period = _sanitize_text(request.form.get("period") or "", 20)
                 due_date = _sanitize_text(request.form.get("due_date") or "", 20)
                 status = _sanitize_text(request.form.get("status") or "Offen", 40)
                 amount_text = _sanitize_text(request.form.get("amount_eur") or "0", 20)
+                normalized_invoice_number = invoice_number or f"INV-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+                pdf_path = _save_invoice_pdf(request.files.get("invoice_pdf"), normalized_invoice_number)
 
                 try:
                     amount = float(amount_text)
@@ -913,11 +1020,12 @@ def admin_invoices():
                 col.insert_one(
                     {
                         "username": username,
-                        "invoice_number": f"INV-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
+                        "invoice_number": normalized_invoice_number,
                         "period": period,
                         "amount_eur": amount,
                         "status": status,
                         "due_date": due_date or "2026-12-31",
+                        "pdf_path": pdf_path or "",
                         "created_at": _utc_now_iso(),
                     }
                 )
@@ -925,19 +1033,27 @@ def admin_invoices():
 
             elif action == "update" and invoice_id:
                 amount_text = _sanitize_text(request.form.get("amount_eur") or "0", 20)
+                invoice_number = _sanitize_text(request.form.get("invoice_number") or "", 120)
+                pdf_path = _save_invoice_pdf(request.files.get("invoice_pdf"), invoice_number or "invoice")
                 try:
                     amount = float(amount_text)
                 except ValueError:
                     amount = 0.0
 
+                update_payload = {
+                    "invoice_number": invoice_number,
+                    "period": _sanitize_text(request.form.get("period") or "", 20),
+                    "status": _sanitize_text(request.form.get("status") or "Offen", 40),
+                    "due_date": _sanitize_text(request.form.get("due_date") or "", 20),
+                    "amount_eur": amount,
+                }
+                if pdf_path:
+                    update_payload["pdf_path"] = pdf_path
+
                 col.update_one(
                     {"_id": ObjectId(invoice_id)},
                     {
-                        "$set": {
-                            "status": _sanitize_text(request.form.get("status") or "Offen", 40),
-                            "due_date": _sanitize_text(request.form.get("due_date") or "", 20),
-                            "amount_eur": amount,
-                        }
+                        "$set": update_payload
                     },
                 )
                 flash("Rechnung aktualisiert.", "success")
@@ -967,7 +1083,8 @@ def admin_invoices():
         if client:
             client.close()
 
-    return render_template("admin_invoices.html", invoices=invoices)
+    users = _list_users_for_admin()
+    return render_template("admin_invoices.html", invoices=invoices, users=users)
 
 
 @app.route('/datenschutz')

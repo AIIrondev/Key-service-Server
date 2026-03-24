@@ -4,3 +4,4 @@ Inventarsystem_Lizenz_Verwaltung
 main.dist
 .mongo-data
 db
+build

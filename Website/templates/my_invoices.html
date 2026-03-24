@@ -5,7 +5,7 @@
 {% block content %}
 <section class="panel">
     <h1>Rechnungseinsicht</h1>
-    <p>Alle Rechnungen im Ueberblick.</p>
+    <p>Alle Rechnungen im Überblick.</p>
 </section>
 
 <section class="table-wrap">
@@ -17,6 +17,7 @@
                 <th>Betrag</th>
                 <th>Faelligkeit</th>
                 <th>Status</th>
+                <th>PDF</th>
             </tr>
         </thead>
         <tbody>
@@ -27,10 +28,17 @@
                 <td>{{ '%.2f'|format(invoice.amount_eur) }} EUR</td>
                 <td>{{ invoice.due_date }}</td>
                 <td>{{ invoice.status }}</td>
+                <td>
+                    {% if invoice.pdf_path %}
+                    <a href="{{ url_for('static', filename=invoice.pdf_path) }}" target="_blank" rel="noopener">PDF ansehen</a>
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
             </tr>
             {% else %}
             <tr>
-                <td colspan="5">Noch keine Rechnungen vorhanden.</td>
+                <td colspan="6">Noch keine Rechnungen vorhanden.</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -42,5 +50,6 @@
 .table-wrap { background: #fff; border: 1px solid #d8e1e8; border-radius: 14px; padding: 1rem; overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 0.7rem; border-bottom: 1px solid #e8eef2; }
+a { color: #0a4c74; font-weight: 700; }
 </style>
 {% endblock %}

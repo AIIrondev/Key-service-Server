@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Kontakt | Invario{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+    <h1>Kontakt</h1>
+    <p>Sie erreichen uns schnell über E-Mail oder Telefon. Für eine strukturierte Anfrage empfehlen wir die Terminbuchung.</p>
+</section>
+
+<section class="contact-grid">
+    <article class="contact-card">
+        <h2>Info</h2>
+        <p><strong>Info E-Mail:</strong> info@invario.de</p>
+        <p><strong>Telefonnummer:</strong> +49 (0) 123 / 456789</p>
+    </article>
+
+    <article class="contact-card">
+        <h2>Support</h2>
+        <p><strong>Support E-Mail:</strong> support@invario.de</p>
+        <p><strong>Support Telefonnummer:</strong> +49 (0) 123 / 456790</p>
+    </article>
+
+    <article class="contact-card">
+        <h2>Terminbuchung</h2>
+        <p>Für Erstgespräche, Rückfragen und Projektanfragen buchen Sie direkt einen Termin.</p>
+        {% if 'username' in session %}
+            <a class="btn" href="{{ url_for('appointments') }}">Zur Terminbuchung</a>
+        {% else %}
+            <a class="btn" href="{{ url_for('login') }}">Login zur Terminbuchung</a>
+        {% endif %}
+    </article>
+</section>
+
+<style>
+.page-hero { margin-bottom: 1.2rem; }
+.contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.9rem; }
+.contact-card { background: #fff; border: 1px solid #d8e1e8; border-radius: 14px; padding: 1rem; }
+.contact-card h2 { color: #0f334b; margin-bottom: 0.45rem; font-size: clamp(1.05rem, 1.8vw, 1.4rem); }
+.btn { margin-top: 0.5rem; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; border: 1px solid #0a4c74; background: linear-gradient(120deg, #0c5a86 0%, #08486c 100%); color: #fff; padding: 0.52rem 0.92rem; font-weight: 700; }
+</style>
+{% endblock %}

@@ -25,7 +25,7 @@
         {% for item in tickets %}
         <article class="ticket">
             <h3>{{ item.title }}</h3>
-            <p><strong>Status:</strong> {{ item.status }} | <strong>Prioritaet:</strong> {{ item.priority }}</p>
+            <p><strong>Status:</strong> {{ item.status }} | <strong>Priorität:</strong> {{ item.priority }}</p>
             <p>{{ item.description }}</p>
             {% if item.admin_response %}
             <p><strong>Admin Antwort:</strong> {{ item.admin_response }}</p>

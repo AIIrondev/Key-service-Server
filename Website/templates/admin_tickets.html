@@ -12,14 +12,14 @@
     {% for ticket in tickets %}
     <article class="ticket">
         <h3>{{ ticket.title }}</h3>
-        <p><strong>Nutzer:</strong> {{ ticket.username }} | <strong>Prioritaet:</strong> {{ ticket.priority }}</p>
+        <p><strong>Nutzer:</strong> {{ ticket.username }} | <strong>Priorität:</strong> {{ ticket.priority }}</p>
         <p>{{ ticket.description }}</p>
         <form method="post" class="update-form">
             <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
             <select name="status">
                 <option value="Offen" {{ 'selected' if ticket.status == 'Offen' else '' }}>Offen</option>
                 <option value="In Bearbeitung" {{ 'selected' if ticket.status == 'In Bearbeitung' else '' }}>In Bearbeitung</option>
-                <option value="Geloest" {{ 'selected' if ticket.status == 'Geloest' else '' }}>Geloest</option>
+                <option value="Geloest" {{ 'selected' if ticket.status == 'Geloest' else '' }}>Gelöst</option>
             </select>
             <textarea name="admin_response" rows="3" placeholder="Antwort an Nutzer">{{ ticket.admin_response }}</textarea>
             <button type="submit">Aktualisieren</button>
