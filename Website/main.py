@@ -278,6 +278,11 @@ def projekte():
     return render_template("projekte.html")
 
 
+@app.route('/inventarsystem')
+def inventarsystem():
+    return render_template("inventarsystem.html")
+
+
 @app.route('/team')
 def team():
     return render_template("team.html")
