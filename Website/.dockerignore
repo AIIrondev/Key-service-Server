@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+build/
+.git/
+.gitignore
+mongodb.log
+mongodb.log.*
+*.dist-info/
+.nuitka-cache/
+*.build/

@@ -1,0 +1,35 @@
+services:
+  mongodb:
+    image: mongo:7
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: Invario_Website
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+
+  website:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NUITKA_JOBS: ${NUITKA_JOBS:-1}
+        NUITKA_LOW_MEMORY: ${NUITKA_LOW_MEMORY:-1}
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      MONGO_URI: mongodb://mongodb:27017
+      MONGO_DB_NAME: Invario_Website
+      SESSION_COOKIE_SECURE: "0"
+      JWT_SECRET_KEY: change-this-in-production
+    ports:
+      - "4999:4999"
+
+volumes:
+  mongo_data:
