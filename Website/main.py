@@ -1,9 +1,11 @@
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
-from flask import Flask, render_template, request, jsonify, flash, redirect, url_for, get_flashed_messages, session
+from flask import Flask, render_template, request, jsonify, flash, redirect, url_for, get_flashed_messages, session, send_file
 import os
+import json
 import calendar
 from datetime import timedelta, datetime, date
 from functools import wraps
+from io import BytesIO
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import bleach
@@ -11,6 +13,8 @@ from markupsafe import escape
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from bson.objectid import ObjectId
+import verify
+import backup
 
 import user as user_store
 
@@ -1210,6 +1214,152 @@ def impressum():
 @app.route('/nutzungsbedingungen')
 def nutzungsbedingungen():
     return render_template("nutzungsbedingungen.html")
+
+@app.route("/admin/lizenz_key")
+@app.route("/admin/license-management")
+@admin_required
+def admin_license_keys():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    keys = verify.load_file()
+    users = _list_users_for_admin()
+    return render_template("lizenz-managment.html", keys=keys, users=users)
+
+
+@app.route("/admin/generate_new", methods=["POST"])
+@admin_required
+def generate_new():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    new_license = verify.new_key()
+    if not new_license:
+        flash("License generation failed (database unavailable).", "error")
+        return redirect(url_for('admin_license_keys'))
+
+    flash(f"New key generated: {new_license}", "success")
+    return redirect(url_for('admin_license_keys'))
+
+
+@app.route("/admin/allocate_key", methods=["POST"])
+@admin_required
+def allocate_key():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    username = _sanitize_text(request.form.get("username") or "", 80)
+    license_key = _sanitize_text(request.form.get("license_key") or "", 160)
+
+    if not username or not license_key:
+        flash("Bitte Benutzer und Lizenz-Key auswaehlen.", "error")
+        return redirect(url_for('admin_license_keys'))
+
+    if not _find_user(username):
+        flash("Ausgewaehlter Benutzer wurde nicht gefunden.", "error")
+        return redirect(url_for('admin_license_keys'))
+
+    client = None
+    try:
+        client, col = _get_collection("licenses")
+        result = col.update_one(
+            {"license_key": license_key},
+            {
+                "$set": {
+                    "username": username,
+                    "updated_at": _utc_now_iso(),
+                }
+            },
+        )
+        if result.matched_count == 0:
+            flash("Lizenz-Key nicht gefunden.", "error")
+            return redirect(url_for('admin_license_keys'))
+    except PyMongoError:
+        flash("Key-Zuweisung fehlgeschlagen.", "error")
+        return redirect(url_for('admin_license_keys'))
+    finally:
+        if client:
+            client.close()
+
+    flash("Lizenz-Key wurde erfolgreich zugewiesen.", "success")
+    return redirect(url_for('admin_license_keys'))
+
+
+@app.route("/admin/remove_key/<user_id>", methods=["POST"])
+@admin_required
+def remove_key(user_id):
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    if verify.remove_key(user_id):
+        flash(f"Key for user {user_id} removed", "success")
+    else:
+        flash(f"No key found for user {user_id}", "error")
+
+    return redirect(url_for('admin_license_keys'))
+
+
+
+@app.route('/admin/download_backup', methods=['GET'])
+@admin_required
+def download_backup():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    licenses_data = backup.export_backup()
+    json_str = json.dumps(licenses_data, indent=2)
+    return send_file(
+        BytesIO(json_str.encode('utf-8')),
+        mimetype='application/json',
+        as_attachment=True,
+        download_name='licenses_backup.json'
+    )
+
+
+@app.route('/admin/upload_backup', methods=['POST'])
+@admin_required
+def upload_backup():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    if 'file' not in request.files:
+        flash('No file provided', 'error')
+        return redirect(url_for('admin_license_keys'))
+
+    file = request.files['file']
+    
+    if file.filename == '':
+        flash('No file selected', 'error')
+        return redirect(url_for('admin_license_keys'))
+
+    try:
+        content = file.read().decode('utf-8')
+        data = json.loads(content)
+        
+        if backup.import_backup(data):
+            flash('Licenses backup restored successfully', 'success')
+        else:
+            flash('Failed to restore backup - invalid format', 'error')
+    except json.JSONDecodeError:
+        flash('Invalid JSON file', 'error')
+    except Exception as e:
+        flash(f'Error uploading backup: {str(e)}', 'error')
+
+    return redirect(url_for('admin_license_keys'))
+
+@app.route("/validate__information", methods=['POST'])
+def validate__information():
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "No JSON data provided"}), 400
+    license_key = data.get("license")
+    hwid_uuid = data.get("hwid")
+    if not license_key or not hwid_uuid:
+        return jsonify({"error": "Missing 'license' or 'hwid' in JSON data"}), 400
+    if verify.check(license_key, hwid_uuid):
+        return jsonify({"status": "ok"}), 200
+    else:
+        return jsonify({"status": "invalid"}), 402
 
 
 @app.route('/logout')
