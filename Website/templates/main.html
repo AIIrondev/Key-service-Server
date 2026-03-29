@@ -1,67 +1,68 @@
 {% extends "base.html" %}
 
-{% block title %}Inventarlösungen{% endblock %}
+{% block title %}Digitale Schulverwaltung fuer Sekretariat und Schulleitung{% endblock %}
 
 {% block head %}
 {{ super() }}
 <style>
 	.hero {
-		margin-top: 1.2rem;
-		padding: 3.8rem;
-		border-radius: 24px;
-		background: linear-gradient(135deg, #f8fcff 0%, #e1ecf3 70%, #d4e3ed 100%);
-		border: 1px solid #cfdbe4;
+		margin-top: 1rem;
+		padding: 3.2rem;
+		border-radius: 22px;
+		background: linear-gradient(130deg, #f8f5ee 0%, #ece7d9 60%, #e0eadf 100%);
+		border: 1px solid #cfd6cd;
 		display: grid;
-		grid-template-columns: 1.2fr 1fr;
-		gap: 2rem;
+		grid-template-columns: 1.15fr 0.85fr;
+		gap: 1.6rem;
 		position: relative;
 		overflow: hidden;
-		box-shadow: 0 25px 55px rgba(17, 35, 50, 0.1);
+		box-shadow: 0 24px 46px rgba(28, 45, 41, 0.08);
 	}
 
 	.hero::after {
 		content: "";
 		position: absolute;
-		right: -80px;
-		bottom: -90px;
-		width: 280px;
-		height: 280px;
+		right: -60px;
+		bottom: -70px;
+		width: 220px;
+		height: 220px;
 		border-radius: 999px;
-		background: radial-gradient(circle at center, #0b5b89 0%, #0b5b89 40%, transparent 70%);
+		background: radial-gradient(circle at center, #b3672e 0%, #b3672e 44%, transparent 72%);
 		opacity: 0.12;
 		pointer-events: none;
 	}
 
 	.eyebrow {
 		display: inline-block;
-		margin-bottom: 0.85rem;
-		padding: 0.3rem 0.65rem;
+		margin-bottom: 0.9rem;
+		padding: 0.34rem 0.72rem;
 		border-radius: 999px;
-		font-size: clamp(0.7rem, 0.9vw, 0.85rem);
+		font-size: clamp(0.76rem, 0.9vw, 0.88rem);
 		font-weight: 700;
-		letter-spacing: 0.08em;
+		letter-spacing: 0.05em;
 		text-transform: uppercase;
-		color: #0c4f78;
-		background: #d9ebf6;
+		color: #1f5158;
+		background: #dbe8e5;
 	}
 
 	.hero h1 {
-		font-size: clamp(2rem, 5.5vw, 4rem);
-		color: #06293e;
+		font-size: clamp(2rem, 4.8vw, 3.6rem);
+		color: #21363b;
 		text-wrap: balance;
 	}
 
 	.hero p {
-		max-width: 56ch;
-		margin-top: 1.1rem;
-		font-size: clamp(0.95rem, 1.4vw, 1.2rem);
+		max-width: 60ch;
+		margin-top: 1rem;
+		font-size: clamp(1.03rem, 1.3vw, 1.18rem);
+		color: #4f666c;
 	}
 
 	.cta-row {
 		margin-top: 1.8rem;
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.75rem;
+		gap: 0.72rem;
 	}
 
 	.btn {
@@ -70,8 +71,9 @@
 		justify-content: center;
 		border-radius: 999px;
 		border: 1px solid transparent;
-		padding: 0.68rem 1.15rem;
+		padding: 0.7rem 1.2rem;
 		font-weight: 700;
+		font-size: 0.97rem;
 		transition: transform 0.2s ease, box-shadow 0.2s ease;
 	}
 
@@ -81,179 +83,168 @@
 
 	.btn-primary {
 		color: #ffffff;
-		background: linear-gradient(120deg, #0c5a86 0%, #08486c 100%);
-		box-shadow: 0 8px 20px rgba(11, 87, 128, 0.26);
+		background: linear-gradient(120deg, #296f78 0%, #1a5057 100%);
+		box-shadow: 0 8px 18px rgba(25, 71, 77, 0.24);
 	}
 
 	.btn-secondary {
-		color: #0d4567;
+		color: #24525a;
 		background: #ffffff;
-		border-color: #b8cddc;
+		border-color: #bcc9c0;
 	}
 
 	.hero-card {
 		align-self: end;
-		background: #0e2f44;
-		color: #dcf0ff;
-		border-radius: 18px;
+		background: #1f4e55;
+		color: #e4f2f1;
+		border-radius: 16px;
 		padding: 1.2rem;
-		border: 1px solid #194b68;
+		border: 1px solid #3a6970;
 	}
 
 	.hero-card h3 {
-		font-size: clamp(1rem, 2vw, 1.4rem);
-		margin-bottom: 0.6rem;
+		font-size: clamp(1rem, 1.8vw, 1.35rem);
+		margin-bottom: 0.55rem;
 	}
 
 	.hero-card p {
-		color: #b6d6ea;
-		font-size: clamp(0.9rem, 1.1vw, 1.05rem);
+		color: #c7dfde;
+		font-size: clamp(0.92rem, 1.05vw, 1.03rem);
 		margin: 0;
 	}
 
 	.stats {
-		margin-top: 1rem;
+		margin-top: 0.95rem;
 		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: 0.55rem;
+		gap: 0.5rem;
 	}
 
 	.stats div {
-		padding: 0.55rem 0.65rem;
-		border-radius: 12px;
-		background: #153a52;
-		border: 1px solid #2a5673;
+		padding: 0.55rem 0.62rem;
+		border-radius: 10px;
+		background: #285e66;
+		border: 1px solid #4a7c82;
 	}
 
 	.stats strong {
 		display: block;
-		font-family: "Space Grotesk", system-ui, sans-serif;
 		color: #ffffff;
-		font-size: 1.08rem;
+		font-size: 1.06rem;
 	}
 
 	.stats span {
-		color: #9ec5dc;
-		font-size: 0.8rem;
+		color: #d1e8e6;
+		font-size: 0.82rem;
 	}
 
 	.section {
-		margin-top: 2.2rem;
-		padding: 2rem;
+		margin-top: 2rem;
+		padding: 1.9rem;
 		border-radius: 18px;
-		border: 1px solid #d4dde5;
+		border: 1px solid #d0d7cf;
 		background: #ffffff;
-		box-shadow: 0 15px 35px rgba(20, 40, 55, 0.05);
-		animation: rise 700ms ease both;
+		box-shadow: 0 14px 30px rgba(28, 45, 41, 0.05);
+		animation: rise 680ms ease both;
 	}
 
 	.section h2 {
-		font-size: clamp(1.5rem, 3.2vw, 2.8rem);
-		margin-bottom: 0.5rem;
-		color: #0f334b;
+		font-size: clamp(1.45rem, 3vw, 2.3rem);
+		margin-bottom: 0.4rem;
+		color: #21393e;
 	}
 
 	.section-grid {
-		margin-top: 1.1rem;
+		margin-top: 1rem;
 		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: 0.9rem;
+		gap: 0.8rem;
 	}
 
 	.card {
 		padding: 1rem;
 		border-radius: 14px;
-		border: 1px solid #d9e2ea;
-		background: linear-gradient(160deg, #fbfdff 0%, #f4f8fb 100%);
+		border: 1px solid #dae1d8;
+		background: linear-gradient(165deg, #fcfcf8 0%, #f4f6ef 100%);
 	}
 
 	.card h3 {
-		font-size: clamp(1rem, 1.8vw, 1.3rem);
-		color: #113c58;
-		margin-bottom: 0.45rem;
+		font-size: clamp(1.04rem, 1.5vw, 1.25rem);
+		color: #275058;
+		margin-bottom: 0.35rem;
 	}
 
 	.card p {
-		font-size: clamp(0.9rem, 1.1vw, 1rem);
+		font-size: clamp(0.95rem, 1vw, 1.02rem);
 	}
 
-	.project-list {
-		margin-top: 1.1rem;
+	.routine-list {
+		margin-top: 1rem;
 		display: grid;
-		gap: 0.8rem;
+		gap: 0.7rem;
 	}
 
-	.project {
-		padding: 0.95rem 1rem;
-		border-radius: 14px;
-		border: 1px solid #cfdae4;
-		background: #f8fbfd;
+	.routine {
+		padding: 0.9rem 1rem;
+		border-radius: 12px;
+		border: 1px solid #d2d9d1;
+		background: #f8f7f1;
 		display: flex;
 		gap: 1rem;
 		justify-content: space-between;
 		align-items: center;
 	}
 
-	.project b {
+	.routine b {
 		display: block;
-		color: #0b3753;
-		margin-bottom: 0.2rem;
-		font-size: clamp(1rem, 1.5vw, 1.15rem);
+		color: #2a4d53;
+		margin-bottom: 0.18rem;
+		font-size: clamp(1rem, 1.2vw, 1.1rem);
 	}
 
-	.project span {
-		font-size: clamp(0.8rem, 0.95vw, 0.95rem);
-		color: #4a6579;
-		border: 1px solid #bfd0dd;
+	.routine span {
+		font-size: 0.86rem;
+		color: #5c716f;
+		border: 1px solid #c5cec5;
 		padding: 0.2rem 0.55rem;
 		border-radius: 999px;
 		white-space: nowrap;
 	}
 
 	.process {
-		margin-top: 1.2rem;
+		margin-top: 1.05rem;
 		display: grid;
-		grid-template-columns: repeat(6, minmax(0, 1fr));
+		grid-template-columns: repeat(5, minmax(0, 1fr));
 		gap: 0.6rem;
 	}
 
 	.step {
-		padding: 0.8rem 0.65rem;
+		padding: 0.78rem 0.65rem;
 		text-align: center;
 		border-radius: 12px;
-		border: 1px solid #ccdae5;
-		background: #f7fafc;
+		border: 1px solid #d0d8d0;
+		background: #f4f6f2;
 	}
 
 	.step strong {
 		display: block;
 		margin-bottom: 0.2rem;
-		font-size: clamp(0.9rem, 1.2vw, 1.1rem);
-		color: #0f3650;
+		font-size: clamp(0.9rem, 1.1vw, 1rem);
+		color: #284a50;
 	}
 
 	.step small {
-		color: #5f7b8f;
-		font-size: clamp(0.8rem, 0.9vw, 0.95rem);
-	}
-
-	.team-note {
-		margin-top: 0.85rem;
-		padding: 0.9rem 1rem;
-		border-radius: 12px;
-		border: 1px solid #f0c18b;
-		background: linear-gradient(120deg, #fffaf3 0%, #ffeed8 100%);
-		color: #7d4f14;
-		font-weight: 600;
+		color: #617572;
+		font-size: clamp(0.8rem, 0.86vw, 0.9rem);
 	}
 
 	.contact {
 		margin-top: 2rem;
 		border-radius: 20px;
-		padding: 2.3rem;
-		border: 1px solid #0f496f;
-		background: linear-gradient(120deg, #114e75 0%, #0a3d5c 100%);
-		color: #d2ebfa;
+		padding: 2rem;
+		border: 1px solid #2a636b;
+		background: linear-gradient(120deg, #245a61 0%, #1b484f 100%);
+		color: #d8ecea;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -262,93 +253,25 @@
 
 	.contact h2 {
 		color: #ffffff;
-		font-size: clamp(1.4rem, 3.2vw, 2.8rem);
+		font-size: clamp(1.35rem, 3vw, 2.2rem);
 		margin-bottom: 0.4rem;
 	}
 
 	.contact p {
-		color: #b9d8ec;
-		font-size: clamp(0.95rem, 1.2vw, 1.1rem);
+		color: #c7e0de;
+		font-size: clamp(0.95rem, 1.05vw, 1.08rem);
 	}
 
 	.contact .btn-secondary {
-		border-color: rgba(255, 255, 255, 0.35);
+		border-color: rgba(255, 255, 255, 0.45);
 		background: rgba(255, 255, 255, 0.14);
 		color: #ffffff;
-	}
-
-	.site-footer {
-		margin-top: 2rem;
-		padding: 1rem 0 0.3rem;
-		color: #6a8192;
-		display: flex;
-		justify-content: space-between;
-		gap: 1rem;
-		font-size: 0.95rem;
-	}
-
-	.partnership {
-	    margin-top: 2.2rem;
-	    padding: 2.5rem;
-	    border-radius: 18px;
-	    background: linear-gradient(135deg, #f0f7fc 0%, #e6effa 100%);
-	    border: 2px solid var(--brand);
-	    display: grid;
-	    grid-template-columns: 1fr 1.2fr;
-	    gap: 2rem;
-	    align-items: center;
-	}
-
-	.partnership-icon {
-	    font-size: clamp(4rem, 8vw, 6rem);
-	    text-align: center;
-	    line-height: 1;
-	}
-
-	.partnership-content h3 {
-	    font-size: clamp(1.3rem, 2.5vw, 1.8rem);
-	    color: var(--brand);
-	    margin-bottom: 0.8rem;
-	}
-
-	.partnership-content p {
-	    margin-bottom: 0.8rem;
-	    color: var(--text-soft);
-	    font-size: clamp(0.95rem, 1.1vw, 1.05rem);
-	}
-
-	.partnership-badges {
-	    display: flex;
-	    flex-wrap: wrap;
-	    gap: 0.6rem;
-	    margin-top: 1rem;
-	}
-
-	.badge {
-	    display: inline-block;
-	    padding: 0.4rem 0.85rem;
-	    border-radius: 999px;
-	    background: var(--brand);
-	    color: #ffffff;
-	    font-size: clamp(0.8rem, 0.95vw, 0.95rem);
-	    font-weight: 600;
-	}
-
-	@media (max-width: 700px) {
-	    .partnership {
-	        grid-template-columns: 1fr;
-	        padding: 1.8rem;
-	    }
-
-	    .partnership-icon {
-	        font-size: clamp(3rem, 6vw, 4rem);
-	    }
 	}
 
 	@keyframes rise {
 		from {
 			opacity: 0;
-			transform: translateY(16px);
+			transform: translateY(14px);
 		}
 		to {
 			opacity: 1;
@@ -359,7 +282,7 @@
 	@media (max-width: 980px) {
 		.hero {
 			grid-template-columns: 1fr;
-			padding: 2rem;
+			padding: 2.1rem;
 		}
 
 		.section-grid {
@@ -376,7 +299,7 @@
 			grid-template-columns: 1fr;
 		}
 
-		.project {
+		.routine {
 			flex-direction: column;
 			align-items: flex-start;
 		}
@@ -388,12 +311,7 @@
 		.contact {
 			flex-direction: column;
 			align-items: flex-start;
-			padding: 1.55rem;
-		}
-
-		.site-footer {
-			flex-direction: column;
-			padding-bottom: 1.2rem;
+			padding: 1.5rem;
 		}
 	}
 </style>
@@ -402,120 +320,100 @@
 {% block content %}
 <section class="hero" id="top">
 	<div>
-		<span class="eyebrow">IT Lösungen mit Haltung</span>
-		<h1>Zuhören. Verstehen. Planen. Realisieren.</h1>
+		<span class="eyebrow">Fuer Schulsekretariat und Schulleitung</span>
+		<h1>Mehr Ruhe im Schulalltag durch klare digitale Verwaltung.</h1>
 		<p>
-			Wir sind spezialisiert auf Schulen aller Art und machen Schulinventur endlich einfach: Unser DSGVO-konformes Inventarsystem sorgt für klare Ordnung, volle Transparenz und schnelle Abläufe im Schulalltag. Jede Lösung wird individuell für Ihre Einrichtung entwickelt, mit passgenauen Features und einer besonders schnellen, unkomplizierten Inbetriebnahme.
+			Invario unterstützt Schulen in Deutschland dabei, Inventar, Lizenzen und Anfragen nachvollziehbar zu organisieren. Die Bedienung ist bewusst einfach gehalten, damit auch Teams ohne IT-Spezialisierung schnell und sicher arbeiten koennen.
 		</p>
 		<div class="cta-row">
 			{% if 'username' in session %}
-				<a class="btn btn-primary" href="{{ url_for('appointments') }}">Termin anfragen</a>
+				<a class="btn btn-primary" href="{{ url_for('appointments') }}">Beratungstermin buchen</a>
 			{% else %}
-				<a class="btn btn-primary" href="{{ url_for('login') }}">Termin anfragen</a>
+				<a class="btn btn-primary" href="{{ url_for('login') }}">Beratungstermin buchen</a>
 			{% endif %}
-			<a class="btn btn-primary" href="{{ url_for('kontakt') }}">Kontakt aufnehmen</a>
-			<a class="btn btn-secondary" href="{{ url_for('dienstleistungen') }}">Dienstleistungen ansehen</a>
+			<a class="btn btn-secondary" href="{{ url_for('dienstleistungen') }}">Leistungen ansehen</a>
+			<a class="btn btn-secondary" href="{{ url_for('kontakt') }}">Direkt kontaktieren</a>
 		</div>
 	</div>
-	<aside class="hero-card" aria-label="Kurzfakten">
-		<h3>Inventur mit Verstand</h3>
-		<p>
-			Von Infrastruktur bis Governance: Wir verbinden konzeptionelle Tiefe mit
-			pragmatischer Umsetzung im Tagesgeschäft.
-		</p>
+	<aside class="hero-card" aria-label="Kurzfakten fuer Schulen">
+		<h3>Was Schulen besonders schaetzen</h3>
+		<p>Klare Ablaeufe, feste Ansprechpartner und verstaendliche Oberflaechen fuer den taeglichen Einsatz.</p>
 		<div class="stats">
-			<div><strong>25+</strong><span>aktive Mandate</span></div>
-			<div><strong>98%</strong><span>Zieltermine erreicht</span></div>
-			<div><strong>24/7</strong><span>Servicebereit</span></div>
+			<div><strong>5 Min</strong><span>Einstieg pro Aufgabe</span></div>
+			<div><strong>1 Klick</strong><span>Status und Historie</span></div>
+			<div><strong>DSGVO</strong><span>Konform dokumentiert</span></div>
 		</div>
 	</aside>
 </section>
 
-<section class="partnership" id="entwicklung">
-    <div class="partnership-icon">🤝</div>
-    <div class="partnership-content">
-        <h3>Entwickelt mit Schulen – für Schulen</h3>
-        <p>
-			Unser Inventarsystem wurde nicht theoretisch konzipiert, sondern in enger Zusammenarbeit mit einzelnen Schulen entwickelt. Wir verstehen die täglichen Herausforderungen im Schulbetrieb und entwickeln Lösungen, die wirklich einen Vorteil für den Schulalltag bringen.
-        </p>
-        <div class="partnership-badges">
-            <span class="badge">✓ Schulgetestet</span>
-            <span class="badge">✓ Praxisorientiert</span>
-            <span class="badge">✓ DSGVO-konform</span>
-            <span class="badge">✓ Einfach zu bedienen</span>
-        </div>
-    </div>
-</section>
-
-<section class="section" id="leistungen" style="animation-delay: 100ms;">
-	<h2>Leistungsbereiche</h2>
-	<p>Klare Gliederung in Konnektivität, Inventarverwaltung und laufenden Betrieb.</p>
+<section class="section" id="nutzen" style="animation-delay: 100ms;">
+	<h2>Was Ihr Sekretariat sofort entlastet</h2>
+	<p>Alle Informationen sind gebuendelt, Vorgaenge sind standardisiert, und Rueckfragen lassen sich schneller beantworten.</p>
 	<div class="section-grid">
 		<article class="card">
-			<h3>Konnektivität und Netzwerk</h3>
-			<p>Stabile Anbindung Ihrer Schulstandorte, saubere Netzstruktur und sichere Erreichbarkeit aller relevanten Systeme.</p>
+			<h3>Inventar auf einen Blick</h3>
+			<p>Geraete, Standorte und Zustaendigkeiten sind zentral erfasst. Das reduziert Suchzeiten und doppelte Rueckfragen.</p>
 		</article>
 		<article class="card">
-			<h3>Inventar und Lizenzmanagement</h3>
-			<p>Zentrale Verwaltung von Geräten und Lizenzen mit schneller Übersicht, nachvollziehbaren Prozessen und klaren Zuständigkeiten.</p>
+			<h3>Lizenzfristen im Blick</h3>
+			<p>Auslaufende Lizenzen werden rechtzeitig sichtbar, damit keine Unterrichtsausfaelle durch fehlende Software entstehen.</p>
 		</article>
 		<article class="card">
-			<h3>Support, Updates und Beratung</h3>
-			<p>Persönliche Ansprechpartner, kurze Reaktionszeiten und planbare Updates für einen zuverlässigen Betrieb im Schulalltag.</p>
+			<h3>Verstaendliche Prozesse</h3>
+			<p>Statt technischer Fachsprache sehen Sie klare Schritte und eindeutige Statusmeldungen fuer jede Aufgabe.</p>
 		</article>
 	</div>
 </section>
 
-<section class="section" id="projekte" style="animation-delay: 180ms;">
-	<h2>Sicherheit</h2>
-	<p>Wir legen großen Wert auf die Sicherheit Ihrer Daten und Systeme. Die Daten liegen ausschließlich gesichert bei ihnen auf dem Server und wird in keinem Fall an dritte weitergegeben.</p>
-	<div class="project-list">
-		<div class="project">
+<section class="section" id="alltag" style="animation-delay: 180ms;">
+	<h2>Typische Situationen aus dem Schulalltag</h2>
+	<p>Die folgenden Beispiele zeigen, wie die Plattform bei wiederkehrenden Verwaltungsaufgaben hilft.</p>
+	<div class="routine-list">
+		<div class="routine">
 			<div>
-				<b>DSGVO</b>
-				Alle Daten werden DSGVO-konform verarbeitet, mit klaren Einwilligungen, transparenter Dokumentation und sicheren Löschprozessen.
+				<b>Neues Geraet kommt an</b>
+				Seriennummer, Raum und Ansprechpartner werden in wenigen Schritten eingetragen und sind sofort nachvollziehbar.
 			</div>
-			<span>Netzwerk</span>
+			<span>Inventar</span>
 		</div>
-		<div class="project">
+		<div class="routine">
 			<div>
-	    		<b>Sicherheitsprüfungen</b>
-	    		Automatisierte Sicherheitsprüfungen und klare Compliance-Standards für den Einsatz im öffentlichen Bereich. Alle an uns herangetragene Fehler werden umgehend behoben und mit einem transparenten Prozess dokumentiert.
+				<b>Rueckfrage der Schulleitung</b>
+				Status zu Bestellung, Nutzung oder Defekt ist direkt sichtbar, ohne mehrere Listen durchsuchen zu muessen.
 			</div>
-			<span>Security</span>
+			<span>Transparenz</span>
 		</div>
-		<div class="project">
+		<div class="routine">
 			<div>
-				<b>Betrieb und Updates</b>
-				Regelmäßige Updates, schnelle Störungsbehebung und laufende Optimierung sorgen für einen dauerhaft stabilen Schulbetrieb.
+				<b>Supportfall im Unterricht</b>
+				Tickets werden dokumentiert und priorisiert. Das Team sieht jederzeit, wer bereits daran arbeitet.
 			</div>
-			<span>Updates</span>
+			<span>Support</span>
 		</div>
 	</div>
 </section>
 
-<section class="section" id="team" style="animation-delay: 260ms;">
-	<h2>Zusammenarbeit</h2>
-	<p>Strukturiert, nachvollziehbar und mit festen Ansprechpartnern von der Analyse bis zum Betrieb.</p>
-	<div class="process" aria-label="Prozessschritte">
-		<div class="step"><strong>Zuhören</strong><small>Anforderungen erfassen</small></div>
-		<div class="step"><strong>Verstehen</strong><small>Kontext analysieren</small></div>
-		<div class="step"><strong>Besprechen</strong><small>Optionen priorisieren</small></div>
-		<div class="step"><strong>Planen</strong><small>Roadmap festlegen</small></div>
-		<div class="step"><strong>Realisieren</strong><small>Lösung liefern</small></div>
-		<div class="step"><strong>Unterstützen</strong><small>Betrieb absichern</small></div>
+<section class="section" id="ablauf" style="animation-delay: 260ms;">
+	<h2>So verlaeuft die Zusammenarbeit</h2>
+	<p>Ein klarer Prozess sorgt fuer Sicherheit, besonders bei begrenzten Zeitfenstern im Schulbetrieb.</p>
+	<div class="process" aria-label="Ablauf in fuenf Schritten">
+		<div class="step"><strong>1. Kennenlernen</strong><small>Ziele klären</small></div>
+		<div class="step"><strong>2. Struktur</strong><small>Bestehende Abläufe erfassen</small></div>
+		<div class="step"><strong>3. Einrichtung</strong><small>System passgenau einstellen</small></div>
+		<div class="step"><strong>4. Schulung</strong><small>Praxisnah einführen</small></div>
+		<div class="step"><strong>5. Betrieb</strong><small>Persoenlich begleiten</small></div>
 	</div>
 </section>
 
 <section class="contact" id="kontakt">
 	<div>
-		<h2>Bereit für das nächste IT-Projekt?</h2>
-		<p>In einem kurzen Erstgespräch klären wir gemeinsam Zielbild, Risiken und realistische Umsetzungsschritte. Erstellen Sie dafür einfach ein Konto über den Button oben rechts und buchen Sie anschließend über die Kalenderfunktion einen Termin mit Ihrem Schulnamen und dem Betreff „Erstgespräch“. Alternativ können Sie uns jederzeit per E-Mail kontaktieren oder unseren Website-Chat nutzen.</p>
+		<h2>Sie moechten den Verwaltungsaufwand spuerbar reduzieren?</h2>
+		<p>In einem kurzen Gespraech klaeren wir gemeinsam, welche Prozesse in Ihrem Sekretariat zuerst vereinfacht werden sollten. Auf Wunsch erhalten Sie danach einen konkreten Einfuehrungsplan fuer Ihre Schule.</p>
 	</div>
 	{% if 'username' in session %}
-		<a class="btn btn-secondary" href="{{ url_for('appointments') }}">Termin anfragen</a>
+		<a class="btn btn-secondary" href="{{ url_for('appointments') }}">Beratungstermin buchen</a>
 	{% else %}
-		<a class="btn btn-secondary" href="{{ url_for('login') }}">Termin anfragen</a>
+		<a class="btn btn-secondary" href="{{ url_for('login') }}">Beratungstermin buchen</a>
 	{% endif %}
 </section>
 {% endblock %}

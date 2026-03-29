@@ -1,33 +1,35 @@
 {% extends "base.html" %}
 
-{% block title %}Kontakt | Invario{% endblock %}
+{% block title %}Kontakt fuer Schulen | Invario{% endblock %}
 
 {% block content %}
 <section class="page-hero">
     <h1>Kontakt</h1>
-    <p>Sie erreichen uns schnell über E-Mail oder Telefon. Für eine strukturierte Anfrage empfehlen wir die Terminbuchung.</p>
+    <p>Wir beantworten Anfragen aus Schulsekretariat und Schulleitung schnell und klar. Fuer neue Projekte empfehlen wir einen kurzen Beratungstermin.</p>
 </section>
 
 <section class="contact-grid">
     <article class="contact-card">
-        <h2>Info</h2>
-        <p><strong>Info E-Mail:</strong> info@invario.de</p>
-        <p><strong>Telefonnummer:</strong> +49 (0) 123 / 456789</p>
+        <h2>Allgemeine Anfrage</h2>
+        <p><strong>E-Mail:</strong> info@invario.de</p>
+        <p><strong>Telefon:</strong> +49 (0) 123 / 456789</p>
+        <p>Geeignet fuer organisatorische Fragen, Erstkontakt und allgemeine Informationen.</p>
     </article>
 
     <article class="contact-card">
         <h2>Support</h2>
-        <p><strong>Support E-Mail:</strong> support@invario.de</p>
-        <p><strong>Support Telefonnummer:</strong> +49 (0) 123 / 456790</p>
+        <p><strong>E-Mail:</strong> support@invario.de</p>
+        <p><strong>Telefon:</strong> +49 (0) 123 / 456790</p>
+        <p>Bei laufendem Betrieb, stoerenden Fehlern oder dringenden Rueckfragen im Schulalltag.</p>
     </article>
 
     <article class="contact-card">
-        <h2>Terminbuchung</h2>
-        <p>Für Erstgespräche, Rückfragen und Projektanfragen buchen Sie direkt einen Termin.</p>
+        <h2>Beratungstermin</h2>
+        <p>In 30 Minuten besprechen wir Ihre aktuelle Situation und priorisieren sinnvolle erste Schritte fuer Ihre Schule.</p>
         {% if 'username' in session %}
-            <a class="btn" href="{{ url_for('appointments') }}">Zur Terminbuchung</a>
+            <a class="btn" href="{{ url_for('appointments') }}">Beratungstermin buchen</a>
         {% else %}
-            <a class="btn" href="{{ url_for('login') }}">Login zur Terminbuchung</a>
+            <a class="btn" href="{{ url_for('login') }}">Login fuer Terminbuchung</a>
         {% endif %}
     </article>
 </section>
@@ -35,8 +37,8 @@
 <style>
 .page-hero { margin-bottom: 1.2rem; }
 .contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.9rem; }
-.contact-card { background: #fff; border: 1px solid #d8e1e8; border-radius: 14px; padding: 1rem; }
-.contact-card h2 { color: #0f334b; margin-bottom: 0.45rem; font-size: clamp(1.05rem, 1.8vw, 1.4rem); }
-.btn { margin-top: 0.5rem; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; border: 1px solid #0a4c74; background: linear-gradient(120deg, #0c5a86 0%, #08486c 100%); color: #fff; padding: 0.52rem 0.92rem; font-weight: 700; }
+.contact-card { background: #fff; border: 1px solid #d8dfd7; border-radius: 14px; padding: 1rem; box-shadow: 0 10px 24px rgba(25, 45, 41, 0.04); }
+.contact-card h2 { color: #265057; margin-bottom: 0.45rem; font-size: clamp(1.05rem, 1.8vw, 1.35rem); }
+.btn { margin-top: 0.5rem; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; border: 1px solid #1d5a63; background: linear-gradient(120deg, #296f78 0%, #1a5057 100%); color: #fff; padding: 0.54rem 0.92rem; font-weight: 700; }
 </style>
 {% endblock %}

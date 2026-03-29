@@ -1,110 +1,80 @@
 {% extends "base.html" %}
 
-{% block title %}Inventarsystem | Funktionsübersicht & Module{% endblock %}
+{% block title %}Inventarsystem fuer Schulen | Uebersicht{% endblock %}
 
 {% block content %}
 <section class="page-hero">
-    <h1>Funktionsmodule: Inventarsystem</h1>
-    <p>Detaillierte Übersicht der technischen Kernkomponenten und der systemseitigen Datenverarbeitung.</p>
+    <h1>Inventarsystem fuer Schulen</h1>
+    <p>Alle wichtigen Funktionen fuer den Schulalltag in einer klaren Oberflaeche: von Inventar ueber Lizenzen bis zur nachvollziehbaren Historie.</p>
 </section>
 
 <section class="split">
     <article class="panel">
-        <h2>Digitale Objektverwaltung</h2>
-        <div class="image-placeholder">
-            <span>[Screenshot: Asset-Detailansicht mit technischen Spezifikationen und Dateianhängen]</span>
-        </div>
-        <p>Das Modul zur Verwaltung einzelner Assets bildet die Basis der Datenbank und erlaubt eine granulare Datenerfassung.</p>
+        <h2>1. Bestand einfach pflegen</h2>
+        <p>Jedes Geraet erhaelt eine eindeutige Akte mit Standort, Status, Kaufdaten und zustaendiger Person.</p>
         <ul>
-            <li><strong>Datenfelder:</strong> Erfassung von Seriennummern, Modellbezeichnungen, Kaufdatum und Anschaffungswerten.</li>
-            <li><strong>Dokumenten-Ablage:</strong> Direkte Verknüpfung von PDF-Rechnungen, Handbüchern oder Garantiescheinen mit dem Objekt.</li>
-            <li><strong>Zustands-Tracking:</strong> Systemseitige Kategorisierung in Zustände wie "Einsatzbereit", "Defekt" oder "In Reparatur".</li>
+            <li>Suche nach Seriennummer, Raum oder Geraetetyp</li>
+            <li>Einheitliche Datenfelder fuer alle Standorte</li>
+            <li>Schnelle Erfassung neuer Geraete</li>
         </ul>
     </article>
 
     <article class="panel">
-        <h2>Hierarchische Standort-Logik</h2>
-        <div class="image-placeholder">
-            <span>[Grafik: Strukturbaum der Standorte – Gebäude, Stockwerk, Raum]</span>
-        </div>
-        <p>Die Standortverwaltung ermöglicht eine präzise physische Verortung jedes Inventargegenstands im System.</p>
+        <h2>2. Standorte nachvollziehbar verwalten</h2>
+        <p>Raeume, Etagen und Gebaeude werden klar strukturiert, damit jederzeit ersichtlich ist, wo sich ein Geraet befindet.</p>
         <ul>
-            <li><strong>Mehrstufige Baumstruktur:</strong> Definition von Hauptstandorten, Unterräumen und spezifischen Lagerplätzen (z.B. Schranknummer).</li>
-            <li><strong>Massen-Transfer:</strong> Funktion zum gleichzeitigen Verschieben mehrerer Assets zwischen verschiedenen Standorten.</li>
-            <li><strong>Raum-Inventur:</strong> Exportierbare Checklisten pro Raum für den schnellen Abgleich vor Ort.</li>
+            <li>Uebersicht je Raum oder Fachbereich</li>
+            <li>Sammelverschiebung mehrerer Geraete</li>
+            <li>Einfacher Abgleich bei Inventurterminen</li>
         </ul>
     </article>
 </section>
 
 <section class="split" style="margin-top:0.9rem;">
     <article class="panel">
-        <h2>QR-Code & Mobil-Schnittstelle</h2>
-        <div class="image-placeholder">
-            <span>[Screenshot: Mobile Ansicht des Scanners und generierte QR-Code Labels]</span>
-        </div>
-        <p>Das System integriert eine Schnittstelle für die physische Identifikation via Scan-Verfahren.</p>
+        <h2>3. QR-Code Unterstuetzung</h2>
+        <p>Mit QR-Codes lassen sich Geraete vor Ort direkt identifizieren und aktualisieren.</p>
         <ul>
-            <li><strong>Automatisierte Label-Generierung:</strong> Erstellung von druckfertigen QR-Codes direkt aus der Datenbank.</li>
-            <li><strong>Direkt-Aktionen:</strong> Beim Scannen öffnet das System sofort die Objektakte für Statusänderungen oder Wartungseinträge.</li>
-            <li><strong>Hardware-Unabhängigkeit:</strong> Unterstützung gängiger USB-Handscanner sowie der Kamerafunktion von Mobilgeräten.</li>
+            <li>Labels direkt aus dem System erzeugen</li>
+            <li>Scannen und sofort zur richtigen Akte springen</li>
+            <li>Nutzbar mit Handscanner oder Smartphone-Kamera</li>
         </ul>
     </article>
 
     <article class="panel">
-        <h2>Transaktions- & Leihhistorie</h2>
-        <div class="image-placeholder">
-            <span>[Grafik: Zeitstrahl eines Assets von Anschaffung bis Aussonderung]</span>
-        </div>
-        <p>Jede Änderung am Status oder Standort eines Objekts wird als unveränderbarer Datensatz gespeichert.</p>
+        <h2>4. Historie und Verantwortung</h2>
+        <p>Aenderungen bleiben dokumentiert, damit Entscheidungen und Vorgaenge transparent bleiben.</p>
         <ul>
-            <li><strong>Leihvorgänge:</strong> Dokumentation von Ausgabe- und Rückgabedaten inklusive Zuweisung zu Personen-IDs.</li>
-            <li><strong>Fristenverwaltung:</strong> Systemseitige Überwachung von Rückgabedaten mit automatischer Kennzeichnung überfälliger Assets.</li>
-            <li><strong>Audit-Logging:</strong> Lückenloser Nachweis über alle Systemzugriffe und Datenänderungen (Wer hat was wann geändert?).</li>
+            <li>Wer hat wann was geaendert</li>
+            <li>Leihvorgaenge und Rueckgaben nachvollziehen</li>
+            <li>Klare Nachweise fuer interne Abstimmungen</li>
         </ul>
     </article>
 </section>
 
 <section class="panel" style="margin-top:0.9rem;">
-    <h2>Benutzerrollen & Datenschnittstellen</h2>
-    <div class="image-placeholder" style="height: 120px;">
-        <span>[Diagramm: Rollenbasiertes Zugriffskonzept (RBAC) und Export-Workflow]</span>
-    </div>
-    <p>Die Administration erfolgt über ein differenziertes Berechtigungssystem zur Steuerung der Datenintegrität.</p>
-    <ul style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-        <li><strong>Rollenmanagement:</strong> Trennung zwischen Administratoren (Vollzugriff), Technikern (Wartungsrechte) und Lese-Accounts.</li>
-        <li><strong>Export-Modul:</strong> Datenausgabe in Formaten wie CSV, JSON oder Excel für externe Revisionen.</li>
-        <li><strong>Sicherheits-Protokolle:</strong> Verschlüsselte Speicherung und passwortgeschützte Zugriffsebenen.</li>
-        <li><strong>API-Anbindung:</strong> Vorbereitete Endpunkte für die Synchronisation mit anderen Datenbank-Systemen.</li>
+    <h2>5. Rollen, Rechte und Exporte</h2>
+    <p>Das System unterscheidet klar zwischen Verwaltung, Schulleitung und technischen Rollen.</p>
+    <ul class="wide-list">
+        <li><strong>Rollenbasiert:</strong> Nur relevante Funktionen pro Nutzergruppe sichtbar.</li>
+        <li><strong>Datenschutzgerecht:</strong> Zugriff und Aenderungen werden protokolliert.</li>
+        <li><strong>Exportierbar:</strong> Berichte und Bestandslisten koennen fuer Termine und Pruefungen ausgegeben werden.</li>
+        <li><strong>Erweiterbar:</strong> Das System waechst mit Ihren organisatorischen Anforderungen.</li>
     </ul>
 </section>
 
 <style>
-/* Konsistente Stile für die Funktionspräsentation */
 .page-hero { margin-bottom: 1.2rem; }
 .split { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
-.panel { background: #fff; border: 1px solid #d8e1e8; border-radius: 14px; padding: 1.2rem; }
-.panel h2 { color: #0f334b; margin-bottom: 0.6rem; font-size: 1.25rem; }
-.panel p { color: #466176; line-height: 1.5; margin-bottom: 1rem; font-size: 0.95rem; }
-.panel ul { margin: 0; padding-left: 1.2rem; color: #466176; display: grid; gap: 0.5rem; }
+.panel { background: #fff; border: 1px solid #d8dfd7; border-radius: 14px; padding: 1.15rem; box-shadow: 0 10px 24px rgba(25, 45, 41, 0.04); }
+.panel h2 { color: #265057; margin-bottom: 0.5rem; font-size: clamp(1.05rem, 1.8vw, 1.35rem); }
+.panel p { color: #496267; line-height: 1.55; margin-bottom: 0.8rem; font-size: 0.98rem; }
+.panel ul { margin: 0; padding-left: 1.15rem; color: #496267; display: grid; gap: 0.45rem; }
+.wide-list { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
 
-.image-placeholder { 
-    background: #f8fafc; 
-    border: 2px dashed #cbd5e1; 
-    border-radius: 10px; 
-    height: 160px; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    color: #94a3b8; 
-    font-size: 0.8rem; 
-    text-align: center; 
-    margin-bottom: 1rem;
-    padding: 15px;
-}
-
-@media (max-width: 900px) { 
-    .split { grid-template-columns: 1fr; } 
-    .panel ul { grid-template-columns: 1fr !important; }
+@media (max-width: 900px) {
+    .split { grid-template-columns: 1fr; }
+    .wide-list { grid-template-columns: 1fr; }
 }
 </style>
 {% endblock %}

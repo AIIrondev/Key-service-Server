@@ -1,51 +1,50 @@
 {% extends "base.html" %}
 
-{% block title %}Projekte | Invario{% endblock %}
+{% block title %}Praxisbeispiele | Invario{% endblock %}
 
 {% block content %}
 <section class="page-hero">
-    <h1>Projekte und Kunden</h1>
-    <p>Einblick in aktuelle und vergangene Zusammenarbeit mit Schulen und Bildungsträgern.</p>
+    <h1>Praxisbeispiele aus dem Schulalltag</h1>
+    <p>So setzen Schulen unsere Loesung ein, um Verwaltungsaufwand zu reduzieren und Ablaeufe transparent zu machen.</p>
 </section>
 
 <section class="split">
     <article class="panel">
-        <h2>Aktuelle Projekte</h2>
+        <h2>Beispiel 1: Gymnasium mit 1.100 Schuelern</h2>
         <ul>
-            <li><strong>Schulverbund Nord:</strong> Rollout Inventarsystem für 12 Standorte, inklusive Gerätehistorie und Lizenzmonitoring.</li>
-            <li><strong>Berufskolleg West:</strong> Einführung zentraler Termin- und Supportprozesse mit Admin-Dashboard.</li>
-            <li><strong>Gymnasium am Park:</strong> Migration von Altbeständen und strukturierte Rechtevergabe für Fachbereiche.</li>
+            <li><strong>Ausgangslage:</strong> Inventardaten lagen in mehreren Excel-Listen und Papierordnern.</li>
+            <li><strong>Umsetzung:</strong> Zentralisierung von Geraeten, Raeumen und Verantwortlichkeiten in einer Plattform.</li>
+            <li><strong>Ergebnis:</strong> Rueckfragen aus Schulleitung und Fachbereichen werden deutlich schneller beantwortet.</li>
         </ul>
     </article>
 
     <article class="panel">
-        <h2>Aktuelle Kunden</h2>
+        <h2>Beispiel 2: Verbundschule mit mehreren Standorten</h2>
         <ul>
-            <li>Städtischer Schulträger Musterstadt</li>
-            <li>Campus Bildung Rhein-Main</li>
-            <li>Verbundschule Süd</li>
-            <li>Fachoberschule Technikzentrum</li>
+            <li><strong>Ausgangslage:</strong> Unterschiedliche Ablaeufe je Standort, keine gemeinsame Fristenuebersicht.</li>
+            <li><strong>Umsetzung:</strong> Einheitliche Prozesse fuer Inventar, Lizenzen und Supporttickets.</li>
+            <li><strong>Ergebnis:</strong> Standortuebergreifende Transparenz und bessere Planbarkeit im Sekretariat.</li>
         </ul>
     </article>
 </section>
 
 <section class="split" style="margin-top:0.9rem;">
     <article class="panel">
-        <h2>Vergangene Projekte</h2>
+        <h2>Beispiel 3: Berufskolleg mit Fokus IT-Raeume</h2>
         <ul>
-            <li><strong>Realschule Mitte:</strong> Digitalisierung der Inventurabläufe und Schulung des Verwaltungsteams.</li>
-            <li><strong>Bildungswerk Ost:</strong> Aufbau eines Lizenz- und Rechnungsworkflows mit Dokumentenablage.</li>
-            <li><strong>Campus Linden:</strong> Sicherheitsreview und Stabilisierung der laufenden IT-Prozesse.</li>
+            <li><strong>Ausgangslage:</strong> Hohe Anzahl technischer Geraete mit haeufigen Aenderungen.</li>
+            <li><strong>Umsetzung:</strong> QR-gestuetzte Bestandsfuehrung und klare Historie je Geraet.</li>
+            <li><strong>Ergebnis:</strong> Schnellere Inventur und weniger Fehler bei Standort- oder Statusaenderungen.</li>
         </ul>
     </article>
 
     <article class="panel">
-        <h2>Vergangene Kunden</h2>
+        <h2>Was diese Projekte gemeinsam haben</h2>
         <ul>
-            <li>Privatschulzentrum Amberg</li>
-            <li>Schulträger Kreis Süd</li>
-            <li>Akademie für Gesundheit Nord</li>
-            <li>Campus Schöneck</li>
+            <li>Verstaendliche Bedienung ohne IT-Fachwissen</li>
+            <li>Klare Rollen fuer Sekretariat, Schulleitung und Administration</li>
+            <li>Nachvollziehbare Dokumentation fuer interne Abstimmungen</li>
+            <li>Schrittweise Einfuehrung im laufenden Schulbetrieb</li>
         </ul>
     </article>
 </section>
@@ -53,9 +52,9 @@
 <style>
 .page-hero { margin-bottom: 1.2rem; }
 .split { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
-.panel { background: #fff; border: 1px solid #d8e1e8; border-radius: 14px; padding: 1rem; }
-.panel h2 { color: #0f334b; margin-bottom: 0.45rem; font-size: clamp(1.05rem, 1.8vw, 1.4rem); }
-.panel ul { margin: 0; padding-left: 1rem; color: #466176; display: grid; gap: 0.55rem; }
+.panel { background: #fff; border: 1px solid #d8dfd7; border-radius: 14px; padding: 1rem; box-shadow: 0 10px 24px rgba(25, 45, 41, 0.04); }
+.panel h2 { color: #265057; margin-bottom: 0.45rem; font-size: clamp(1.05rem, 1.8vw, 1.35rem); }
+.panel ul { margin: 0; padding-left: 1rem; color: #4a6267; display: grid; gap: 0.55rem; }
 @media (max-width: 900px) { .split { grid-template-columns: 1fr; } }
 </style>
 {% endblock %}

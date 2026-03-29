@@ -1,44 +1,51 @@
 {% extends "base.html" %}
 
-{% block title %}Dienstleistungen | Invario{% endblock %}
+{% block title %}Leistungen fuer Schulen | Invario{% endblock %}
 
 {% block content %}
 <section class="page-hero">
-    <h1>Unsere Dienstleistungen</h1>
-    <p>Praxisnahe IT-Lösungen für Schulen mit klaren Prozessen, direkter Betreuung und zuverlässiger Umsetzung.</p>
+    <h1>Leistungen fuer Schulsekretariat und Schulleitung</h1>
+    <p>Praxisnahe Module fuer Schulen in Deutschland: verstaendlich, sicher und ohne unnoetige Komplexitaet.</p>
 </section>
 
 <section class="cards">
     <article class="card">
-        <h2>Inventarsystem</h2>
-        <p>Strukturierte Verwaltung von Geräten, Zubehör und Standorten mit nachvollziehbaren Zuständigkeiten und sauberer Historie.</p>
+        <h2>Digitale Inventarverwaltung</h2>
+        <p>Alle Geraete, Raeume und Zustaendigkeiten an einem Ort. So finden Sie Informationen schneller und reduzieren Rueckfragen.</p>
     </article>
     <article class="card">
-        <h2>Lizenzverwaltung</h2>
-        <p>Zentrale Übersicht über aktive, pausierte und abgelaufene Lizenzen inklusive Laufzeiten, Zuständen und Übergaben.</p>
+        <h2>Lizenz- und Fristenkontrolle</h2>
+        <p>Lizenzlaufzeiten werden transparent angezeigt, inklusive Hinweise auf bald ablaufende Nutzungen.</p>
     </article>
     <article class="card">
-        <h2>24/7 Support</h2>
-        <p>Schnelle Reaktionszeiten bei Störungen, klare Eskalationspfade und direkte Hilfe bei betriebskritischen Themen.</p>
+        <h2>Support mit klaren Prioritaeten</h2>
+        <p>Stoerungen werden strukturiert aufgenommen, priorisiert und mit nachvollziehbarem Status bearbeitet.</p>
     </article>
     <article class="card">
-        <h2>Beratung</h2>
-        <p>Strategische und technische Beratung für Schulträger und Schulleitungen von der Planung bis zum laufenden Betrieb.</p>
+        <h2>DSGVO-konforme Dokumentation</h2>
+        <p>Vorgaenge und Aenderungen bleiben nachvollziehbar dokumentiert, damit Pruefungen und Abstimmungen einfacher werden.</p>
     </article>
     <article class="card">
-        <h2>Sicherheitskonzepte</h2>
-        <p>DSGVO-konforme Abläufe, Zugriffsrollen und dokumentierte Sicherheitsstandards für sensible Schuldaten.</p>
+        <h2>Einrichtung und Schulung</h2>
+        <p>Wir richten das System gemeinsam mit Ihrem Team ein und schulen in klaren, alltagsnahen Schritten.</p>
     </article>
     <article class="card">
-        <h2>Einführung & Schulung</h2>
-        <p>Geordnete Einführung im Team, kurze Lernkurve und praxisorientierte Schulung für Verwaltung und Kollegium.</p>
+        <h2>Begleitung im laufenden Betrieb</h2>
+        <p>Feste Ansprechpartner unterstuetzen Ihr Team bei Fragen, Erweiterungen und organisatorischen Anpassungen.</p>
     </article>
+</section>
+
+<section class="highlight">
+    <h2>Besonders geeignet fuer Teams mit wenig Zeit</h2>
+    <p>Die Oberflaeche ist bewusst reduziert aufgebaut: grosse, klare Bedienelemente, eindeutige Bezeichnungen und kurze Klickwege fuer taegliche Verwaltungsaufgaben.</p>
 </section>
 
 <style>
 .page-hero { margin-bottom: 1.2rem; }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.9rem; }
-.card { background: #fff; border: 1px solid #d8e1e8; border-radius: 14px; padding: 1rem; }
-.card h2 { color: #0f334b; margin-bottom: 0.45rem; font-size: clamp(1.05rem, 1.8vw, 1.4rem); }
+.card { background: #fff; border: 1px solid #d8dfd7; border-radius: 14px; padding: 1rem; box-shadow: 0 10px 26px rgba(25, 45, 41, 0.04); }
+.card h2 { color: #24525a; margin-bottom: 0.45rem; font-size: clamp(1.05rem, 1.8vw, 1.35rem); }
+.highlight { margin-top: 1rem; background: linear-gradient(135deg, #f8f4eb 0%, #eef3eb 100%); border: 1px solid #d4dbd2; border-radius: 14px; padding: 1.1rem; }
+.highlight h2 { color: #2a4d53; margin-bottom: 0.4rem; font-size: clamp(1.1rem, 2.2vw, 1.55rem); }
 </style>
 {% endblock %}
