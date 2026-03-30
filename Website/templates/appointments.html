@@ -1,235 +1,99 @@
 {% extends "base.html" %}
 
-{% block title %}Buchungsoption{% endblock %}
+{% block title %}Buchungsoptionen{% endblock %}
 
 {% block head %}
 {{ super() }}
 <style>
-    .appointments-grid {
-        display: grid;
-        grid-template-columns: 1.2fr 0.8fr;
-        gap: 1rem;
-        align-items: start;
+    .packages-hero {
+        background: linear-gradient(140deg, #f6f2e6 0%, #e8efe4 55%, #dfe9ef 100%);
+        border: 1px solid #ced8d1;
+        border-radius: 18px;
+        padding: 1.4rem;
+        box-shadow: 0 14px 34px rgba(16, 36, 47, 0.08);
+        margin-bottom: 1rem;
     }
 
-    .panel {
+    .packages-hero h1 {
+        color: #173f57;
+        font-size: clamp(1.65rem, 3.2vw, 2.45rem);
+        margin-bottom: 0.35rem;
+    }
+
+    .packages-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.9rem;
+    }
+
+    .package-card {
+        background: #ffffff;
+        border: 1px solid #d5e0e8;
+        border-radius: 16px;
+        padding: 1rem;
+        box-shadow: 0 10px 24px rgba(23, 44, 57, 0.05);
+        display: grid;
+        gap: 0.7rem;
+    }
+
+    .package-name {
+        margin: 0;
+        color: #184560;
+        font-size: 1.35rem;
+    }
+
+    .package-headline {
+        color: #3a6177;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .feature-list {
+        margin: 0;
+        padding-left: 1.1rem;
+        color: #456274;
+        display: grid;
+        gap: 0.35rem;
+    }
+
+    .package-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+    }
+
+    .btn {
+        border: 1px solid #0d4f77;
+        background: linear-gradient(120deg, #0d6294 0%, #0b476a 100%);
+        color: #ffffff;
+        border-radius: 999px;
+        padding: 0.45rem 0.88rem;
+        font-weight: 700;
+        cursor: pointer;
+        font: inherit;
+    }
+
+    .btn.secondary {
+        border-color: #9ab5c8;
+        background: #f2f8fc;
+        color: #275a78;
+    }
+
+    .notice {
+        margin-top: 1rem;
         background: #ffffff;
         border: 1px solid #d4e0e9;
-        border-radius: 16px;
-        padding: 1.2rem;
-        box-shadow: 0 14px 32px rgba(20, 39, 55, 0.06);
+        border-radius: 14px;
+        padding: 0.9rem;
+        color: #274f65;
     }
 
-    .calendar-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.8rem;
-        margin-bottom: 0.9rem;
+    .notice strong {
+        color: #173f57;
     }
 
-    .calendar-header h1 {
-        font-size: 1.5rem;
-        color: #133f5d;
-    }
-
-    .month-nav {
-        display: inline-flex;
-        gap: 0.4rem;
-    }
-
-    .month-nav a {
-        border-radius: 999px;
-        border: 1px solid #bfd1de;
-        padding: 0.38rem 0.7rem;
-        color: #185170;
-        font-weight: 700;
-        background: #ffffff;
-    }
-
-    .weekday-row,
-    .day-grid {
-        display: grid;
-        grid-template-columns: repeat(7, minmax(0, 1fr));
-        gap: 0.3rem;
-    }
-
-    .weekday {
-        text-align: center;
-        font-size: 0.82rem;
-        font-weight: 700;
-        color: #587689;
-        padding-bottom: 0.2rem;
-    }
-
-    .day {
-        min-height: 74px;
-        border: 1px solid #d8e3ec;
-        border-radius: 10px;
-        background: #f9fcff;
-        color: #0f3f5d;
-        cursor: pointer;
-        font-weight: 700;
-        transition: all 0.15s ease;
-    }
-
-    .day:hover {
-        border-color: #9ec0d6;
-        transform: translateY(-1px);
-    }
-
-    .day.empty {
-        background: #f2f6f9;
-        border-style: dashed;
-        cursor: default;
-    }
-
-    .day.today {
-        border-color: #2d7fab;
-    }
-
-    .day.selected {
-        background: linear-gradient(140deg, #0d5c88 0%, #0a4464 100%);
-        border-color: #0d5c88;
-        color: #ffffff;
-    }
-
-    .day.blocked {
-        background: #f3f4f7;
-        color: #8b96a1;
-        border-color: #d2d8de;
-        cursor: not-allowed;
-    }
-
-    .day.blocked:hover {
-        transform: none;
-        border-color: #d2d8de;
-    }
-
-    .booking-form h2,
-    .appointment-list h2 {
-        font-size: 1.2rem;
-        color: #143f5e;
-        margin: 0 0 0.8rem;
-    }
-
-    .selected-date-badge {
-        display: inline-block;
-        margin-bottom: 0.8rem;
-        border-radius: 999px;
-        padding: 0.28rem 0.6rem;
-        border: 1px solid #bfd2df;
-        color: #23526c;
-        font-weight: 700;
-        font-size: 0.9rem;
-    }
-
-    .field {
-        margin-bottom: 0.8rem;
-    }
-
-    .field label {
-        display: block;
-        margin-bottom: 0.3rem;
-        font-weight: 700;
-        color: #1f4b65;
-    }
-
-    .field input,
-    .field textarea,
-    .field select {
-        width: 100%;
-        border: 1px solid #c4d4e0;
-        border-radius: 10px;
-        padding: 0.65rem 0.72rem;
-        font: inherit;
-        color: #143f5d;
-        background: #ffffff;
-    }
-
-    .field textarea {
-        min-height: 86px;
-        resize: vertical;
-    }
-
-    .submit-btn {
-        width: 100%;
-        border: none;
-        border-radius: 999px;
-        padding: 0.74rem;
-        font-size: 1rem;
-        font-weight: 700;
-        color: #ffffff;
-        background: linear-gradient(120deg, #0a5f8f 0%, #0b4567 100%);
-        cursor: pointer;
-    }
-
-    .entry {
-        border: 1px solid #d7e2ea;
-        border-radius: 12px;
-        padding: 0.72rem;
-        margin-bottom: 0.55rem;
-        background: #f9fbfd;
-    }
-
-    .entry strong {
-        color: #113d59;
-    }
-
-    .entry p {
-        margin-top: 0.18rem;
-        font-size: 0.92rem;
-    }
-
-    .status {
-        display: inline-block;
-        margin-top: 0.45rem;
-        border-radius: 999px;
-        border: 1px solid #c9d7e2;
-        padding: 0.15rem 0.55rem;
-        font-size: 0.8rem;
-        color: #2f5f79;
-        font-weight: 700;
-        background: #eef4f8;
-    }
-
-    .meeting-note {
-        margin: 0 0 0.75rem;
-        color: #27526d;
-        font-weight: 600;
-    }
-
-    .helper-line {
-        margin-top: 0.35rem;
-        font-size: 0.84rem;
-        color: #4f6f83;
-    }
-
-    .maps-tools {
-        display: flex;
-        gap: 0.45rem;
-        margin-top: 0.45rem;
-    }
-
-    .maps-btn {
-        border: 1px solid #8fb1c8;
-        background: #f6fbff;
-        color: #1d5575;
-        border-radius: 999px;
-        padding: 0.35rem 0.7rem;
-        font-size: 0.84rem;
-        font-weight: 700;
-        cursor: pointer;
-    }
-
-    .entry-meta {
-        margin-top: 0.2rem;
-        color: #345e78;
-        font-size: 0.9rem;
-    }
-
-    @media (max-width: 960px) {
-        .appointments-grid {
+    @media (max-width: 980px) {
+        .packages-grid {
             grid-template-columns: 1fr;
         }
     }
@@ -237,167 +101,45 @@
 {% endblock %}
 
 {% block content %}
-<section class="appointments-grid">
-    <article class="panel">
-        <div class="calendar-header">
-            <h1>{{ month_name }} {{ year }}</h1>
-            <div class="month-nav">
-                <a href="{{ url_for('appointments', month=previous_month, year=previous_year) }}">Zurück</a>
-                <a href="{{ url_for('appointments', month=next_month, year=next_year) }}">Weiter</a>
-            </div>
-        </div>
-
-        <div class="weekday-row" aria-hidden="true">
-            <div class="weekday">Mo</div>
-            <div class="weekday">Di</div>
-            <div class="weekday">Mi</div>
-            <div class="weekday">Do</div>
-            <div class="weekday">Fr</div>
-            <div class="weekday">Sa</div>
-            <div class="weekday">So</div>
-        </div>
-
-        <div class="day-grid" id="dayGrid">
-            {% for week in month_grid %}
-                {% for day in week %}
-                    {% if day == 0 %}
-                        <button type="button" class="day empty" disabled></button>
-                    {% else %}
-                        {% set day_iso = "%04d-%02d-%02d"|format(year, month, day) %}
-                        {% set blocked_day = blocked_day_map.get(day_iso) %}
-                        <button
-                            type="button"
-                            class="day {% if day_iso == today_iso %}today{% endif %} {% if blocked_day %}blocked{% endif %}"
-                            data-date="{{ day_iso }}"
-                            {% if blocked_day %}
-                                disabled
-                                title="Gesperrt{% if blocked_day.reason %}: {{ blocked_day.reason }}{% endif %}"
-                            {% endif %}
-                        >
-                            {{ day }}
-                        </button>
-                    {% endif %}
-                {% endfor %}
-            {% endfor %}
-        </div>
-    </article>
-
-    <aside class="panel booking-form">
-        <h2>Buchung anfragen</h2>
-        <p class="meeting-note">Persoenliche Buchungsoption: Digital oder Vor Ort.</p>
-        <span class="selected-date-badge" id="selectedDateBadge">Kein Datum gewählt</span>
-        <form method="POST" action="{{ url_for('appointments', month=month, year=year) }}">
-            <input type="hidden" id="selectedDateInput" name="selected_date" required>
-            <div class="field">
-                <label for="appointment_time">Uhrzeit</label>
-                <input id="appointment_time" name="appointment_time" type="time" required>
-            </div>
-            <div class="field">
-                <label for="meeting_type">Buchungsart</label>
-                <select id="meeting_type" name="meeting_type" required>
-                    <option value="digital">Digital</option>
-                    <option value="vor_ort">Vor Ort</option>
-                </select>
-            </div>
-            <div class="field">
-                <label for="subject">Betreff</label>
-                <input id="subject" name="subject" type="text" placeholder="z. B. Projekt Kickoff" required>
-            </div>
-            <div class="field" id="locationField" style="display: none;">
-                <label for="location_name">Ort (bei Vor-Ort Pflicht)</label>
-                <input id="location_name" name="location_name" type="text" placeholder="Adresse oder Ort">
-                <div class="maps-tools">
-                    <button type="button" id="mapsSearchBtn" class="maps-btn">In Google Maps suchen</button>
-                </div>
-                <div class="helper-line">Optional: Google-Maps-Link eintragen.</div>
-                <input id="location_maps_url" name="location_maps_url" type="url" placeholder="https://maps.google.com/..." style="margin-top: 0.4rem;">
-            </div>
-            <div class="field">
-                <label for="note">Notiz (optional)</label>
-                <textarea id="note" name="note" placeholder="Kurzbeschreibung der Anfrage"></textarea>
-            </div>
-            <button class="submit-btn" type="submit">Buchung anfragen</button>
-        </form>
-    </aside>
+<section class="packages-hero">
+    <h1>Buchungsoptionen als Softwarepakete</h1>
+    <p>Alle Pakete sind frei einsehbar, auch ohne Admin. Die Testversion kann nur mit aktivem Konto gestartet werden.</p>
+    <p>Jedes Paket basiert auf derselben Sicherheitsarchitektur mit Rollenrechten, geschuetzten Sessions und nachvollziehbaren Aktionen.</p>
 </section>
 
-<section class="panel appointment-list" style="margin-top: 1rem;">
-    <h2>Meine Buchungsanfragen</h2>
-    {% if user_appointments %}
-        {% for item in user_appointments %}
-            <article class="entry">
-                <strong>{{ item.date }} um {{ item.time }} - {{ item.subject }}</strong>
-                {% if item.note %}
-                    <p>{{ item.note }}</p>
+<section class="packages-grid">
+    {% for package in software_packages %}
+        <article class="package-card">
+            <h2 class="package-name">{{ package.name }}</h2>
+            <p class="package-headline">{{ package.headline }}</p>
+            <ul class="feature-list">
+                {% for feature in package.features %}
+                    <li>{{ feature }}</li>
+                {% endfor %}
+            </ul>
+            <div class="package-actions">
+                {% if 'username' in session %}
+                    <form method="POST" action="{{ url_for('start_test_package') }}">
+                        <input type="hidden" name="package" value="{{ package.slug }}">
+                        <button class="btn" type="submit">Testversion starten</button>
+                    </form>
+                {% else %}
+                    <a class="btn secondary" href="{{ url_for('login') }}">Mit Konto starten</a>
                 {% endif %}
-                <p class="entry-meta"><strong>Buchungsart:</strong> {{ item.meeting_label or ('Vor Ort' if item.meeting_type == 'vor_ort' else 'Digital') }}</p>
-                {% if item.location_name %}
-                    <p class="entry-meta"><strong>Ort:</strong> {{ item.location_name }}</p>
-                {% endif %}
-                {% if item.location_maps_url %}
-                    <p class="entry-meta"><a href="{{ item.location_maps_url }}" target="_blank" rel="noopener noreferrer">Google Maps anzeigen</a></p>
-                {% endif %}
-                {% if item.response %}
-                    <p><strong>Admin-Antwort:</strong> {{ item.response }}</p>
-                {% endif %}
-                <span class="status">{{ item.status }}</span>
-            </article>
-        {% endfor %}
+            </div>
+        </article>
+    {% endfor %}
+</section>
+
+<section class="notice">
+    {% if 'username' in session %}
+        {% if active_test_license %}
+            <p><strong>Aktive Testversion:</strong> {{ active_test_license.plan }} | Key: {{ active_test_license.license_key }} | Gueltig bis: {{ active_test_license.valid_until }}</p>
+        {% else %}
+            <p><strong>Hinweis:</strong> Fuer Ihr Konto ist noch keine Testversion aktiv. Starten Sie oben eine Testversion fuer Normal, Pro oder Buecherei.</p>
+        {% endif %}
     {% else %}
-        <p>Noch keine Anfragen vorhanden.</p>
+        <p><strong>Hinweis:</strong> Bitte einloggen oder registrieren, um die Testversion zu starten.</p>
     {% endif %}
 </section>
-
-<script>
-    (function () {
-        const dayGrid = document.getElementById("dayGrid");
-        const selectedDateInput = document.getElementById("selectedDateInput");
-        const selectedDateBadge = document.getElementById("selectedDateBadge");
-        const meetingType = document.getElementById("meeting_type");
-        const locationField = document.getElementById("locationField");
-        const locationNameInput = document.getElementById("location_name");
-        const mapsSearchBtn = document.getElementById("mapsSearchBtn");
-
-        function setSelection(dateValue, button) {
-            selectedDateInput.value = dateValue;
-            selectedDateBadge.textContent = "Ausgewählt: " + dateValue;
-
-            dayGrid.querySelectorAll(".day").forEach(function (node) {
-                node.classList.remove("selected");
-            });
-
-            if (button) {
-                button.classList.add("selected");
-            }
-        }
-
-        function updateLocationRequirement() {
-            const isOnsite = meetingType.value === "vor_ort";
-            locationField.style.display = isOnsite ? "block" : "none";
-            locationNameInput.required = isOnsite;
-            if (!isOnsite) {
-                locationNameInput.value = "";
-                document.getElementById("location_maps_url").value = "";
-            }
-        }
-
-        dayGrid.addEventListener("click", function (event) {
-            const target = event.target.closest(".day[data-date]");
-            if (!target) {
-                return;
-            }
-            setSelection(target.dataset.date, target);
-        });
-
-        meetingType.addEventListener("change", updateLocationRequirement);
-
-        mapsSearchBtn.addEventListener("click", function () {
-            const query = (locationNameInput.value || "").trim();
-            const base = "https://www.google.com/maps/search/?api=1&query=";
-            window.open(base + encodeURIComponent(query || "meeting location"), "_blank", "noopener");
-        });
-
-        updateLocationRequirement();
-    })();
-</script>
 {% endblock %}

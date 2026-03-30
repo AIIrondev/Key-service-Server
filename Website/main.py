@@ -114,7 +114,7 @@ def _sanitize_text(text: str, max_length: int = 255) -> str:
     return text
 
 
-def _activate_test_license_for_user(username: str, school_name: str) -> tuple[bool, str]:
+def _activate_test_license_for_user(username: str, school_name: str, package_name: str = "Normal") -> tuple[bool, str]:
     """Create a one-time test license for the user if none exists yet."""
     user_name = _sanitize_text(username or "", 80)
     school = _sanitize_text(school_name or "", 200)
@@ -125,11 +125,15 @@ def _activate_test_license_for_user(username: str, school_name: str) -> tuple[bo
     try:
         client, col = _get_collection("licenses")
 
+        normalized_package = _sanitize_text(package_name or "Normal", 40)
+        if normalized_package not in {"Normal", "Pro", "Buecherei", "Bücherei"}:
+            normalized_package = "Normal"
+
         existing = col.find_one(
             {
                 "username": user_name,
-                "plan": "Test",
                 "status": {"$in": ["Aktiv", "Pausiert"]},
+                "plan": {"$regex": "^Test"},
             }
         )
         if existing:
@@ -141,7 +145,7 @@ def _activate_test_license_for_user(username: str, school_name: str) -> tuple[bo
                 "username": user_name,
                 "school_name": school or user_name,
                 "license_key": test_key,
-                "plan": "Test",
+                "plan": f"Test {normalized_package}",
                 "status": "Aktiv",
                 "valid_until": (datetime.utcnow() + timedelta(days=30)).date().isoformat(),
                 "hwid_uuid": "",
@@ -243,6 +247,19 @@ def _validate_username(username: str) -> bool:
     if len(username) < 3 or len(username) > 30:
         return False
     return all(c.isalnum() or c in "_-" for c in username)
+
+
+def _validate_email(email: str) -> bool:
+    """Simple email validation for registration input."""
+    value = (email or "").strip()
+    if len(value) < 5 or len(value) > 254:
+        return False
+    if "@" not in value or value.count("@") != 1:
+        return False
+    local, domain = value.split("@", 1)
+    if not local or not domain or "." not in domain:
+        return False
+    return True
 
 
 def _find_user(username: str):
@@ -383,11 +400,12 @@ def register():
         username = (request.form.get("username") or "").strip()
         school_name = (request.form.get("school_name") or "").strip()
         contact_person = (request.form.get("contact_person") or "").strip()
+        email = (request.form.get("email") or "").strip().lower()
         activate_test_key = (request.form.get("activate_test_key") or "").strip().lower() in {"1", "on", "true", "yes"}
         password = request.form.get("password") or ""
         password_repeat = request.form.get("password_repeat") or ""
 
-        if not username or not school_name or not contact_person or not password or not password_repeat:
+        if not username or not school_name or not contact_person or not email or not password or not password_repeat:
             flash("Bitte alle Felder ausfuellen.", "error")
             return redirect(url_for("register"))
 
@@ -407,13 +425,18 @@ def register():
             flash("Benutzername bereits vergeben.", "error")
             return redirect(url_for("register"))
 
+        if not _validate_email(email):
+            flash("Bitte eine gueltige E-Mail-Adresse angeben.", "error")
+            return redirect(url_for("register"))
+
         school_name = _sanitize_text(school_name, 120)
         contact_person = _sanitize_text(contact_person, 120)
+        email = _sanitize_text(email, 254)
 
         try:
             existing_users = user_store.get_all_users() or []
             is_first_user = len(existing_users) == 0
-            if not user_store.add_user(username, password, school_name, contact_person):
+            if not user_store.add_user(username, password, school_name, contact_person, email):
                 flash("Benutzer konnte nicht erstellt werden.", "error")
                 return redirect(url_for("register"))
 
@@ -436,132 +459,90 @@ def register():
     return render_template("register.html")
 
 
-@app.route('/appointments', methods=['GET', 'POST'])
-@login_required
+@app.route('/appointments', methods=['GET'])
 def appointments():
-    today = date.today()
-    month = request.args.get("month", type=int) or today.month
-    year = request.args.get("year", type=int) or today.year
+    software_packages = [
+        {
+            "slug": "normal",
+            "name": "Normal",
+            "headline": "Stabiler Einstieg fuer den Schulalltag",
+            "features": [
+                "Inventarverwaltung mit Rollenrechten",
+                "Basis-Support und Ticketing",
+                "Schulweite Uebersichten",
+            ],
+        },
+        {
+            "slug": "pro",
+            "name": "Pro",
+            "headline": "Fuer Schulen mit erweitertem Bedarf",
+            "features": [
+                "Erweiterte Lizenzverwaltung",
+                "Detailberichte und Admin-Insights",
+                "Priorisierter Support",
+            ],
+        },
+        {
+            "slug": "buecherei",
+            "name": "Bücherei",
+            "headline": "Optimiert fuer Bibliothek und Medien",
+            "features": [
+                "Ausleih- und Rueckgabeprozesse",
+                "Bestandsuebersichten fuer Medien",
+                "Transparente Historie pro Medium",
+            ],
+        },
+    ]
 
-    month = 1 if month < 1 else 12 if month > 12 else month
-    year = 1970 if year < 1970 else year
-
-    if request.method == 'POST':
-        selected_date = (request.form.get("selected_date") or "").strip()
-        appointment_time = (request.form.get("appointment_time") or "").strip()
-        subject = (request.form.get("subject") or "").strip()
-        note = (request.form.get("note") or "").strip()
-        meeting_type = (request.form.get("meeting_type") or "digital").strip().lower()
-        location_name = _sanitize_text(request.form.get("location_name") or "", 200)
-        location_maps_url = _sanitize_text(request.form.get("location_maps_url") or "", 1000)
-
-        blocked_day_map = _get_blocked_day_map()
-
-        try:
-            date.fromisoformat(selected_date)
-        except ValueError:
-            flash("Bitte eine gueltige Buchung im Kalender auswaehlen.", "error")
-            return redirect(url_for("appointments", month=month, year=year))
-
-        if selected_date in blocked_day_map:
-            flash("Dieser Tag ist im Kalender gesperrt. Bitte eine andere Buchung waehlen.", "error")
-            return redirect(url_for("appointments", month=month, year=year))
-
-        if not appointment_time or not subject:
-            flash("Bitte Uhrzeit und Betreff ausfuellen.", "error")
-            return redirect(url_for("appointments", month=month, year=year))
-
-        if meeting_type not in ["digital", "vor_ort"]:
-            flash("Bitte eine gueltige Buchungsart waehlen.", "error")
-            return redirect(url_for("appointments", month=month, year=year))
-
-        if meeting_type == "vor_ort" and not location_name:
-            flash("Bei Vor-Ort-Buchungen ist ein Ort erforderlich.", "error")
-            return redirect(url_for("appointments", month=month, year=year))
-
-        if meeting_type == "digital":
-            location_name = ""
-            location_maps_url = ""
-
-        subject = _sanitize_text(subject, 200)
-        note = _sanitize_text(note, 2000)
-
+    active_test_license = None
+    if session.get("username"):
         client = None
         try:
-            client, col = _get_collection("appointments")
-            col.insert_one(
+            client, col = _get_collection("licenses")
+            active_test_license = col.find_one(
                 {
-                    "id": f"a-{int(datetime.utcnow().timestamp() * 1000)}",
                     "username": session.get("username"),
-                    "display_name": session.get("display_name"),
-                    "date": selected_date,
-                    "time": appointment_time,
-                    "subject": subject,
-                    "meeting_type": meeting_type,
-                    "meeting_label": "Digital" if meeting_type == "digital" else "Vor Ort",
-                    "location_name": location_name,
-                    "location_maps_url": location_maps_url,
-                    "note": note,
-                    "status": "Angefragt",
-                    "created_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
-                }
+                    "status": {"$in": ["Aktiv", "Pausiert"]},
+                    "plan": {"$regex": "^Test"},
+                },
+                {"_id": 0},
             )
         except PyMongoError:
-            flash("Buchung konnte nicht gespeichert werden.", "error")
-            return redirect(url_for("appointments", month=month, year=year))
+            active_test_license = None
         finally:
             if client:
                 client.close()
 
-        flash("Buchung erfolgreich angefragt.", "success")
-        selected = date.fromisoformat(selected_date)
-        return redirect(url_for("appointments", month=selected.month, year=selected.year))
-
-    cal = calendar.Calendar(firstweekday=0)
-    month_grid = cal.monthdayscalendar(year, month)
-    month_name = calendar.month_name[month]
-
-    previous_month = month - 1
-    previous_year = year
-    if previous_month == 0:
-        previous_month = 12
-        previous_year -= 1
-
-    next_month = month + 1
-    next_year = year
-    if next_month == 13:
-        next_month = 1
-        next_year += 1
-
-    user_appointments = []
-    client = None
-    try:
-        client, col = _get_collection("appointments")
-        user_appointments = list(col.find({"username": session.get("username")}).sort([("date", 1), ("time", 1)]))
-        for item in user_appointments:
-            _with_public_id(item)
-    except PyMongoError:
-        flash("Buchungen konnten nicht geladen werden.", "error")
-    finally:
-        if client:
-            client.close()
-
-    blocked_day_map = _get_blocked_day_map()
-
     return render_template(
         "appointments.html",
-        month=month,
-        month_name=month_name,
-        year=year,
-        month_grid=month_grid,
-        today_iso=today.isoformat(),
-        previous_month=previous_month,
-        previous_year=previous_year,
-        next_month=next_month,
-        next_year=next_year,
-        blocked_day_map=blocked_day_map,
-        user_appointments=user_appointments,
+        software_packages=software_packages,
+        active_test_license=active_test_license,
     )
+
+
+@app.route('/appointments/start-test', methods=['POST'])
+@login_required
+def start_test_package():
+    package_raw = _sanitize_text(request.form.get("package") or "normal", 40).lower()
+    package_map = {
+        "normal": "Normal",
+        "pro": "Pro",
+        "buecherei": "Buecherei",
+    }
+    selected_package = package_map.get(package_raw)
+    if not selected_package:
+        flash("Ungueltiges Paket ausgewaehlt.", "error")
+        return redirect(url_for("appointments"))
+
+    school_name = _sanitize_text(session.get("display_name") or session.get("username") or "", 200)
+    activated, message = _activate_test_license_for_user(session.get("username") or "", school_name, selected_package)
+
+    if activated:
+        flash(f"Testversion fuer Paket {selected_package} gestartet. Key: {message}", "success")
+    else:
+        flash(message, "error")
+
+    return redirect(url_for("appointments"))
 
 
 @app.route('/admin/dashboard')

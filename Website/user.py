@@ -63,7 +63,7 @@ def check_nm_pwd(username, password):
             client.close()
 
 
-def add_user(username, password, name, last_name):
+def add_user(username, password, name, last_name, email=""):
     """
     Add a new user to the database.
     
@@ -80,7 +80,17 @@ def add_user(username, password, name, last_name):
     client = None
     try:
         client, users = _get_users_collection()
-        users.insert_one({'Username': username, 'Password': hashing(password), 'Admin': False, 'active_ausleihung': None, 'name': name, 'last_name': last_name})
+        users.insert_one(
+            {
+                'Username': username,
+                'Password': hashing(password),
+                'Admin': False,
+                'active_ausleihung': None,
+                'name': name,
+                'last_name': last_name,
+                'email': (email or '').strip().lower(),
+            }
+        )
         return True
     finally:
         if client:

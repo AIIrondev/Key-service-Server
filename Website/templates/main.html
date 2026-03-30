@@ -268,6 +268,41 @@
 		color: #ffffff;
 	}
 
+	.logo-wall {
+		margin-top: 2rem;
+		padding: 1.5rem;
+		border-radius: 18px;
+		border: 1px solid #d4ddd4;
+		background: #ffffff;
+		box-shadow: 0 14px 30px rgba(28, 45, 41, 0.05);
+	}
+
+	.logo-wall h2 {
+		color: #21444a;
+		margin-bottom: 0.4rem;
+	}
+
+	.logo-grid {
+		margin-top: 1rem;
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 0.8rem;
+	}
+
+	.logo-item {
+		border: 1px solid #d8e0d8;
+		border-radius: 12px;
+		background: #f8faf7;
+		padding: 0.65rem;
+	}
+
+	.logo-item img {
+		width: 100%;
+		height: 160px;
+		object-fit: cover;
+		border-radius: 8px;
+	}
+
 	@keyframes rise {
 		from {
 			opacity: 0;
@@ -313,6 +348,10 @@
 			align-items: flex-start;
 			padding: 1.5rem;
 		}
+
+		.logo-grid {
+			grid-template-columns: 1fr;
+		}
 	}
 </style>
 {% endblock %}
@@ -320,10 +359,10 @@
 {% block content %}
 <section class="hero" id="top">
 	<div>
-		<span class="eyebrow">Für moderne Schulverwaltung</span>
-		<h1>Mehr Ruhe im Schulalltag durch klare digitale Verwaltung.</h1>
+		<span class="eyebrow">Lehrmittelverwaltungssoftware für Schulen</span>
+		<h1>Lehrmittel, Schul-IT und Ausleihen in einem sicheren System.</h1>
 		<p>
-			Invario unterstützt Bildungseinrichtungen in Deutschland dabei, Inventar, Lizenzen und Anfragen nachvollziehbar zu organisieren. Die Bedienung bleibt bewusst einfach, während zentrale Sicherheitsfunktionen wie Rollenrechte, Protokollierung und geschützte Verbindungen standardmäßig integriert sind.
+			Invario ist eine Lehrmittelverwaltungssoftware, die Schulbibliothek, Inventar und digitale Ausleihe zusammenfuehrt. Prozesse bleiben bewusst schlank und schnell, waehrend Sicherheitsfunktionen wie rollenbasierte Rechte, Sitzungsabsicherung und nachvollziehbare Protokolle im Hintergrund dauerhaft aktiv sind.
 		</p>
 		<div class="cta-row">
 			{% if 'username' in session %}
@@ -348,68 +387,84 @@
 </section>
 
 <section class="section" id="nutzen" style="animation-delay: 100ms;">
-	<h2>Vorteile für Ihr Sekretariat</h2>
-	<p>Alle Informationen sind gebündelt, Vorgänge sind standardisiert, und Rückfragen lassen sich schneller beantworten.</p>
+	<h2>Vorteile fuer Verwaltung und Bibliothek</h2>
+	<p>Alle Daten zu Lehrmitteln, Geraeten und Ausleihen sind gebuendelt, sodass Rückfragen schnell geklaert werden koennen.</p>
 	<div class="section-grid">
 		<article class="card">
-			<h3>Inventar auf einen Blick</h3>
-			<p>Geräte, Standorte und Zuständigkeiten sind zentral erfasst. Das reduziert Suchzeiten und doppelte Rückfragen.</p>
+			<h3>Lehrmittel pro Klasse steuern</h3>
+			<p>Buecher und Unterrichtsmaterialien lassen sich klassenweise ausgeben und zum Schuljahresende sauber rueckfuehren.</p>
 		</article>
 		<article class="card">
-			<h3>Lizenzfristen im Blick</h3>
-			<p>Auslaufende Lizenzen werden rechtzeitig sichtbar, damit keine Unterrichtsausfälle durch fehlende Software entstehen.</p>
+			<h3>Scanner-gestuetzte Ausleihe</h3>
+			<p>Barcode- oder QR-Workflows beschleunigen Ausgabe und Ruecknahme deutlich, auch bei grossen Bestandsmengen.</p>
 		</article>
 		<article class="card">
-			<h3>Verständliche Prozesse</h3>
-			<p>Statt technischer Fachsprache zeigt die Plattform klare Schritte und eindeutige Statusmeldungen für jede Aufgabe.</p>
+			<h3>IT- und Medienbestand kombiniert</h3>
+			<p>Tablets, Laptops, Webcams und Print-Medien werden gemeinsam verwaltet statt in voneinander getrennten Listen.</p>
 		</article>
 	</div>
 </section>
 
 <section class="section" id="alltag" style="animation-delay: 180ms;">
-	<h2>Typische Situationen aus dem Schulalltag</h2>
-	<p>Die folgenden Beispiele zeigen, wie die Plattform bei wiederkehrenden Verwaltungsaufgaben hilft.</p>
+	<h2>Typische Lehrmittel-Szenarien</h2>
+	<p>Die folgenden Beispiele orientieren sich an realen Schulablaeufen mit Fokus auf Tempo und Nachvollziehbarkeit.</p>
 	<div class="routine-list">
 		<div class="routine">
 			<div>
-				<b>Neues Gerät kommt an</b>
-				Seriennummer, Raum und Ansprechperson werden in wenigen Schritten eingetragen und sind sofort nachvollziehbar.
+				<b>Neue Klassensaetze treffen ein</b>
+				Lehrmittel werden etikettiert, Klassen zugeordnet und mit Ausgabehistorie gespeichert.
 			</div>
-			<span>Inventar</span>
+			<span>Lehrmittel</span>
 		</div>
 		<div class="routine">
 			<div>
-				<b>Rückfrage zur Gerätehistorie</b>
-				Status zu Bestellung, Nutzung oder Defekt ist direkt sichtbar, ohne mehrere Listen durchsuchen zu müssen.
+				<b>Rueckfrage zu ausgeliehenen Medien</b>
+				Verfuegbarkeit, Entleiher und Rueckgabedatum sind sofort sichtbar, ohne manuelle Listenpflege.
 			</div>
-			<span>Transparenz</span>
+			<span>Ausleihe</span>
 		</div>
 		<div class="routine">
 			<div>
-				<b>Supportfall im Unterricht</b>
-				Tickets werden dokumentiert und priorisiert. Das Team sieht jederzeit, wer bereits daran arbeitet.
+				<b>Defekt bei einem Endgeraet</b>
+				Zustand, Schaden und Verantwortlichkeiten werden dokumentiert, inklusive klarer Eskalationswege.
 			</div>
-			<span>Support</span>
+			<span>Sicherheit</span>
 		</div>
 	</div>
 </section>
 
 <section class="section" id="sicherheit" style="animation-delay: 220ms;">
-	<h2>Allgemeine Sicherheit des Programms</h2>
-	<p>Das Sicherheitskonzept verbindet technische Schutzmaßnahmen mit klaren Arbeitsabläufen, damit Daten im laufenden Betrieb zuverlässig geschützt bleiben.</p>
+	<h2>Erweiterte Sicherheit fuer den Schulbetrieb</h2>
+	<p>Die Plattform setzt auf Datenschutz und Betriebssicherheit, damit personenbezogene Daten und Inventardaten langfristig geschuetzt bleiben.</p>
 	<div class="section-grid">
 		<article class="card">
-			<h3>Rollenbasierte Zugriffe</h3>
-			<p>Nutzerkonten sehen nur Funktionen, die für die jeweilige Aufgabe benötigt werden. Das reduziert Fehlbedienungen und ungewollte Änderungen.</p>
+			<h3>Rollen- und Bereichstrennung</h3>
+			<p>Bibliothek, Verwaltung und IT erhalten abgestufte Rechte, sodass jede Rolle nur ihre benoetigten Funktionen sieht.</p>
 		</article>
 		<article class="card">
-			<h3>Dokumentierte Änderungen</h3>
-			<p>Wichtige Aktionen werden nachvollziehbar protokolliert. Dadurch lassen sich Abläufe prüfen und Sicherheitsereignisse schneller einordnen.</p>
+			<h3>Protokollierung und Nachweis</h3>
+			<p>Ausgaben, Ruecknahmen und kritische Admin-Aktionen werden dokumentiert und sind jederzeit auditierbar.</p>
 		</article>
 		<article class="card">
-			<h3>Geschützte Übertragung</h3>
-			<p>Verbindungen laufen über sichere Protokolle, ergänzt durch Sicherheits-Header und strikte Session-Regeln für den täglichen Webbetrieb.</p>
+			<h3>Gesicherte Web-Session</h3>
+			<p>Sicherheits-Header, HttpOnly-Cookies und klare Session-Richtlinien schuetzen den laufenden Betrieb vor typischen Webangriffen.</p>
 		</article>
+	</div>
+</section>
+
+<section class="logo-wall" id="logos">
+	<h2>Einblicke und Logo-Varianten</h2>
+	<p>Die folgenden Grafiken sind direkt aus dem statischen Bereich Ihrer Website eingebunden.</p>
+	<div class="logo-grid">
+		<figure class="logo-item">
+			<img src="{{ url_for('static', filename='images/logo-1.jpeg') }}" alt="Invario Logo Variante 1">
+		</figure>
+		<figure class="logo-item">
+			<img src="{{ url_for('static', filename='images/logo-2.jpeg') }}" alt="Invario Logo Variante 2">
+		</figure>
+		<figure class="logo-item">
+			<img src="{{ url_for('static', filename='images/logo-3.jpeg') }}" alt="Invario Logo Variante 3">
+		</figure>
 	</div>
 </section>
 
