@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Kontakt fuer Schulen | Invario{% endblock %}
+{% block title %}Kontakt für Schulen | Invario{% endblock %}
 
 {% block content %}
 <section class="page-hero">
     <h1>Kontakt</h1>
-    <p>Wir beantworten Anfragen aus Schulsekretariat und Schulleitung schnell und klar. Fuer neue Projekte empfehlen wir einen kurzen Beratungstermin.</p>
+    <p>Anfragen rund um Einführung, Betrieb und Support werden schnell und klar beantwortet. Für neue Projekte empfiehlt sich eine kurze Buchungsoption.</p>
 </section>
 
 <section class="contact-grid">
@@ -13,23 +13,23 @@
         <h2>Allgemeine Anfrage</h2>
         <p><strong>E-Mail:</strong> info@invario.de</p>
         <p><strong>Telefon:</strong> +49 (0) 123 / 456789</p>
-        <p>Geeignet fuer organisatorische Fragen, Erstkontakt und allgemeine Informationen.</p>
+        <p>Geeignet für organisatorische Fragen, Erstkontakt und allgemeine Informationen.</p>
     </article>
 
     <article class="contact-card">
         <h2>Support</h2>
         <p><strong>E-Mail:</strong> support@invario.de</p>
         <p><strong>Telefon:</strong> +49 (0) 123 / 456790</p>
-        <p>Bei laufendem Betrieb, stoerenden Fehlern oder dringenden Rueckfragen im Schulalltag.</p>
+        <p>Bei laufendem Betrieb, störenden Fehlern oder dringenden Rückfragen im Schulalltag.</p>
     </article>
 
     <article class="contact-card">
-        <h2>Beratungstermin</h2>
-        <p>In 30 Minuten besprechen wir Ihre aktuelle Situation und priorisieren sinnvolle erste Schritte fuer Ihre Schule.</p>
+        <h2>Buchungsoption</h2>
+        <p>In 30 Minuten werden aktuelle Rahmenbedingungen bewertet und sinnvolle erste Schritte priorisiert.</p>
         {% if 'username' in session %}
-            <a class="btn" href="{{ url_for('appointments') }}">Beratungstermin buchen</a>
+            <a class="btn" href="{{ url_for('appointments') }}">Buchungsoption nutzen</a>
         {% else %}
-            <a class="btn" href="{{ url_for('login') }}">Login fuer Terminbuchung</a>
+            <a class="btn" href="{{ url_for('login') }}">Login für Buchung</a>
         {% endif %}
     </article>
 </section>

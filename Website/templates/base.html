@@ -354,15 +354,16 @@
         <div class="site-shell site-nav-inner">
             <a class="brand" href="{{ url_for('default') }}">Invario Schule</a>
             <div class="nav-links" aria-label="Main Navigation">
-                <a href="{{ url_for('dienstleistungen') }}">Leistungen fuer Schulen</a>
+                <a href="{{ url_for('dienstleistungen') }}">Leistungen für Schulen</a>
                 <a href="{{ url_for('projekte') }}">Praxisbeispiele</a>
+                <a href="{{ url_for('tutorial') }}">Tutorial</a>
                 <a href="{{ url_for('team') }}">Unser Ansatz</a>
                 <a href="{{ url_for('kontakt') }}">Kontakt</a>
                 <a href="{{ url_for('inventarsystem') }}">Inventarsystem</a>
             </div>
             <div class="nav-actions">
                 {% if 'username' in session %}
-                    <a class="nav-btn" href="{{ url_for('appointments') }}">Beratungstermin</a>
+                    <a class="nav-btn" href="{{ url_for('appointments') }}">Buchungsoption</a>
 
                     <details class="nav-dropdown">
                         <summary class="nav-btn">Nutzerbereich</summary>
@@ -416,16 +417,17 @@
             <div class="footer-content">
                 <div class="footer-section">
                     <h4>Über uns</h4>
-                    <p>Digitale Verwaltungsablaeufe fuer Schulsekretariate und Schulleitungen in Deutschland.</p>
+                    <p>Digitale Verwaltungsabläufe für Bildungseinrichtungen in Deutschland.</p>
                 </div>
                 <div class="footer-section">
                     <h4>Schnelllinks</h4>
                     <ul class="footer-links">
                         <li><a href="{{ url_for('default') }}">Start</a></li>
-                        <li><a href="{{ url_for('dienstleistungen') }}">Leistungsuebersicht</a></li>
+                        <li><a href="{{ url_for('dienstleistungen') }}">Leistungsübersicht</a></li>
+                        <li><a href="{{ url_for('tutorial') }}">Tutorial</a></li>
                         <li><a href="{{ url_for('blog') }}">Neuigkeiten</a></li>
                         {% if 'username' in session %}
-                            <li><a href="{{ url_for('appointments') }}">Beratungstermine</a></li>
+                            <li><a href="{{ url_for('appointments') }}">Buchungsoption</a></li>
                         {% endif %}
                     </ul>
                 </div>
@@ -525,7 +527,7 @@
         </style>
     </footer>
     <div class="cookie-banner hidden" id="cookieBanner" role="dialog" aria-live="polite" aria-label="Cookie Hinweis">
-        <p>Wir verwenden Cookies, um die Website sicher und benutzerfreundlich zu betreiben. Mit "Cookies akzeptieren" stimmen Sie der Nutzung zu. Details in <a href="{{ url_for('datenschutz') }}">Datenschutz</a>.</p>
+        <p>Wir verwenden Cookies, um die Website sicher und benutzerfreundlich zu betreiben. Mit "Cookies akzeptieren" wird die Nutzung bestätigt. Details in <a href="{{ url_for('datenschutz') }}">Datenschutz</a>.</p>
         <div class="cookie-actions">
             <button type="button" class="cookie-btn" id="cookieAcceptBtn">Cookies akzeptieren</button>
             <button type="button" class="cookie-btn secondary" id="cookieDeclineBtn">Ablehnen und zu Ecosia</button>

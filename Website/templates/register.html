@@ -51,6 +51,19 @@
         box-shadow: 0 0 0 3px rgba(58, 133, 180, 0.2);
     }
 
+    .checkbox-line {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.6rem;
+        margin: 0.35rem 0 1rem;
+        color: #244f66;
+    }
+
+    .checkbox-line input {
+        width: auto;
+        margin-top: 0.2rem;
+    }
+
     .auth-btn {
         width: 100%;
         border: none;
@@ -77,12 +90,16 @@
 
 {% block content %}
 <section class="auth-wrap">
-    <h1>Registrierung</h1>
-    <p>Legen Sie ein Konto an, um den Kalender für Terminanfragen zu nutzen.</p>
+    <h1>Schulregistrierung</h1>
+    <p>Registrieren Sie Ihre Schule, um Buchungen, Lizenzen und Support zentral zu verwalten.</p>
     <form method="POST" action="{{ url_for('register') }}">
         <div class="field">
-            <label for="display_name">Name</label>
-            <input id="display_name" name="display_name" type="text" autocomplete="name" required>
+            <label for="school_name">Name der Schule</label>
+            <input id="school_name" name="school_name" type="text" autocomplete="organization" required>
+        </div>
+        <div class="field">
+            <label for="contact_person">Ansprechpartner der Schule</label>
+            <input id="contact_person" name="contact_person" type="text" autocomplete="name" required>
         </div>
         <div class="field">
             <label for="username">Benutzername</label>
@@ -96,6 +113,10 @@
             <label for="password_repeat">Passwort wiederholen</label>
             <input id="password_repeat" name="password_repeat" type="password" autocomplete="new-password" required>
         </div>
+        <label class="checkbox-line" for="activate_test_key">
+            <input id="activate_test_key" name="activate_test_key" type="checkbox" value="1">
+            <span>Direkt bei Registrierung einen Test-Key aktivieren</span>
+        </label>
         <button class="auth-btn" type="submit">Konto erstellen</button>
     </form>
     <p class="auth-meta">Bereits registriert? <a href="{{ url_for('login') }}">Zum Login</a></p>

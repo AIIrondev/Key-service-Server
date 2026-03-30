@@ -114,6 +114,49 @@ def _sanitize_text(text: str, max_length: int = 255) -> str:
     return text
 
 
+def _activate_test_license_for_user(username: str, school_name: str) -> tuple[bool, str]:
+    """Create a one-time test license for the user if none exists yet."""
+    user_name = _sanitize_text(username or "", 80)
+    school = _sanitize_text(school_name or "", 200)
+    if not user_name:
+        return False, "Benutzername fehlt fuer Test-Key."
+
+    client = None
+    try:
+        client, col = _get_collection("licenses")
+
+        existing = col.find_one(
+            {
+                "username": user_name,
+                "plan": "Test",
+                "status": {"$in": ["Aktiv", "Pausiert"]},
+            }
+        )
+        if existing:
+            return False, "Ein Test-Key ist fuer dieses Schulkonto bereits vorhanden."
+
+        test_key = f"TEST-{verify.key_generator()[:18].upper()}"
+        col.insert_one(
+            {
+                "username": user_name,
+                "school_name": school or user_name,
+                "license_key": test_key,
+                "plan": "Test",
+                "status": "Aktiv",
+                "valid_until": (datetime.utcnow() + timedelta(days=30)).date().isoformat(),
+                "hwid_uuid": "",
+                "created_at": _utc_now_iso(),
+                "updated_at": _utc_now_iso(),
+            }
+        )
+        return True, test_key
+    except PyMongoError:
+        return False, "Test-Key konnte nicht aktiviert werden."
+    finally:
+        if client:
+            client.close()
+
+
 def _with_public_id(doc: dict | None) -> dict | None:
     if not doc:
         return doc
@@ -277,6 +320,11 @@ def inventarsystem():
     return render_template("inventarsystem.html")
 
 
+@app.route('/tutorial')
+def tutorial():
+    return render_template("tutorial.html")
+
+
 @app.route('/team')
 def team():
     return render_template("team.html")
@@ -333,11 +381,13 @@ def login():
 def register():
     if request.method == "POST":
         username = (request.form.get("username") or "").strip()
-        display_name = (request.form.get("display_name") or "").strip()
+        school_name = (request.form.get("school_name") or "").strip()
+        contact_person = (request.form.get("contact_person") or "").strip()
+        activate_test_key = (request.form.get("activate_test_key") or "").strip().lower() in {"1", "on", "true", "yes"}
         password = request.form.get("password") or ""
         password_repeat = request.form.get("password_repeat") or ""
 
-        if not username or not display_name or not password or not password_repeat:
+        if not username or not school_name or not contact_person or not password or not password_repeat:
             flash("Bitte alle Felder ausfuellen.", "error")
             return redirect(url_for("register"))
 
@@ -357,21 +407,30 @@ def register():
             flash("Benutzername bereits vergeben.", "error")
             return redirect(url_for("register"))
 
-        display_name = _sanitize_text(display_name, 100)
+        school_name = _sanitize_text(school_name, 120)
+        contact_person = _sanitize_text(contact_person, 120)
 
         try:
             existing_users = user_store.get_all_users() or []
             is_first_user = len(existing_users) == 0
-            if not user_store.add_user(username, password, display_name, ""):
+            if not user_store.add_user(username, password, school_name, contact_person):
                 flash("Benutzer konnte nicht erstellt werden.", "error")
                 return redirect(url_for("register"))
+
+            if activate_test_key:
+                activated, message = _activate_test_license_for_user(username, school_name)
+                if activated:
+                    flash(f"Test-Key aktiviert: {message}", "success")
+                else:
+                    flash(message, "error")
+
             if is_first_user:
                 user_store.make_admin(username)
         except Exception:
             flash("MongoDB ist derzeit nicht erreichbar.", "error")
             return redirect(url_for("register"))
 
-        flash("Registrierung erfolgreich. Bitte jetzt einloggen.", "success")
+        flash("Schulregistrierung erfolgreich. Bitte jetzt einloggen.", "success")
         return redirect(url_for("login"))
 
     return render_template("register.html")
@@ -401,11 +460,11 @@ def appointments():
         try:
             date.fromisoformat(selected_date)
         except ValueError:
-            flash("Bitte einen gueltigen Termin im Kalender auswaehlen.", "error")
+            flash("Bitte eine gueltige Buchung im Kalender auswaehlen.", "error")
             return redirect(url_for("appointments", month=month, year=year))
 
         if selected_date in blocked_day_map:
-            flash("Dieser Tag ist im Kalender gesperrt. Bitte einen anderen Termin waehlen.", "error")
+            flash("Dieser Tag ist im Kalender gesperrt. Bitte eine andere Buchung waehlen.", "error")
             return redirect(url_for("appointments", month=month, year=year))
 
         if not appointment_time or not subject:
@@ -413,11 +472,11 @@ def appointments():
             return redirect(url_for("appointments", month=month, year=year))
 
         if meeting_type not in ["digital", "vor_ort"]:
-            flash("Bitte eine gueltige Terminart waehlen.", "error")
+            flash("Bitte eine gueltige Buchungsart waehlen.", "error")
             return redirect(url_for("appointments", month=month, year=year))
 
         if meeting_type == "vor_ort" and not location_name:
-            flash("Bei Vor-Ort-Terminen ist ein Ort erforderlich.", "error")
+            flash("Bei Vor-Ort-Buchungen ist ein Ort erforderlich.", "error")
             return redirect(url_for("appointments", month=month, year=year))
 
         if meeting_type == "digital":
@@ -448,13 +507,13 @@ def appointments():
                 }
             )
         except PyMongoError:
-            flash("Termin konnte nicht gespeichert werden.", "error")
+            flash("Buchung konnte nicht gespeichert werden.", "error")
             return redirect(url_for("appointments", month=month, year=year))
         finally:
             if client:
                 client.close()
 
-        flash("Termin erfolgreich angefragt.", "success")
+        flash("Buchung erfolgreich angefragt.", "success")
         selected = date.fromisoformat(selected_date)
         return redirect(url_for("appointments", month=selected.month, year=selected.year))
 
@@ -482,7 +541,7 @@ def appointments():
         for item in user_appointments:
             _with_public_id(item)
     except PyMongoError:
-        flash("Termine konnten nicht geladen werden.", "error")
+        flash("Buchungen konnten nicht geladen werden.", "error")
     finally:
         if client:
             client.close()
@@ -516,7 +575,7 @@ def admin_dashboard():
         for item in all_appointments:
             _with_public_id(item)
     except PyMongoError:
-        flash("Terminanfragen konnten nicht geladen werden.", "error")
+        flash("Buchungsanfragen konnten nicht geladen werden.", "error")
     finally:
         if client:
             client.close()
@@ -610,7 +669,7 @@ def update_appointment(appointment_id):
     
     query = _appointment_query_from_id(appointment_id)
     if not query:
-        flash("Termin nicht gefunden.", "error")
+        flash("Buchung nicht gefunden.", "error")
         return redirect(url_for("admin_dashboard"))
 
     new_status = "Bestaetigt" if action == "confirm" else "Abgelehnt"
@@ -630,16 +689,16 @@ def update_appointment(appointment_id):
             },
         )
         if result.matched_count == 0:
-            flash("Termin nicht gefunden.", "error")
+            flash("Buchung nicht gefunden.", "error")
             return redirect(url_for("admin_dashboard"))
     except PyMongoError:
-        flash("Termin konnte nicht aktualisiert werden.", "error")
+        flash("Buchung konnte nicht aktualisiert werden.", "error")
         return redirect(url_for("admin_dashboard"))
     finally:
         if client:
             client.close()
 
-    flash(f"Termin wurde {('bestaetigt' if action == 'confirm' else 'abgelehnt')}.", "success")
+    flash(f"Buchung wurde {('bestaetigt' if action == 'confirm' else 'abgelehnt')}.", "success")
     return redirect(url_for("admin_dashboard"))
 
 

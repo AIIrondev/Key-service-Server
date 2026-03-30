@@ -248,7 +248,7 @@
 </section>
 
 <section class="appointments-section">
-    <h2>Terminanfragen verwalten</h2>
+    <h2>Buchungsanfragen verwalten</h2>
     <div class="block-days-section">
         <h3>Kalender-Tage sperren</h3>
         <form method="POST" action="{{ url_for('admin_block_day') }}" class="block-form">
@@ -285,7 +285,7 @@
                 <div class="appointment-info">
                     <strong>{{ appointment.display_name }} - {{ appointment.subject }}</strong>
                     <p><strong>Datum:</strong> {{ appointment.date }} um {{ appointment.time }}</p>
-                    <p><strong>Terminart:</strong> {{ appointment.meeting_label or ('Vor Ort' if appointment.meeting_type == 'vor_ort' else 'Digital') }}</p>
+                    <p><strong>Buchungsart:</strong> {{ appointment.meeting_label or ('Vor Ort' if appointment.meeting_type == 'vor_ort' else 'Digital') }}</p>
                     {% if appointment.location_name %}
                         <p><strong>Ort:</strong> {{ appointment.location_name }}</p>
                     {% endif %}
@@ -315,7 +315,7 @@
             </article>
         {% endfor %}
     {% else %}
-        <p>Keine Terminanfragen vorhanden.</p>
+        <p>Keine Buchungsanfragen vorhanden.</p>
     {% endif %}
 </section>
 

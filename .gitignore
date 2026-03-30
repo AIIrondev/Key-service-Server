@@ -5,3 +5,4 @@ main.dist
 .mongo-data
 db
 build
+mongodb.log

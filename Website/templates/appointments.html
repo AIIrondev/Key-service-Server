@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Termin anfragen{% endblock %}
+{% block title %}Buchungsoption{% endblock %}
 
 {% block head %}
 {{ super() }}
@@ -283,8 +283,8 @@
     </article>
 
     <aside class="panel booking-form">
-        <h2>Termin anfragen</h2>
-        <p class="meeting-note">Persoenliches Gespraechstermin: Digital oder Vor Ort.</p>
+        <h2>Buchung anfragen</h2>
+        <p class="meeting-note">Persoenliche Buchungsoption: Digital oder Vor Ort.</p>
         <span class="selected-date-badge" id="selectedDateBadge">Kein Datum gewählt</span>
         <form method="POST" action="{{ url_for('appointments', month=month, year=year) }}">
             <input type="hidden" id="selectedDateInput" name="selected_date" required>
@@ -293,7 +293,7 @@
                 <input id="appointment_time" name="appointment_time" type="time" required>
             </div>
             <div class="field">
-                <label for="meeting_type">Terminart</label>
+                <label for="meeting_type">Buchungsart</label>
                 <select id="meeting_type" name="meeting_type" required>
                     <option value="digital">Digital</option>
                     <option value="vor_ort">Vor Ort</option>
@@ -316,13 +316,13 @@
                 <label for="note">Notiz (optional)</label>
                 <textarea id="note" name="note" placeholder="Kurzbeschreibung der Anfrage"></textarea>
             </div>
-            <button class="submit-btn" type="submit">Termin anfragen</button>
+            <button class="submit-btn" type="submit">Buchung anfragen</button>
         </form>
     </aside>
 </section>
 
 <section class="panel appointment-list" style="margin-top: 1rem;">
-    <h2>Meine Terminanfragen</h2>
+    <h2>Meine Buchungsanfragen</h2>
     {% if user_appointments %}
         {% for item in user_appointments %}
             <article class="entry">
@@ -330,7 +330,7 @@
                 {% if item.note %}
                     <p>{{ item.note }}</p>
                 {% endif %}
-                <p class="entry-meta"><strong>Terminart:</strong> {{ item.meeting_label or ('Vor Ort' if item.meeting_type == 'vor_ort' else 'Digital') }}</p>
+                <p class="entry-meta"><strong>Buchungsart:</strong> {{ item.meeting_label or ('Vor Ort' if item.meeting_type == 'vor_ort' else 'Digital') }}</p>
                 {% if item.location_name %}
                     <p class="entry-meta"><strong>Ort:</strong> {{ item.location_name }}</p>
                 {% endif %}
