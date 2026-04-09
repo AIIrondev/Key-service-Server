@@ -116,11 +116,24 @@
         }
 
         .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.62rem;
             font-family: "Merriweather", Georgia, serif;
             font-size: 1.15rem;
             font-weight: 700;
             letter-spacing: 0.03em;
             color: var(--brand-strong);
+        }
+
+        .brand img {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 1px solid #bccdc4;
+            box-shadow: 0 8px 16px rgba(19, 49, 54, 0.14);
+            background: #ffffff;
         }
 
         .nav-links {
@@ -352,12 +365,14 @@
 <body>
     <nav class="site-nav">
         <div class="site-shell site-nav-inner">
-            <a class="brand" href="{{ url_for('default') }}">Invario Schule</a>
+            <a class="brand" href="{{ url_for('default') }}">
+                <img src="{{ url_for('static', filename='images/logo-1.jpeg') }}" alt="Invario Logo">
+                <span>Invario Schule</span>
+            </a>
             <div class="nav-links" aria-label="Main Navigation">
                 <a href="{{ url_for('dienstleistungen') }}">Leistungen für Schulen</a>
                 <a href="{{ url_for('projekte') }}">Praxisbeispiele</a>
-                <a href="{{ url_for('tutorial') }}">Tutorial</a>
-                <a href="{{ url_for('team') }}">Unser Ansatz</a>
+                <a href="{{ url_for('team') }}">Team</a>
                 <a href="{{ url_for('kontakt') }}">Kontakt</a>
                 <a href="{{ url_for('inventarsystem') }}">Inventarsystem</a>
             </div>
@@ -387,6 +402,7 @@
                                 <a href="{{ url_for('admin_chats') }}">Admin-Chat</a>
                                 <a href="{{ url_for('admin_tickets') }}">Support-Center</a>
                                 <a href="{{ url_for('admin_blog') }}">Blog verwalten</a>
+                                <a href="{{ url_for('admin_team') }}">Team Cards</a>
                             </div>
                         </details>
                     {% endif %}
@@ -424,7 +440,7 @@
                     <ul class="footer-links">
                         <li><a href="{{ url_for('default') }}">Start</a></li>
                         <li><a href="{{ url_for('dienstleistungen') }}">Leistungsübersicht</a></li>
-                        <li><a href="{{ url_for('tutorial') }}">Tutorial</a></li>
+                        <li><a href="{{ url_for('team') }}">Team</a></li>
                         <li><a href="{{ url_for('blog') }}">Neuigkeiten</a></li>
                         {% if 'username' in session %}
                             <li><a href="{{ url_for('appointments') }}">Buchungsoption</a></li>

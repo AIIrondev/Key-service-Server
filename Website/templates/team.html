@@ -1,47 +1,123 @@
 {% extends "base.html" %}
 
-{% block title %}Unser Ansatz | Invario{% endblock %}
+{% block title %}Team | Invario{% endblock %}
 
 {% block content %}
 <section class="page-hero">
-    <h1>Unser Ansatz für Schulen</h1>
-    <p>Die Arbeitsweise ist strukturiert, persönlich und auf den praktischen Nutzen in der täglichen Verwaltung ausgerichtet.</p>
+    <h1>Unser Team für Schulen</h1>
+    <p>Unsere Ansprechpartner mit klaren Verantwortungen. Inhalte und Fotos werden direkt im Admin-Bereich gepflegt.</p>
 </section>
 
-<section class="grid">
-    <article class="member">
-        <h2>Verständliche Beratung</h2>
-        <p>Technische Möglichkeiten werden in klare Entscheidungen übersetzt: Was bringt im Schulalltag wirklich Entlastung und was nicht.</p>
-        <p><strong>Ergebnis:</strong> Keine unnötigen Funktionen, sondern ein klarer Fahrplan mit nachvollziehbaren Prioritäten.</p>
-    </article>
-    <article class="member">
-        <h2>Saubere Einführung</h2>
-        <p>Das System wird gemeinsam mit den verantwortlichen Teams eingerichtet, ohne den laufenden Betrieb zu überlasten.</p>
-        <p><strong>Ergebnis:</strong> Schrittweise Umstellung mit Schulung direkt an typischen Arbeitsabläufen.</p>
-    </article>
-    <article class="member">
-        <h2>Zuverlässige Begleitung</h2>
-        <p>Nach der Einführung bleibt das Team erreichbar und unterstützt bei Anpassungen, Fragen und neuen Anforderungen.</p>
-        <p><strong>Ergebnis:</strong> Feste Ansprechpartner und verlässliche Rückmeldung statt wechselnder Kontaktwege.</p>
-    </article>
+<section class="team-grid" aria-label="Team Cards">
+    {% for member in team_members %}
+        <article class="member-card">
+            {% if member and member.photo %}
+                <img class="member-photo" src="{{ url_for('static', filename=member.photo) }}" alt="Teamfoto {{ member.name }}">
+            {% endif %}
+
+            <div class="member-content">
+                <p class="member-slot">Teammitglied</p>
+                <h2>{{ member.name }}</h2>
+                <p class="member-role">{{ member.role }}</p>
+                <p><strong>Arbeit:</strong> {{ member.work }}</p>
+                {% if member.bio %}
+                    <p>{{ member.bio }}</p>
+                {% endif %}
+            </div>
+        </article>
+    {% else %}
+        <article class="member-card">
+            <div class="member-content">
+                <p class="member-slot">Team</p>
+                <h2>Noch keine Einträge vorhanden</h2>
+                <p class="member-role">Der Admin kann Teammitglieder im Bereich „Admin > Team Cards“ hinzufügen.</p>
+            </div>
+        </article>
+    {% endfor %}
 </section>
 
-<section class="references">
-    <h2>Werte, nach denen wir arbeiten</h2>
-    <ul>
-        <li>Klarheit vor Komplexität</li>
-        <li>Datenschutz als Standard, nicht als Zusatz</li>
-        <li>Respekt für die Arbeitsrealität in Schulen</li>
-        <li>Verbindliche Kommunikation und transparente Schritte</li>
-    </ul>
+<section class="values">
+    <h2>Arbeitsprinzipien</h2>
+    <p>Direkte Kommunikation, saubere Einführung und verbindliche Betreuung im laufenden Betrieb.</p>
 </section>
 
 <style>
-.page-hero { margin-bottom: 1.2rem; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.9rem; }
-.member, .references { background: #fff; border: 1px solid #d8dfd7; border-radius: 14px; padding: 1rem; box-shadow: 0 10px 24px rgba(25, 45, 41, 0.04); }
-.member h2, .references h2 { color: #265057; margin-bottom: 0.45rem; font-size: clamp(1.05rem, 1.8vw, 1.35rem); }
-.references { margin-top: 0.9rem; }
-.references ul { margin: 0; padding-left: 1rem; color: #4a6267; display: grid; gap: 0.5rem; }
+.page-hero {
+    margin-bottom: 1.2rem;
+}
+
+.team-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.member-card {
+    background: #ffffff;
+    border: 1px solid #d8dfd7;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 24px rgba(25, 45, 41, 0.06);
+    display: grid;
+    grid-template-rows: auto 1fr;
+}
+
+.member-photo {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    background: #eef2ee;
+}
+
+.member-content {
+    padding: 1rem;
+    display: grid;
+    gap: 0.5rem;
+}
+
+.member-slot {
+    margin: 0;
+    color: #5f7479;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.member-content h2 {
+    margin: 0;
+    color: #264f56;
+    font-size: clamp(1.12rem, 1.8vw, 1.42rem);
+}
+
+.member-role {
+    margin: 0;
+    color: #3b6168;
+    font-weight: 700;
+}
+
+.values {
+    margin-top: 1rem;
+    background: #ffffff;
+    border: 1px solid #d8dfd7;
+    border-radius: 14px;
+    padding: 1rem;
+}
+
+.values h2 {
+    color: #265057;
+    margin-bottom: 0.45rem;
+    font-size: clamp(1.05rem, 1.8vw, 1.35rem);
+}
+
+@media (max-width: 680px) {
+    .team-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .member-photo {
+        height: 200px;
+    }
+}
 </style>
 {% endblock %}

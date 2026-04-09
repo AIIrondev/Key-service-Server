@@ -104,7 +104,7 @@
 <section class="packages-hero">
     <h1>Buchungsoptionen als Softwarepakete</h1>
     <p>Alle Pakete sind frei einsehbar, auch ohne Admin. Die Testversion kann nur mit aktivem Konto gestartet werden.</p>
-    <p>Jedes Paket basiert auf derselben Sicherheitsarchitektur mit Rollenrechten, geschuetzten Sessions und nachvollziehbaren Aktionen.</p>
+    <p>Jedes Paket basiert auf derselben Sicherheitsarchitektur mit Rollenrechten, geschützten Sessions und nachvollziehbaren Aktionen.</p>
 </section>
 
 <section class="packages-grid">
@@ -119,12 +119,23 @@
             </ul>
             <div class="package-actions">
                 {% if 'username' in session %}
-                    <form method="POST" action="{{ url_for('start_test_package') }}">
-                        <input type="hidden" name="package" value="{{ package.slug }}">
-                        <button class="btn" type="submit">Testversion starten</button>
-                    </form>
+                    {% if package.slug == 'test' %}
+                        <form method="POST" action="{{ url_for('start_test_package') }}">
+                            <input type="hidden" name="package" value="{{ package.slug }}">
+                            <button class="btn" type="submit">Testversion starten</button>
+                        </form>
+                    {% else %}
+                        <form method="POST" action="{{ url_for('book_option_package') }}">
+                            <input type="hidden" name="package" value="{{ package.slug }}">
+                            <button class="btn" type="submit">Option buchen</button>
+                        </form>
+                    {% endif %}
                 {% else %}
-                    <a class="btn secondary" href="{{ url_for('login') }}">Mit Konto starten</a>
+                    {% if package.slug == 'test' %}
+                        <a class="btn secondary" href="{{ url_for('login') }}">Mit Konto testen</a>
+                    {% else %}
+                        <a class="btn secondary" href="{{ url_for('login') }}">Mit Konto buchen</a>
+                    {% endif %}
                 {% endif %}
             </div>
         </article>
@@ -134,9 +145,9 @@
 <section class="notice">
     {% if 'username' in session %}
         {% if active_test_license %}
-            <p><strong>Aktive Testversion:</strong> {{ active_test_license.plan }} | Key: {{ active_test_license.license_key }} | Gueltig bis: {{ active_test_license.valid_until }}</p>
+            <p><strong>Aktive Testversion:</strong> {{ active_test_license.plan }} | Key: {{ active_test_license.license_key }} | Gültig bis: {{ active_test_license.valid_until }}</p>
         {% else %}
-            <p><strong>Hinweis:</strong> Fuer Ihr Konto ist noch keine Testversion aktiv. Starten Sie oben eine Testversion fuer Normal, Pro oder Buecherei.</p>
+            <p><strong>Hinweis:</strong> Für Ihr Konto ist noch keine Testversion aktiv. Starten Sie oben die Testversion beim Paket Testversion.</p>
         {% endif %}
     {% else %}
         <p><strong>Hinweis:</strong> Bitte einloggen oder registrieren, um die Testversion zu starten.</p>

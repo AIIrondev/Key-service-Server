@@ -183,7 +183,7 @@
         <form method="POST" action="{{ url_for('allocate_key') }}" class="key-form">
             <label for="alloc_user">Benutzer</label>
             <select id="alloc_user" name="username" required>
-                <option value="">Benutzer auswaehlen</option>
+                <option value="">Benutzer auswählen</option>
                 {% for user in users %}
                 <option value="{{ user.username }}">{{ user.username }} ({{ user.display_name }})</option>
                 {% endfor %}
@@ -191,7 +191,7 @@
 
             <label for="alloc_key">Lizenz-Key</label>
             <select id="alloc_key" name="license_key" required>
-                <option value="">Key auswaehlen</option>
+                <option value="">Key auswählen</option>
                 {% for item in keys %}
                 <option value="{{ item.license_key }}">{{ item.user_id or '----' }} | {{ item.license_key[:22] }}{% if item.license_key|length > 22 %}...{% endif %}</option>
                 {% endfor %}
@@ -246,7 +246,7 @@
                         </td>
                         <td>
                             {% if item.user_id %}
-                                <form method="POST" action="{{ url_for('remove_key', user_id=item.user_id) }}" class="remove-form" onsubmit="return confirm('Key fuer User {{ item.user_id }} wirklich loeschen?');">
+                                <form method="POST" action="{{ url_for('remove_key', user_id=item.user_id) }}" class="remove-form" onsubmit="return confirm('Key für User {{ item.user_id }} wirklich löschen?');">
                                     <button type="submit" class="btn-danger">Entfernen</button>
                                 </form>
                             {% else %}

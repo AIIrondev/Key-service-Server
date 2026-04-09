@@ -40,6 +40,7 @@ def set_security_headers(response):
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 INVOICE_UPLOAD_DIR = os.path.join(BASE_DIR, "static", "uploads", "invoices")
+TEAM_UPLOAD_DIR = os.path.join(BASE_DIR, "static", "uploads", "team")
 MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
 MONGO_DB_NAME = os.environ.get("MONGO_DB_NAME", "Invario_Website")
 
@@ -56,6 +57,13 @@ def _is_allowed_invoice_filename(filename: str) -> bool:
     return bool(filename) and filename.lower().endswith(".pdf")
 
 
+def _is_allowed_image_filename(filename: str) -> bool:
+    if not filename:
+        return False
+    lowered = filename.lower()
+    return lowered.endswith(".jpg") or lowered.endswith(".jpeg") or lowered.endswith(".png") or lowered.endswith(".webp")
+
+
 def _save_invoice_pdf(file_obj, invoice_number: str) -> str | None:
     if not file_obj or not file_obj.filename:
         return None
@@ -68,6 +76,21 @@ def _save_invoice_pdf(file_obj, invoice_number: str) -> str | None:
     target = os.path.join(INVOICE_UPLOAD_DIR, unique_name)
     file_obj.save(target)
     return f"uploads/invoices/{unique_name}"
+
+
+def _save_team_photo(file_obj, identifier: str) -> str | None:
+    if not file_obj or not file_obj.filename:
+        return None
+    original_name = secure_filename(file_obj.filename)
+    if not _is_allowed_image_filename(original_name):
+        return None
+    os.makedirs(TEAM_UPLOAD_DIR, exist_ok=True)
+    extension = os.path.splitext(original_name)[1].lower() or ".jpg"
+    safe_identifier = secure_filename(identifier or "member")
+    unique_name = f"team_{safe_identifier}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}{extension}"
+    target = os.path.join(TEAM_UPLOAD_DIR, unique_name)
+    file_obj.save(target)
+    return f"uploads/team/{unique_name}"
 
 
 def _get_mongo_client() -> MongoClient:
@@ -119,14 +142,14 @@ def _activate_test_license_for_user(username: str, school_name: str, package_nam
     user_name = _sanitize_text(username or "", 80)
     school = _sanitize_text(school_name or "", 200)
     if not user_name:
-        return False, "Benutzername fehlt fuer Test-Key."
+        return False, "Benutzername fehlt für Test-Key."
 
     client = None
     try:
         client, col = _get_collection("licenses")
 
         normalized_package = _sanitize_text(package_name or "Normal", 40)
-        if normalized_package not in {"Normal", "Pro", "Buecherei", "Bücherei"}:
+        if normalized_package not in {"Normal", "Pro", "Bücherei", "Bücherei"}:
             normalized_package = "Normal"
 
         existing = col.find_one(
@@ -137,7 +160,7 @@ def _activate_test_license_for_user(username: str, school_name: str, package_nam
             }
         )
         if existing:
-            return False, "Ein Test-Key ist fuer dieses Schulkonto bereits vorhanden."
+            return False, "Ein Test-Key ist für dieses Schulkonto bereits vorhanden."
 
         test_key = f"TEST-{verify.key_generator()[:18].upper()}"
         col.insert_one(
@@ -239,6 +262,42 @@ def _sanitize_html(html_content: str, max_length: int = 50000) -> str:
     return bleach.clean(html_content, tags=allowed_tags, attributes=allowed_attrs, strip=True)
 
 
+def _get_team_members() -> list:
+    members = []
+    client = None
+    try:
+        client, col = _get_collection("team_members")
+        members = list(col.find().sort([("sort_order", 1), ("created_at", 1)]))
+    except PyMongoError:
+        return []
+    finally:
+        if client:
+            client.close()
+
+    normalized = []
+    for member in members:
+        public_id = str(member.get("_id") or "")
+        sort_raw = member.get("sort_order", 999)
+        try:
+            sort_order = int(sort_raw)
+        except (TypeError, ValueError):
+            sort_order = 999
+        normalized.append(
+            {
+                "id": public_id,
+                "sort_order": sort_order,
+                "name": _sanitize_text(member.get("name") or "", 120),
+                "role": _sanitize_text(member.get("role") or "", 120),
+                "work": _sanitize_text(member.get("work") or "", 220),
+                "bio": _sanitize_text(member.get("bio") or "", 500),
+                "photo": _sanitize_text(member.get("photo") or "", 255),
+            }
+        )
+
+    normalized.sort(key=lambda value: (value.get("sort_order", 999), value.get("name", "")))
+    return normalized
+
+
 def _validate_username(username: str) -> bool:
     """Validate username format: alphanumeric, underscore, dash, 3-30 chars."""
     if not username or not isinstance(username, str):
@@ -337,14 +396,10 @@ def inventarsystem():
     return render_template("inventarsystem.html")
 
 
-@app.route('/tutorial')
-def tutorial():
-    return render_template("tutorial.html")
-
-
 @app.route('/team')
 def team():
-    return render_template("team.html")
+    team_members = _get_team_members()
+    return render_template("team.html", team_members=team_members)
 
 
 @app.route('/kontakt')
@@ -388,7 +443,7 @@ def login():
 
         if request.is_json:
             return jsonify({"error": "Invalid credentials"}), 401
-        flash('Login fehlgeschlagen. Bitte pruefen Sie Ihre Eingaben.', 'error')
+        flash('Login fehlgeschlagen. Bitte prüfen Sie Ihre Eingaben.', 'error')
         get_flashed_messages()
 
     return render_template('login.html')
@@ -406,7 +461,7 @@ def register():
         password_repeat = request.form.get("password_repeat") or ""
 
         if not username or not school_name or not contact_person or not email or not password or not password_repeat:
-            flash("Bitte alle Felder ausfuellen.", "error")
+            flash("Bitte alle Felder ausfüllen.", "error")
             return redirect(url_for("register"))
 
         if not _validate_username(username):
@@ -418,7 +473,7 @@ def register():
             return redirect(url_for("register"))
 
         if password != password_repeat:
-            flash("Die Passwoerter stimmen nicht ueberein.", "error")
+            flash("Die Passwörter stimmen nicht überein.", "error")
             return redirect(url_for("register"))
 
         if _find_user(username):
@@ -426,7 +481,7 @@ def register():
             return redirect(url_for("register"))
 
         if not _validate_email(email):
-            flash("Bitte eine gueltige E-Mail-Adresse angeben.", "error")
+            flash("Bitte eine gültige E-Mail-Adresse angeben.", "error")
             return redirect(url_for("register"))
 
         school_name = _sanitize_text(school_name, 120)
@@ -463,19 +518,29 @@ def register():
 def appointments():
     software_packages = [
         {
+            "slug": "test",
+            "name": "Testversion",
+            "headline": "30 Tage kostenlos zum Ausprobieren",
+            "features": [
+                "Sofortiger Zugang mit Test-Key",
+                "Ideal für Erstbewertung im Schulalltag",
+                "Ohne langfristige Bindung",
+            ],
+        },
+        {
             "slug": "normal",
             "name": "Normal",
-            "headline": "Stabiler Einstieg fuer den Schulalltag",
+            "headline": "Stabiler Einstieg für den Schulalltag",
             "features": [
                 "Inventarverwaltung mit Rollenrechten",
                 "Basis-Support und Ticketing",
-                "Schulweite Uebersichten",
+                "Schulweite Übersichten",
             ],
         },
         {
             "slug": "pro",
             "name": "Pro",
-            "headline": "Fuer Schulen mit erweitertem Bedarf",
+            "headline": "Für Schulen mit erweitertem Bedarf",
             "features": [
                 "Erweiterte Lizenzverwaltung",
                 "Detailberichte und Admin-Insights",
@@ -485,10 +550,10 @@ def appointments():
         {
             "slug": "buecherei",
             "name": "Bücherei",
-            "headline": "Optimiert fuer Bibliothek und Medien",
+            "headline": "Optimiert für Bibliothek und Medien",
             "features": [
-                "Ausleih- und Rueckgabeprozesse",
-                "Bestandsuebersichten fuer Medien",
+                "Ausleih- und Rückgabeprozesse",
+                "Bestandsübersichten für Medien",
                 "Transparente Historie pro Medium",
             ],
         },
@@ -525,24 +590,67 @@ def appointments():
 def start_test_package():
     package_raw = _sanitize_text(request.form.get("package") or "normal", 40).lower()
     package_map = {
+        "test": "Normal",
         "normal": "Normal",
         "pro": "Pro",
-        "buecherei": "Buecherei",
+        "buecherei": "Bücherei",
     }
     selected_package = package_map.get(package_raw)
     if not selected_package:
-        flash("Ungueltiges Paket ausgewaehlt.", "error")
+        flash("Ungültiges Paket ausgewählt.", "error")
         return redirect(url_for("appointments"))
 
     school_name = _sanitize_text(session.get("display_name") or session.get("username") or "", 200)
     activated, message = _activate_test_license_for_user(session.get("username") or "", school_name, selected_package)
 
     if activated:
-        flash(f"Testversion fuer Paket {selected_package} gestartet. Key: {message}", "success")
+        flash(f"Testversion für Paket {selected_package} gestartet. Key: {message}", "success")
     else:
         flash(message, "error")
 
     return redirect(url_for("appointments"))
+
+
+@app.route('/appointments/book-option', methods=['POST'])
+@login_required
+def book_option_package():
+    package_raw = _sanitize_text(request.form.get("package") or "", 40).lower()
+    package_map = {
+        "normal": "Normal",
+        "pro": "Pro",
+        "buecherei": "Bücherei",
+    }
+    selected_package = package_map.get(package_raw)
+    if not selected_package:
+        flash("Ungültige Buchungsoption ausgewählt.", "error")
+        return redirect(url_for("appointments"))
+
+    message = (
+        f"Ich möchte das Paket {selected_package} buchen. "
+        "Bitte kontaktieren Sie mich für die nächsten Schritte."
+    )
+
+    client = None
+    try:
+        client, col = _get_collection("chat_messages")
+        col.insert_one(
+            {
+                "username": session.get("username"),
+                "sender": session.get("display_name") or session.get("username"),
+                "sender_role": "user",
+                "message": message,
+                "created_at": _utc_now_iso(),
+            }
+        )
+    except PyMongoError:
+        flash("Buchungsanfrage konnte nicht gesendet werden.", "error")
+        return redirect(url_for("appointments"))
+    finally:
+        if client:
+            client.close()
+
+    flash(f"Buchungsanfrage für Paket {selected_package} wurde an den Admin gesendet.", "success")
+    return redirect(url_for("user_chat"))
 
 
 @app.route('/admin/dashboard')
@@ -604,7 +712,7 @@ def admin_block_day():
             try:
                 date.fromisoformat(block_date)
             except ValueError:
-                flash("Bitte ein gueltiges Datum zum Sperren waehlen.", "error")
+                flash("Bitte ein gültiges Datum zum Sperren wählen.", "error")
                 return redirect(url_for("admin_dashboard"))
 
             if col.find_one({"date": block_date}):
@@ -627,7 +735,7 @@ def admin_block_day():
                 return redirect(url_for("admin_dashboard"))
             flash("Sperrtag entfernt.", "success")
         else:
-            flash("Ungueltige Aktion fuer Kalendersperre.", "error")
+            flash("Ungültige Aktion für Kalendersperre.", "error")
             return redirect(url_for("admin_dashboard"))
     except PyMongoError:
         flash("Kalendersperre konnte nicht gespeichert werden.", "error")
@@ -645,7 +753,7 @@ def update_appointment(appointment_id):
     response_text = _sanitize_text(request.form.get("response") or "", 5000)
     
     if action not in ["confirm", "reject"]:
-        flash("Ungueltige Aktion.", "error")
+        flash("Ungültige Aktion.", "error")
         return redirect(url_for("admin_dashboard"))
     
     query = _appointment_query_from_id(appointment_id)
@@ -695,7 +803,7 @@ def admin_blog():
             excerpt = _sanitize_text(request.form.get("excerpt") or "", 500)
             
             if not title or not content:
-                flash("Bitte Titel und inhalt ausfuellen.", "error")
+                flash("Bitte Titel und inhalt ausfüllen.", "error")
                 return redirect(url_for("admin_blog"))
             client = None
             try:
@@ -725,14 +833,14 @@ def admin_blog():
             post_id = (request.form.get("post_id") or "").strip()
             query = _post_query_from_id(post_id)
             if not query:
-                flash("Ungueltige Beitrag-ID.", "error")
+                flash("Ungültige Beitrag-ID.", "error")
                 return redirect(url_for("admin_blog"))
             client = None
             try:
                 client, col = _get_collection("posts")
                 result = col.delete_one(query)
             except PyMongoError:
-                flash("Beitrag konnte nicht geloescht werden.", "error")
+                flash("Beitrag konnte nicht gelöscht werden.", "error")
                 return redirect(url_for("admin_blog"))
             finally:
                 if client:
@@ -742,7 +850,7 @@ def admin_blog():
                 flash("Beitrag nicht gefunden.", "error")
                 return redirect(url_for("admin_blog"))
 
-            flash("Beitrag geloescht.", "success")
+            flash("Beitrag gelöscht.", "success")
             return redirect(url_for("admin_blog"))
 
     posts = []
@@ -783,7 +891,7 @@ def blog():
 def blog_post(post_id):
     query = _post_query_from_id(post_id)
     if not query:
-        flash("Ungueltige Beitrag-ID.", "error")
+        flash("Ungültige Beitrag-ID.", "error")
         return redirect(url_for("blog"))
     client = None
     post = None
@@ -892,7 +1000,7 @@ def user_tickets():
         description = _sanitize_text(request.form.get("description") or "", 5000)
         priority = _sanitize_text(request.form.get("priority") or "Normal", 30)
         if not title or not description:
-            flash("Bitte Titel und Beschreibung ausfuellen.", "error")
+            flash("Bitte Titel und Beschreibung ausfüllen.", "error")
             return redirect(url_for("user_tickets"))
         try:
             client, col = _get_collection("support_tickets")
@@ -951,16 +1059,133 @@ def admin_users():
             flash("Admin-Rechte entfernt.", "success")
         elif action == "delete_user":
             if username == session.get("username"):
-                flash("Sie koennen Ihr eigenes Konto nicht loeschen.", "error")
+                flash("Sie können Ihr eigenes Konto nicht löschen.", "error")
                 return redirect(url_for("admin_users"))
             user_store.delete_user(username)
-            flash("Benutzer geloescht.", "success")
+            flash("Benutzer gelöscht.", "success")
         else:
-            flash("Ungueltige Aktion.", "error")
+            flash("Ungültige Aktion.", "error")
         return redirect(url_for("admin_users"))
 
     users = _list_users_for_admin()
     return render_template("admin_users.html", users=users)
+
+
+@app.route('/admin/team', methods=['GET', 'POST'])
+@admin_required
+def admin_team():
+    if request.method == 'POST':
+        action = _sanitize_text(request.form.get("action") or "upsert", 20)
+        member_id = _sanitize_text(request.form.get("member_id") or "", 64)
+
+        client = None
+        try:
+            client, col = _get_collection("team_members")
+
+            if action == "delete":
+                try:
+                    result = col.delete_one({"_id": ObjectId(member_id)})
+                except Exception:
+                    flash("Ungültige Team-ID.", "error")
+                    return redirect(url_for("admin_team"))
+                if result.deleted_count:
+                    flash("Teammitglied entfernt.", "success")
+                else:
+                    flash("Teammitglied nicht gefunden.", "error")
+                return redirect(url_for("admin_team"))
+
+            name = _sanitize_text(request.form.get("name") or "", 120)
+            role = _sanitize_text(request.form.get("role") or "", 120)
+            work = _sanitize_text(request.form.get("work") or "", 220)
+            bio = _sanitize_text(request.form.get("bio") or "", 500)
+            sort_raw = _sanitize_text(request.form.get("sort_order") or "999", 10)
+
+            try:
+                sort_order = int(sort_raw)
+            except ValueError:
+                sort_order = 999
+            sort_order = max(1, min(sort_order, 999))
+
+            if not name or not role or not work:
+                flash("Bitte Name, Rolle und Arbeit ausfüllen.", "error")
+                return redirect(url_for("admin_team"))
+
+            current = None
+            if member_id:
+                try:
+                    current = col.find_one({"_id": ObjectId(member_id)})
+                except Exception:
+                    flash("Ungültige Team-ID.", "error")
+                    return redirect(url_for("admin_team"))
+
+            photo_identifier = member_id or name[:20]
+            photo_path = _save_team_photo(request.files.get("photo"), photo_identifier)
+
+            if request.files.get("photo") and request.files.get("photo").filename and not photo_path:
+                flash("Foto muss JPG, JPEG, PNG oder WEBP sein.", "error")
+                return redirect(url_for("admin_team"))
+
+            if not photo_path:
+                photo_path = (current or {}).get("photo", "")
+
+            if action == "create":
+                if not photo_path:
+                    flash("Bitte ein Foto für das neue Teammitglied hochladen.", "error")
+                    return redirect(url_for("admin_team"))
+                col.insert_one(
+                    {
+                        "name": name,
+                        "role": role,
+                        "work": work,
+                        "bio": bio,
+                        "photo": photo_path,
+                        "sort_order": sort_order,
+                        "created_by": session.get("username") or "admin",
+                        "created_at": _utc_now_iso(),
+                        "updated_at": _utc_now_iso(),
+                    }
+                )
+                flash("Teammitglied hinzugefuegt.", "success")
+            elif action == "update":
+                if not member_id:
+                    flash("Team-ID fehlt.", "error")
+                    return redirect(url_for("admin_team"))
+                try:
+                    result = col.update_one(
+                        {"_id": ObjectId(member_id)},
+                        {
+                            "$set": {
+                                "name": name,
+                                "role": role,
+                                "work": work,
+                                "bio": bio,
+                                "photo": photo_path,
+                                "sort_order": sort_order,
+                                "updated_by": session.get("username") or "admin",
+                                "updated_at": _utc_now_iso(),
+                            }
+                        },
+                    )
+                except Exception:
+                    flash("Ungültige Team-ID.", "error")
+                    return redirect(url_for("admin_team"))
+                if result.matched_count == 0:
+                    flash("Teammitglied nicht gefunden.", "error")
+                    return redirect(url_for("admin_team"))
+                flash("Teammitglied aktualisiert.", "success")
+            else:
+                flash("Ungültige Aktion.", "error")
+                return redirect(url_for("admin_team"))
+        except PyMongoError:
+            flash("Teamdaten konnten nicht gespeichert werden.", "error")
+        finally:
+            if client:
+                client.close()
+
+        return redirect(url_for("admin_team"))
+
+    team_members = _get_team_members()
+    return render_template("admin_team.html", team_members=team_members)
 
 
 @app.route('/admin/chats', methods=['GET', 'POST'])
@@ -1114,9 +1339,9 @@ def admin_licenses():
 
             elif action == "delete" and license_id:
                 col.delete_one({"_id": ObjectId(license_id)})
-                flash("Lizenz geloescht.", "success")
+                flash("Lizenz gelöscht.", "success")
             else:
-                flash("Ungueltige Aktion.", "error")
+                flash("Ungültige Aktion.", "error")
         except Exception:
             flash("Lizenzverwaltung fehlgeschlagen.", "error")
         finally:
@@ -1214,9 +1439,9 @@ def admin_invoices():
 
             elif action == "delete" and invoice_id:
                 col.delete_one({"_id": ObjectId(invoice_id)})
-                flash("Rechnung geloescht.", "success")
+                flash("Rechnung gelöscht.", "success")
             else:
-                flash("Ungueltige Aktion.", "error")
+                flash("Ungültige Aktion.", "error")
         except Exception:
             flash("Rechnungsverwaltung fehlgeschlagen.", "error")
         finally:
@@ -1292,7 +1517,7 @@ def allocate_key():
     license_key = _sanitize_text(request.form.get("license_key") or "", 160)
 
     if not username or not license_key:
-        flash("Bitte Benutzer und Lizenz-Key auswaehlen.", "error")
+        flash("Bitte Benutzer und Lizenz-Key auswählen.", "error")
         return redirect(url_for('admin_license_keys'))
 
     if not _find_user(username):

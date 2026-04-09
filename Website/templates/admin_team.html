@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Admin | Team Cards{% endblock %}
+
+{% block content %}
+<section class="panel">
+    <h1>Team Cards verwalten</h1>
+    <p>Beliebig viele Teammitglieder können hinzugefügt und sortiert werden. Jedes Mitglied hat Name, Rolle, Arbeit, Kurztext und ein Foto.</p>
+</section>
+
+<section class="card add-card">
+    <h2>Neues Teammitglied hinzufügen</h2>
+    <form method="post" enctype="multipart/form-data" class="form-grid">
+        <input type="hidden" name="action" value="create">
+
+        <label>Name</label>
+        <input name="name" maxlength="120" required>
+
+        <label>Rolle</label>
+        <input name="role" maxlength="120" required>
+
+        <label>Arbeit</label>
+        <input name="work" maxlength="220" required>
+
+        <label>Kurzbeschreibung</label>
+        <textarea name="bio" rows="3" maxlength="500"></textarea>
+
+        <label>Reihenfolge (1-999)</label>
+        <input type="number" name="sort_order" min="1" max="999" value="100" required>
+
+        <label>Foto (JPG, JPEG, PNG, WEBP)</label>
+        <input type="file" name="photo" accept=".jpg,.jpeg,.png,.webp" required>
+
+        <div class="row">
+            <button type="submit" class="btn primary">Hinzufügen</button>
+        </div>
+    </form>
+</section>
+
+<section class="card-grid">
+    {% for member in team_members %}
+        <article class="card">
+            <h2>{{ member.name }}</h2>
+            <form method="post" enctype="multipart/form-data" class="form-grid">
+                <input type="hidden" name="action" value="update">
+                <input type="hidden" name="member_id" value="{{ member.id }}">
+
+                <label>Name</label>
+                <input name="name" value="{{ member.name }}" maxlength="120" required>
+
+                <label>Rolle</label>
+                <input name="role" value="{{ member.role }}" maxlength="120" required>
+
+                <label>Arbeit</label>
+                <input name="work" value="{{ member.work }}" maxlength="220" required>
+
+                <label>Kurzbeschreibung</label>
+                <textarea name="bio" rows="3" maxlength="500">{{ member.bio }}</textarea>
+
+                <label>Reihenfolge (1-999)</label>
+                <input type="number" name="sort_order" min="1" max="999" value="{{ member.sort_order or 100 }}" required>
+
+                <label>Foto (JPG, JPEG, PNG, WEBP)</label>
+                <input type="file" name="photo" accept=".jpg,.jpeg,.png,.webp">
+
+                {% if member.photo %}
+                    <img class="preview" src="{{ url_for('static', filename=member.photo) }}" alt="Teamfoto {{ member.name }}">
+                {% endif %}
+
+                <div class="row">
+                    <button type="submit" class="btn primary">Speichern</button>
+                </div>
+            </form>
+
+            <form method="post" class="delete-form" onsubmit="return confirm('Mitglied wirklich entfernen?');">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="member_id" value="{{ member.id }}">
+                <button type="submit" class="btn danger">Entfernen</button>
+            </form>
+        </article>
+    {% else %}
+        <article class="card">
+            <h2>Noch keine Teammitglieder</h2>
+            <p>Über das Formular oben kann jetzt das erste Teammitglied erstellt werden.</p>
+        </article>
+    {% endfor %}
+</section>
+
+<style>
+.panel {
+    margin-bottom: 1rem;
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    gap: 1rem;
+}
+
+.card {
+    background: #fff;
+    border: 1px solid #d8e1e8;
+    border-radius: 14px;
+    padding: 1rem;
+    box-shadow: 0 10px 24px rgba(20, 40, 55, 0.05);
+}
+
+.add-card {
+    margin-bottom: 1rem;
+}
+
+.card h2 {
+    margin: 0 0 0.7rem;
+    color: #113d59;
+    font-size: 1.2rem;
+}
+
+.form-grid {
+    display: grid;
+    gap: 0.45rem;
+}
+
+label {
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #4b677c;
+}
+
+input,
+textarea {
+    border: 1px solid #bdd0dd;
+    border-radius: 9px;
+    padding: 0.5rem 0.6rem;
+    font: inherit;
+    width: 100%;
+}
+
+textarea {
+    resize: vertical;
+}
+
+.preview {
+    margin-top: 0.4rem;
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    border: 1px solid #d0d9de;
+    border-radius: 10px;
+}
+
+.row {
+    margin-top: 0.4rem;
+    display: flex;
+    gap: 0.45rem;
+}
+
+.btn {
+    border: none;
+    border-radius: 999px;
+    padding: 0.5rem 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn.primary {
+    color: #fff;
+    background: linear-gradient(120deg, #0b5b89 0%, #0b4262 100%);
+}
+
+.btn.danger {
+    color: #842f2f;
+    background: #fff4f4;
+    border: 1px solid #e7b9b9;
+}
+
+.delete-form {
+    margin-top: 0.8rem;
+}
+</style>
+{% endblock %}

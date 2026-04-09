@@ -42,6 +42,28 @@
         box-shadow: 0 14px 32px rgba(20, 39, 55, 0.06);
     }
 
+    .quick-admin-link {
+        margin-bottom: 1rem;
+        border: 1px solid #d8e3ec;
+        border-radius: 12px;
+        background: #f6fbff;
+        padding: 0.85rem 0.95rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.8rem;
+    }
+
+    .quick-admin-link a {
+        border-radius: 999px;
+        padding: 0.42rem 0.8rem;
+        border: 1px solid #b8ccda;
+        background: #ffffff;
+        color: #0b4d73;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
     .appointments-section h2 {
         font-size: 1.3rem;
         color: #0f354d;
@@ -248,6 +270,10 @@
 </section>
 
 <section class="appointments-section">
+    <div class="quick-admin-link">
+        <p><strong>Team verwalten:</strong> Bilder, Rolle und Arbeit der zwei Team-Cards zentral pflegen.</p>
+        <a href="{{ url_for('admin_team') }}">Team Cards öffnen</a>
+    </div>
     <h2>Buchungsanfragen verwalten</h2>
     <div class="block-days-section">
         <h3>Kalender-Tage sperren</h3>
