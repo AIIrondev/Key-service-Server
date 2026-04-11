@@ -19,6 +19,12 @@
 		box-shadow: 0 24px 46px rgba(28, 45, 41, 0.08);
 	}
 
+	.hero-right {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
 	.hero::after {
 		content: "";
 		position: absolute;
@@ -93,8 +99,66 @@
 		border-color: #bcc9c0;
 	}
 
+	.hero-testimonial {
+		background: linear-gradient(135deg, #ffffff 0%, #f9faf8 100%);
+		border: 1px solid #e0e6df;
+		border-radius: 14px;
+		padding: 1.4rem;
+		box-shadow: 0 8px 16px rgba(28, 45, 41, 0.06);
+		margin-bottom: 1rem;
+	}
+
+	.hero-testimonial .stars {
+		display: flex;
+		gap: 0.25rem;
+		font-size: 1.05rem;
+		margin-bottom: 0.8rem;
+	}
+
+	.hero-testimonial .stars .star {
+		color: #f59e0b;
+	}
+
+	.hero-testimonial .quote {
+		font-size: clamp(0.95rem, 1.05vw, 1.08rem);
+		color: #4f666c;
+		line-height: 1.6;
+		font-style: italic;
+		margin-bottom: 0.8rem;
+	}
+
+	.hero-testimonial .author {
+		display: flex;
+		align-items: center;
+		gap: 0.7rem;
+	}
+
+	.hero-testimonial .avatar {
+		width: 38px;
+		height: 38px;
+		border-radius: 50%;
+		background: linear-gradient(135deg, #296f78 0%, #1a5057 100%);
+		color: #ffffff;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-weight: 700;
+		font-size: 0.9rem;
+	}
+
+	.hero-testimonial .info h4 {
+		margin: 0;
+		font-size: 0.95rem;
+		color: #21363b;
+		font-weight: 700;
+	}
+
+	.hero-testimonial .info span {
+		font-size: 0.82rem;
+		color: #7c8f8c;
+	}
+
 	.hero-card {
-		align-self: end;
 		background: #1f4e55;
 		color: #e4f2f1;
 		border-radius: 16px;
@@ -270,6 +334,99 @@
 	}
 
 
+	.testimonials {
+		margin-top: 2rem;
+		padding: 1.9rem;
+		border-radius: 18px;
+		border: 1px solid #d0d7cf;
+		background: linear-gradient(135deg, #fafaf8 0%, #f5f7f3 100%);
+		box-shadow: 0 14px 30px rgba(28, 45, 41, 0.05);
+		animation: rise 680ms ease both;
+		animation-delay: 50ms;
+	}
+
+	.testimonials h2 {
+		font-size: clamp(1.45rem, 3vw, 2.3rem);
+		margin-bottom: 1.5rem;
+		color: #21393e;
+		text-align: center;
+	}
+
+	.testimonials-grid {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 1.2rem;
+	}
+
+	.testimonial-card {
+		padding: 1.4rem;
+		border-radius: 14px;
+		border: 1px solid #e0e6df;
+		background: #ffffff;
+		box-shadow: 0 4px 12px rgba(28, 45, 41, 0.04);
+		transition: transform 0.3s ease, box-shadow 0.3s ease;
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	.testimonial-card:hover {
+		transform: translateY(-4px);
+		box-shadow: 0 8px 20px rgba(28, 45, 41, 0.08);
+	}
+
+	.testimonial-stars {
+		display: flex;
+		gap: 0.25rem;
+		font-size: 1.1rem;
+	}
+
+	.testimonial-stars .star {
+		color: #f59e0b;
+	}
+
+	.testimonial-text {
+		flex: 1;
+		font-size: clamp(0.95rem, 1vw, 1.02rem);
+		color: #4f666c;
+		line-height: 1.6;
+		font-style: italic;
+	}
+
+	.testimonial-author {
+		display: flex;
+		align-items: center;
+		gap: 0.8rem;
+		margin-top: 0.5rem;
+		border-top: 1px solid #e8ebe7;
+		padding-top: 0.8rem;
+	}
+
+	.testimonial-avatar {
+		width: 42px;
+		height: 42px;
+		border-radius: 50%;
+		background: linear-gradient(135deg, #296f78 0%, #1a5057 100%);
+		color: #ffffff;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-weight: 700;
+		font-size: 1rem;
+	}
+
+	.testimonial-info h4 {
+		margin: 0;
+		font-size: 0.98rem;
+		color: #21363b;
+		font-weight: 700;
+	}
+
+	.testimonial-info span {
+		font-size: 0.85rem;
+		color: #7c8f8c;
+	}
+
 	@keyframes rise {
 		from {
 			opacity: 0;
@@ -291,6 +448,10 @@
 			grid-template-columns: 1fr 1fr;
 		}
 
+		.testimonials-grid {
+			grid-template-columns: 1fr 1fr;
+		}
+
 		.process {
 			grid-template-columns: repeat(3, minmax(0, 1fr));
 		}
@@ -298,6 +459,10 @@
 
 	@media (max-width: 700px) {
 		.section-grid {
+			grid-template-columns: 1fr;
+		}
+
+		.testimonials-grid {
 			grid-template-columns: 1fr;
 		}
 
@@ -339,15 +504,91 @@
 			<a class="btn btn-secondary" href="{{ url_for('kontakt') }}">Direkt kontaktieren</a>
 		</div>
 	</div>
-	<aside class="hero-card" aria-label="Kurzfakten für Schulen">
-		<h3>Was Schulen besonders schätzen</h3>
-		<p>Klare Abläufe, feste Ansprechpartner und verständliche Oberflächen für den täglichen Einsatz.</p>
-		<div class="stats">
-			<div><strong>5 Min</strong><span>Einstieg pro Aufgabe</span></div>
-			<div><strong>1 Klick</strong><span>Status und Historie</span></div>
-			<div><strong>DSGVO</strong><span>Konform dokumentiert</span></div>
+	<div class="hero-right">
+		<div class="hero-testimonial">
+			<div class="stars">
+				<span class="star">★</span>
+				<span class="star">★</span>
+				<span class="star">★</span>
+				<span class="star">★</span>
+				<span class="star">★</span>
+			</div>
+			<p class="quote">"Mit Invario haben wir unsere Lehrmittelausleihe um 70% beschleunigt. Die Oberfläche ist intuitiv und unsere Bibliothekare sparen täglich Zeit."</p>
+			<div class="author">
+				<div class="avatar">SR</div>
+				<div class="info">
+					<h4>Sabine Roth</h4>
+					<span>Schulleitung, Sekundarschule Zentral</span>
+				</div>
+			</div>
 		</div>
-	</aside>
+		<aside class="hero-card" aria-label="Kurzfakten für Schulen">
+			<h3>Was Schulen besonders schätzen</h3>
+			<p>Klare Abläufe, feste Ansprechpartner und verständliche Oberflächen für den täglichen Einsatz.</p>
+			<div class="stats">
+				<div><strong>5 Min</strong><span>Einstieg pro Aufgabe</span></div>
+				<div><strong>1 Klick</strong><span>Status und Historie</span></div>
+				<div><strong>DSGVO</strong><span>Konform dokumentiert</span></div>
+			</div>
+		</aside>
+	</div>
+</section>
+
+<section class="testimonials">
+	<h2>Das sagen unsere Schulen</h2>
+	<div class="testimonials-grid">
+		<div class="testimonial-card">
+			<div class="testimonial-stars">
+				<span class="star">★</span>
+				<span class="star">★</span>
+				<span class="star">★</span>
+				<span class="star">★</span>
+				<span class="star">★</span>
+			</div>
+			<p class="testimonial-text">"Mit Invario haben wir unsere Lehrmittelausleihe um 70% beschleunigt. Die Schüler wissen sofort, welche Materialien verfügbar sind, ohne die Bibliothek zu stören."</p>
+			<div class="testimonial-author">
+				<div class="testimonial-avatar">SR</div>
+				<div class="testimonial-info">
+					<h4>Sabine Roth</h4>
+					<span>Schulleitung, Sekundarschule Zentral</span>
+				</div>
+			</div>
+		</div>
+		<div class="testimonial-card">
+			<div class="testimonial-stars">
+				<span class="star">★</span>
+				<span class="star">★</span>
+				<span class="star">★</span>
+				<span class="star">★</span>
+				<span class="star">★</span>
+			</div>
+			<p class="testimonial-text">"Die Sicherheitsfeatures und die klare Dokumentation geben uns ein beruhigendes Gefühl. Datenschutz ist für uns als Schule essentiell – hier sind wir bestens aufgehoben."</p>
+			<div class="testimonial-author">
+				<div class="testimonial-avatar">MT</div>
+				<div class="testimonial-info">
+					<h4>Martin Thalter</h4>
+					<span>IT-Koordinator, Gymnasium Nord</span>
+				</div>
+			</div>
+		</div>
+		<div class="testimonial-card">
+			<div class="testimonial-stars">
+				<span class="star">★</span>
+				<span class="star">★</span>
+				<span class="star">★</span>
+				<span class="star">★</span>
+				<span class="star">★</span>
+			</div>
+			<p class="testimonial-text">"Die Schnittstelle zwischen Inventarbuchhaltung und Lehrmittelausleihe ist brillant gelöst. Wir sparen monatlich Stunden an manueller Verwaltungsarbeit."</p>
+			<div class="testimonial-author">
+				<div class="testimonial-avatar">KM</div>
+				<div class="testimonial-info">
+					<h4>Karina Müller</h4>
+					<span>Verwaltungsleiterin, Primarschule West</span>
+				</div>
+			</div>
+		</div>
+	</div>
 </section>
 
 <section class="section" id="nutzen" style="animation-delay: 100ms;">
