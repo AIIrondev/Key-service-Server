@@ -427,6 +427,62 @@
 		color: #7c8f8c;
 	}
 
+	.primary-focus {
+		margin-top: 2rem;
+		border-radius: 20px;
+		padding: 2rem;
+		position: relative;
+		overflow: hidden;
+		border: 1px solid #bfcfc9;
+		background:
+			linear-gradient(114deg, rgba(17, 57, 63, 0.9) 0%, rgba(30, 92, 99, 0.78) 42%, rgba(244, 248, 242, 0.92) 100%),
+			url("{{ url_for('static', filename='images/Gemini_Generated_Image_2cd74s2cd74s2cd7.png') }}") 76% center/cover no-repeat;
+		color: #f2f8f7;
+		box-shadow: 0 16px 34px rgba(22, 44, 40, 0.12);
+	}
+
+	.primary-focus::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background: radial-gradient(circle at 15% 20%, rgba(255, 228, 151, 0.28) 0%, transparent 38%);
+		pointer-events: none;
+	}
+
+	.primary-focus-content {
+		position: relative;
+		z-index: 1;
+		max-width: 720px;
+	}
+
+	.primary-focus h2 {
+		color: #ffffff;
+		font-size: clamp(1.6rem, 3vw, 2.35rem);
+		margin-bottom: 0.55rem;
+	}
+
+	.primary-focus p {
+		color: #e4f0ef;
+		font-size: clamp(0.96rem, 1.1vw, 1.08rem);
+		max-width: 62ch;
+	}
+
+	.primary-points {
+		margin-top: 1rem;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.6rem;
+	}
+
+	.primary-points span {
+		padding: 0.38rem 0.78rem;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.14);
+		border: 1px solid rgba(255, 255, 255, 0.3);
+		font-size: 0.87rem;
+		color: #ffffff;
+	}
+
 	@keyframes rise {
 		from {
 			opacity: 0;
@@ -455,6 +511,10 @@
 		.process {
 			grid-template-columns: repeat(3, minmax(0, 1fr));
 		}
+
+		.primary-focus {
+			padding: 1.6rem;
+		}
 	}
 
 	@media (max-width: 700px) {
@@ -479,6 +539,10 @@
 			flex-direction: column;
 			align-items: flex-start;
 			padding: 1.5rem;
+		}
+
+		.primary-focus {
+			background-position: right center;
 		}
 
 	}
@@ -591,13 +655,31 @@
 	</div>
 </section>
 
+<section class="primary-focus" id="grundschule" aria-label="Kategorie für Grundschulen">
+	<div class="primary-focus-content">
+		<span class="eyebrow">Kategorie: Grundschule</span>
+		<h2>Mehr Übersicht für Klassen 1 bis 4</h2>
+		<p>Diese Ansicht ist auf den Schulalltag in Grundschulen zugeschnitten: schnelle Materialausgabe, klar erkennbare Verfügbarkeiten und einfache Workflows für Lehrkräfte ohne lange Einarbeitung.</p>
+		<div class="primary-points" aria-label="Vorteile für Grundschulen">
+			<span>Schnelle Ausleihe pro Klasse</span>
+			<span>Farbcodes für Materialtypen</span>
+			<span>Weniger Verwaltungsaufwand</span>
+			<span>Kinderleichte Bedienung</span>
+		</div>
+		<div class="cta-row">
+			<a class="btn btn-primary" href="{{ url_for('inventarsystem') }}">Grundschul-Modul ansehen</a>
+			<a class="btn btn-secondary" href="{{ url_for('kontakt') }}">Beratung für Grundschule</a>
+		</div>
+	</div>
+</section>
+
 <section class="section" id="nutzen" style="animation-delay: 100ms;">
 	<h2>Vorteile für Verwaltung und Bibliothek</h2>
 	<p>Alle Daten zu Lehrmitteln, Geraeten und Ausleihen sind gebündelt, sodass Rückfragen schnell geklärt werden können.</p>
 	<div class="section-grid">
 		<article class="card">
-			<h3>Lehrmittel pro Klasse steuern</h3>
-			<p>Bücher und Unterrichtsmaterialien lassen sich klassenweise ausgeben und zum Schuljahresende sauber rückführen.</p>
+			<h3>Lehrmittel für einfache Unterichtsplanung</h3>
+			<p>Bücher und Unterrichtsmaterialien lassen sich schon im vorhinein ganz bequem von zuhause Planen. Dadurch vermeiden sich doppel benötigungen durch Lehrkräfte und somit Spannungen im Kollegium.</p>
 		</article>
 		<article class="card">
 			<h3>Scanner-gestuetzte Ausleihe</h3>
@@ -605,7 +687,7 @@
 		</article>
 		<article class="card">
 			<h3>IT- und Medienbestand kombiniert</h3>
-			<p>Tablets, Laptops, Webcams und Print-Medien werden gemeinsam verwaltet statt in voneinander getrennten Listen.</p>
+			<p>Tablets, Laptops, Webcams, Print-Medien und Lehrmittel werden gemeinsam verwaltet statt in voneinander getrennten Listen.</p>
 		</article>
 	</div>
 </section>
