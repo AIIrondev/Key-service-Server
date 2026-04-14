@@ -2,8 +2,14 @@ services:
   mongodb:
     image: mongo:7
     restart: unless-stopped
-    mem_limit: 512m
-    mem_reservation: 256m
+    command:
+      - mongod
+      - --wiredTigerCacheSizeGB
+      - "0.25"
+      - --setParameter
+      - diagnosticDataCollectionEnabled=false
+    mem_limit: 384m
+    mem_reservation: 192m
     environment:
       MONGO_INITDB_DATABASE: Invario_Website
     volumes:
@@ -25,7 +31,7 @@ services:
     environment:
       MONGO_URI: mongodb://mongodb:27017
       MONGO_DB_NAME: Invario_Website
-      MONGO_MAX_POOL_SIZE: ${MONGO_MAX_POOL_SIZE:-24}
+      MONGO_MAX_POOL_SIZE: ${MONGO_MAX_POOL_SIZE:-12}
       MONGO_MIN_POOL_SIZE: ${MONGO_MIN_POOL_SIZE:-0}
       MONGO_MAX_IDLE_MS: ${MONGO_MAX_IDLE_MS:-60000}
       MONGO_CONNECT_TIMEOUT_MS: ${MONGO_CONNECT_TIMEOUT_MS:-1500}
@@ -48,8 +54,8 @@ services:
       - /etc/nginx/certs:/etc/nginx/certs
     ports:
       - "4999:4999"
-    mem_limit: 384m
-    mem_reservation: 192m
+    mem_limit: 256m
+    mem_reservation: 128m
 
 volumes:
   mongo_data:

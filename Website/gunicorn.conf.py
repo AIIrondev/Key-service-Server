@@ -1,11 +1,11 @@
 bind = "0.0.0.0:4999"
 worker_class = "gthread"
 workers = 1
-threads = 8
+threads = 4
 timeout = 45
 keepalive = 2
-max_requests = 400
-max_requests_jitter = 60
+max_requests = 300
+max_requests_jitter = 40
 preload_app = False
 accesslog = "-"
 errorlog = "-"

@@ -80,7 +80,7 @@ def _env_int(name: str, default: int) -> int:
         return default
 
 
-MONGO_MAX_POOL_SIZE = max(_env_int("MONGO_MAX_POOL_SIZE", 24), 1)
+MONGO_MAX_POOL_SIZE = max(_env_int("MONGO_MAX_POOL_SIZE", 12), 1)
 MONGO_MIN_POOL_SIZE = max(_env_int("MONGO_MIN_POOL_SIZE", 0), 0)
 MONGO_MAX_IDLE_MS = max(_env_int("MONGO_MAX_IDLE_MS", 60000), 1000)
 MONGO_CONNECT_TIMEOUT_MS = max(_env_int("MONGO_CONNECT_TIMEOUT_MS", 1500), 500)
