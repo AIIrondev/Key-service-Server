@@ -2,6 +2,8 @@ services:
   mongodb:
     image: mongo:7
     restart: unless-stopped
+    mem_limit: 512m
+    mem_reservation: 256m
     environment:
       MONGO_INITDB_DATABASE: Invario_Website
     volumes:
@@ -23,6 +25,12 @@ services:
     environment:
       MONGO_URI: mongodb://mongodb:27017
       MONGO_DB_NAME: Invario_Website
+      MONGO_MAX_POOL_SIZE: ${MONGO_MAX_POOL_SIZE:-24}
+      MONGO_MIN_POOL_SIZE: ${MONGO_MIN_POOL_SIZE:-0}
+      MONGO_MAX_IDLE_MS: ${MONGO_MAX_IDLE_MS:-60000}
+      MONGO_CONNECT_TIMEOUT_MS: ${MONGO_CONNECT_TIMEOUT_MS:-1500}
+      MONGO_SOCKET_TIMEOUT_MS: ${MONGO_SOCKET_TIMEOUT_MS:-30000}
+      MONGO_WAIT_QUEUE_TIMEOUT_MS: ${MONGO_WAIT_QUEUE_TIMEOUT_MS:-2000}
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-0}
       JWT_SECRET_KEY: change-this-in-production
       INSTANCE_PROVISION_SCRIPT: /app/provision_instance.sh
@@ -40,6 +48,8 @@ services:
       - /etc/nginx/certs:/etc/nginx/certs
     ports:
       - "4999:4999"
+    mem_limit: 384m
+    mem_reservation: 192m
 
 volumes:
   mongo_data:

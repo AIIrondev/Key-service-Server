@@ -1,14 +1,120 @@
 {% extends "base.html" %}
 
-{% block title %}Admin | System-Tools{% endblock %}
+{% block title %}Admin | Server-Verwaltung{% endblock %}
 
 {% block content %}
 <section class="head">
-    <h1>System-Tools</h1>
-    <p>Nützliche Admin-Funktionen für Betrieb, Backup, Update, Restart und Log-Download.</p>
+    <h1>Server-Verwaltung</h1>
+    <p>Zentrale Betriebsübersicht und Aktionen rund um Website, Instanzen, Ressourcen und Wartung.</p>
 </section>
 
-<section class="core-tools">
+<section class="kpi-grid">
+    <article class="kpi-card">
+        <p class="kpi-label">Instanzen (Laufend)</p>
+        <p class="kpi-value" id="kpiInstancesRunning">{{ (system_snapshot.runtime.instances | selectattr('status', 'equalto', 'Läuft') | list | length) }}</p>
+    </article>
+    <article class="kpi-card">
+        <p class="kpi-label">Offene Tickets</p>
+        <p class="kpi-value" id="kpiTicketsOpen">{{ system_snapshot.ops.tickets_open }}</p>
+    </article>
+    <article class="kpi-card">
+        <p class="kpi-label">Angefragte Termine</p>
+        <p class="kpi-value" id="kpiAppointmentsPending">{{ system_snapshot.ops.appointments_pending }}</p>
+    </article>
+    <article class="kpi-card">
+        <p class="kpi-label">Nutzer gesamt</p>
+        <p class="kpi-value" id="kpiUsersTotal">{{ system_snapshot.ops.users_total }}</p>
+    </article>
+    <article class="kpi-card">
+        <p class="kpi-label">Host RAM</p>
+        <p class="kpi-value" id="kpiHostRam">{{ system_snapshot.runtime.host.used_mem_mib }} MiB</p>
+    </article>
+    <article class="kpi-card">
+        <p class="kpi-label">Docker RAM (Invario)</p>
+        <p class="kpi-value" id="kpiDockerManaged">{{ system_snapshot.runtime.docker.managed_used_mem_mib }} MiB</p>
+    </article>
+</section>
+
+<section class="overview-grid">
+    <article class="panel">
+        <h2>Systemstatus</h2>
+        <dl class="kv-grid">
+            <dt>Uptime</dt><dd id="sysUptime">{{ system_snapshot.system.uptime_seconds }} s</dd>
+            <dt>Load 1/5/15</dt><dd id="sysLoad">{{ system_snapshot.system.load_1 }} / {{ system_snapshot.system.load_5 }} / {{ system_snapshot.system.load_15 }}</dd>
+            <dt>Letztes Update</dt><dd id="sysUpdatedAt">{{ system_snapshot.generated_at }}</dd>
+        </dl>
+    </article>
+
+    <article class="panel">
+        <h2>Speicher (Root)</h2>
+        <dl class="kv-grid">
+            <dt>Belegt</dt><dd id="rootUsed">{{ system_snapshot.root_disk.used_gib }} GiB</dd>
+            <dt>Frei</dt><dd id="rootFree">{{ system_snapshot.root_disk.free_gib }} GiB</dd>
+            <dt>Auslastung</dt><dd id="rootPct">{{ system_snapshot.root_disk.used_pct }} %</dd>
+        </dl>
+    </article>
+
+    <article class="panel">
+        <h2>Instanz-Speicher</h2>
+        <dl class="kv-grid">
+            <dt>Pfad</dt><dd>{{ system_snapshot.instance_disk.path }}</dd>
+            <dt>Belegt</dt><dd id="instUsed">{{ system_snapshot.instance_disk.used_gib }} GiB</dd>
+            <dt>Frei</dt><dd id="instFree">{{ system_snapshot.instance_disk.free_gib }} GiB</dd>
+            <dt>Auslastung</dt><dd id="instPct">{{ system_snapshot.instance_disk.used_pct }} %</dd>
+        </dl>
+    </article>
+</section>
+
+<section class="usage-grid">
+    <article class="panel usage-panel">
+        <h2>Usage-Diagramme</h2>
+        <div class="usage-row">
+            <div class="usage-top">
+                <span>Host RAM</span>
+                <strong id="usageHostRamLabel">0.0 %</strong>
+            </div>
+            <div class="usage-bar"><span id="usageHostRamFill"></span></div>
+        </div>
+        <div class="usage-row">
+            <div class="usage-top">
+                <span>Host CPU</span>
+                <strong id="usageHostCpuLabel">0.0 %</strong>
+            </div>
+            <div class="usage-bar"><span id="usageHostCpuFill"></span></div>
+        </div>
+        <div class="usage-row">
+            <div class="usage-top">
+                <span>Root-Disk</span>
+                <strong id="usageRootDiskLabel">0.0 %</strong>
+            </div>
+            <div class="usage-bar"><span id="usageRootDiskFill"></span></div>
+        </div>
+        <div class="usage-row">
+            <div class="usage-top">
+                <span>Instanz-Disk</span>
+                <strong id="usageInstDiskLabel">0.0 %</strong>
+            </div>
+            <div class="usage-bar"><span id="usageInstDiskFill"></span></div>
+        </div>
+    </article>
+</section>
+
+<section class="charts-grid">
+    <article class="panel chart-panel">
+        <h2>Verlauf: RAM</h2>
+        <canvas id="ramHistoryChart" height="140"></canvas>
+    </article>
+    <article class="panel chart-panel">
+        <h2>Verlauf: CPU / Load</h2>
+        <canvas id="cpuLoadHistoryChart" height="140"></canvas>
+    </article>
+    <article class="panel chart-panel">
+        <h2>Verlauf: Docker-Container</h2>
+        <canvas id="containerHistoryChart" height="140"></canvas>
+    </article>
+</section>
+
+<section class="core-tools panel">
     <h2>Core-Services</h2>
     <div class="actions">
         <form method="post">
@@ -17,9 +123,18 @@
         </form>
         <a class="action-link" href="{{ url_for('admin_download_core_logs') }}">Core-Logs herunterladen</a>
     </div>
+
+    <h2 style="margin-top: 1rem;">Backup-Export / Einspielen</h2>
+    <div class="actions">
+        <a class="action-link" href="{{ url_for('download_backup') }}">Lizenz-Backup exportieren</a>
+        <form method="post" action="{{ url_for('upload_backup') }}" enctype="multipart/form-data" class="inline-restore-form">
+            <input type="file" name="file" accept=".json,application/json" required>
+            <button type="submit">Lizenz-Backup einspielen</button>
+        </form>
+    </div>
 </section>
 
-<section class="instance-tools">
+<section class="instance-tools panel">
     <h2>Instanz-Operationen</h2>
     {% if instances %}
     <table>
@@ -28,15 +143,17 @@
                 <th>Schule</th>
                 <th>Subdomain</th>
                 <th>Status</th>
+                <th>Live</th>
                 <th>Aktionen</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="instanceMgmtBody">
             {% for item in instances %}
-            <tr>
+            <tr data-subdomain="{{ item.subdomain }}">
                 <td>{{ item.school_name }}</td>
                 <td>{{ item.subdomain }}</td>
                 <td>{{ item.status }} / {{ item.nginx_status }}</td>
+                <td class="live-cell">RAM: - | CPU: -</td>
                 <td>
                     <div class="actions row-actions">
                         <form method="post">
@@ -44,6 +161,7 @@
                             <input type="hidden" name="subdomain" value="{{ item.subdomain }}">
                             <button type="submit">Backup</button>
                         </form>
+                        <a class="action-link" href="{{ url_for('admin_export_instance_backup', subdomain=item.subdomain) }}">Backup exportieren</a>
                         <form method="post">
                             <input type="hidden" name="action" value="update_instance">
                             <input type="hidden" name="subdomain" value="{{ item.subdomain }}">
@@ -56,6 +174,10 @@
                         </form>
                         <a class="action-link" href="{{ url_for('admin_download_instance_logs', subdomain=item.subdomain) }}">Logs</a>
                     </div>
+                    <form method="post" action="{{ url_for('admin_import_instance_backup', subdomain=item.subdomain) }}" enctype="multipart/form-data" class="inline-restore-form">
+                        <input type="file" name="backup_file" accept=".tar.gz,.tgz,application/gzip" required>
+                        <button type="submit">Backup einspielen</button>
+                    </form>
                     <form method="post" class="inline-admin-form">
                         <input type="hidden" name="action" value="create_instance_admin">
                         <input type="hidden" name="subdomain" value="{{ item.subdomain }}">
@@ -76,15 +198,162 @@
 </section>
 
 <style>
-.head { margin-bottom: 1rem; }
-.core-tools,
-.instance-tools {
-    border: 1px solid #d8e1e8;
-    background: #ffffff;
+:root {
+    --term-bg: #0b1114;
+    --term-bg-soft: #0f181d;
+    --term-border: #1f323a;
+    --term-text: #d6f7d8;
+    --term-muted: #8db49f;
+    --term-accent: #5af78e;
+    --term-accent-soft: #2fd06f;
+    --term-warn: #f1c75b;
+}
+
+.head {
+    margin-bottom: 1rem;
+    background: radial-gradient(circle at top left, #12311f 0%, #0b1114 58%);
+    border: 1px solid var(--term-border);
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+.head h1,
+.head p,
+.panel h2,
+.kpi-value,
+.kpi-label,
+.kv-grid dt,
+.kv-grid dd,
+th,
+td,
+button,
+.action-link,
+.inline-admin-form input {
+    font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+}
+
+.head h1 {
+    margin: 0;
+    color: var(--term-accent);
+    font-size: 1.34rem;
+}
+
+.head p {
+    margin: 0.45rem 0 0;
+    color: var(--term-muted);
+}
+
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.65rem;
+    margin-bottom: 1rem;
+}
+.kpi-card {
+    border: 1px solid var(--term-border);
+    background: linear-gradient(160deg, var(--term-bg) 0%, var(--term-bg-soft) 100%);
+    border-radius: 12px;
+    padding: 0.75rem;
+    box-shadow: inset 0 0 0 1px rgba(90, 247, 142, 0.04);
+}
+.kpi-label {
+    margin: 0;
+    color: var(--term-muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+.kpi-value {
+    margin: 0.28rem 0 0;
+    font-size: 1.35rem;
+    color: var(--term-accent);
+    font-weight: 800;
+}
+.overview-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+}
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+}
+.usage-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+}
+.panel {
+    border: 1px solid var(--term-border);
+    background: linear-gradient(180deg, #0f171b 0%, #0b1114 100%);
     border-radius: 14px;
     padding: 1rem;
     margin-bottom: 1rem;
 }
+.chart-panel {
+    min-height: 235px;
+}
+.chart-panel canvas {
+    width: 100% !important;
+    height: 220px !important;
+    display: block;
+}
+.panel h2 {
+    margin: 0 0 0.65rem;
+    color: var(--term-accent);
+    font-size: 1rem;
+}
+.kv-grid {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    gap: 0.35rem 0.55rem;
+    margin: 0;
+}
+.kv-grid dt { color: var(--term-muted); font-weight: 600; }
+.kv-grid dd { margin: 0; font-weight: 700; color: var(--term-text); }
+
+.usage-panel {
+    margin-bottom: 0;
+}
+
+.usage-row + .usage-row {
+    margin-top: 0.7rem;
+}
+
+.usage-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.3rem;
+    color: var(--term-muted);
+}
+
+.usage-top strong {
+    color: var(--term-accent);
+}
+
+.usage-bar {
+    position: relative;
+    height: 11px;
+    border: 1px solid var(--term-border);
+    border-radius: 999px;
+    background: #0b1114;
+    overflow: hidden;
+}
+
+.usage-bar > span {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #2fa96e 0%, #63ff9a 100%);
+    transition: width 0.25s ease;
+}
+
 .actions { display: flex; flex-wrap: wrap; gap: 0.55rem; align-items: center; }
 .row-actions { gap: 0.4rem; }
 .actions form { margin: 0; }
@@ -94,38 +363,322 @@
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 0.38rem;
 }
+.inline-restore-form {
+    margin-top: 0.55rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.38rem;
+    align-items: center;
+}
 .inline-admin-form input {
-    border: 1px solid #bcd0de;
+    border: 1px solid var(--term-border);
     border-radius: 8px;
     padding: 0.38rem 0.5rem;
     font: inherit;
     min-width: 0;
+    color: var(--term-text);
+    background: #0b1114;
+}
+.inline-restore-form input[type="file"] {
+    border: 1px solid var(--term-border);
+    border-radius: 8px;
+    padding: 0.35rem 0.45rem;
+    color: var(--term-text);
+    background: #0b1114;
 }
 button,
 .action-link {
-    border: 1px solid #bcd0de;
-    background: #ffffff;
+    border: 1px solid #2f6148;
+    background: #0e2218;
     padding: 0.42rem 0.72rem;
-    border-radius: 999px;
+    border-radius: 7px;
     font-weight: 700;
     cursor: pointer;
     text-decoration: none;
-    color: #173f5a;
+    color: var(--term-accent);
     display: inline-flex;
     align-items: center;
 }
 button:hover,
-.action-link:hover { background: #f2f8fc; }
+.action-link:hover { background: #133425; }
+.live-cell { font-weight: 700; color: var(--term-warn); }
 table { width: 100%; border-collapse: collapse; }
 th, td {
     text-align: left;
-    border-bottom: 1px solid #e7edf3;
+    border-bottom: 1px solid #1f323a;
     padding: 0.62rem;
     vertical-align: top;
+}
+th {
+    color: var(--term-muted);
+    font-weight: 700;
+}
+td {
+    color: var(--term-text);
+}
+@media (max-width: 1180px) {
+    .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .overview-grid { grid-template-columns: 1fr; }
+    .charts-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 860px) {
     .actions { display: grid; }
     .inline-admin-form { grid-template-columns: 1fr; }
+    .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 </style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(function () {
+    const mib = (value) => `${Number(value || 0).toFixed(1)} MiB`;
+    const gib = (value) => `${Number(value || 0).toFixed(2)} GiB`;
+    const pct = (value) => `${Number(value || 0).toFixed(1)} %`;
+    const clampPct = (value) => Math.max(0, Math.min(100, Number(value || 0)));
+    const historyLimit = 24;
+
+    const history = {
+        labels: [],
+        hostRam: [],
+        dockerManagedRam: [],
+        hostCpu: [],
+        avgInstanceCpu: [],
+        load1: [],
+        managedContainers: [],
+        allContainers: []
+    };
+
+    const chartDefaults = {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+            mode: 'index',
+            intersect: false
+        },
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        },
+        scales: {
+            x: {
+                ticks: { maxRotation: 0, autoSkip: true }
+            }
+        }
+    };
+
+    const makeLineChart = (canvasId, datasets, yTitle) => {
+        const el = document.getElementById(canvasId);
+        if (!el || typeof Chart === 'undefined') {
+            return null;
+        }
+        return new Chart(el, {
+            type: 'line',
+            data: {
+                labels: history.labels,
+                datasets
+            },
+            options: {
+                ...chartDefaults,
+                scales: {
+                    ...chartDefaults.scales,
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: yTitle
+                        }
+                    }
+                }
+            }
+        });
+    };
+
+    const ramChart = makeLineChart('ramHistoryChart', [
+        {
+            label: 'Host RAM (MiB)',
+            data: history.hostRam,
+            borderColor: '#1f7a8c',
+            backgroundColor: 'rgba(31,122,140,0.16)',
+            tension: 0.25,
+            fill: true
+        },
+        {
+            label: 'Docker RAM Invario (MiB)',
+            data: history.dockerManagedRam,
+            borderColor: '#2a9d8f',
+            backgroundColor: 'rgba(42,157,143,0.15)',
+            tension: 0.25,
+            fill: true
+        }
+    ], 'MiB');
+
+    const cpuLoadChart = makeLineChart('cpuLoadHistoryChart', [
+        {
+            label: 'Host CPU (%)',
+            data: history.hostCpu,
+            borderColor: '#c16200',
+            backgroundColor: 'rgba(193,98,0,0.15)',
+            tension: 0.25,
+            fill: true
+        },
+        {
+            label: 'Instanzen CPU Mittel (%)',
+            data: history.avgInstanceCpu,
+            borderColor: '#355070',
+            backgroundColor: 'rgba(53,80,112,0.15)',
+            tension: 0.25,
+            fill: true
+        },
+        {
+            label: 'Load 1m',
+            data: history.load1,
+            borderColor: '#8a5a44',
+            backgroundColor: 'rgba(138,90,68,0.13)',
+            tension: 0.25,
+            fill: true
+        }
+    ], 'Wert');
+
+    const containerChart = makeLineChart('containerHistoryChart', [
+        {
+            label: 'Container (Invario)',
+            data: history.managedContainers,
+            borderColor: '#3f37c9',
+            backgroundColor: 'rgba(63,55,201,0.15)',
+            tension: 0.2,
+            fill: true
+        },
+        {
+            label: 'Container (alle)',
+            data: history.allContainers,
+            borderColor: '#6c757d',
+            backgroundColor: 'rgba(108,117,125,0.13)',
+            tension: 0.2,
+            fill: true
+        }
+    ], 'Anzahl');
+
+    const pushHistory = (data) => {
+        const runtime = data.runtime || {};
+        const host = runtime.host || {};
+        const docker = runtime.docker || {};
+        const sys = data.system || {};
+        const instances = runtime.instances || [];
+        const avgInstanceCpu = instances.length
+            ? instances.reduce((sum, item) => sum + Number(item.cpu_percent || 0), 0) / instances.length
+            : 0;
+
+        const now = new Date();
+        const timeLabel = now.toLocaleTimeString('de-DE', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+
+        history.labels.push(timeLabel);
+        history.hostRam.push(Number(host.used_mem_mib || 0));
+        history.dockerManagedRam.push(Number(docker.managed_used_mem_mib || 0));
+        history.hostCpu.push(Number(host.cpu_percent || 0));
+        history.avgInstanceCpu.push(Number(avgInstanceCpu.toFixed(2)));
+        history.load1.push(Number(sys.load_1 || 0));
+        history.managedContainers.push(Number(docker.managed_container_count || 0));
+        history.allContainers.push(Number(docker.all_container_count || 0));
+
+        if (history.labels.length > historyLimit) {
+            Object.keys(history).forEach((key) => {
+                history[key].shift();
+            });
+        }
+
+        [ramChart, cpuLoadChart, containerChart].forEach((chart) => {
+            if (chart) {
+                chart.update();
+            }
+        });
+    };
+
+    const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.textContent = value;
+        }
+    };
+
+    const setUsageBar = (fillId, labelId, valuePct) => {
+        const pctValue = clampPct(valuePct);
+        const fill = document.getElementById(fillId);
+        const label = document.getElementById(labelId);
+        if (fill) {
+            fill.style.width = `${pctValue.toFixed(1)}%`;
+        }
+        if (label) {
+            label.textContent = `${pctValue.toFixed(1)} %`;
+        }
+    };
+
+    const updateSystem = async () => {
+        try {
+            const response = await fetch('/admin/system/stats', { cache: 'no-store' });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            const data = await response.json();
+            const runtime = data.runtime || {};
+            const host = runtime.host || {};
+            const docker = runtime.docker || {};
+            const ops = data.ops || {};
+            const rootDisk = data.root_disk || {};
+            const instDisk = data.instance_disk || {};
+            const sys = data.system || {};
+
+            setText('kpiInstancesRunning', String((runtime.instances || []).filter(i => (i.status || '') === 'Läuft').length));
+            setText('kpiTicketsOpen', String(ops.tickets_open || 0));
+            setText('kpiAppointmentsPending', String(ops.appointments_pending || 0));
+            setText('kpiUsersTotal', String(ops.users_total || 0));
+            setText('kpiHostRam', mib(host.used_mem_mib));
+            setText('kpiDockerManaged', mib(docker.managed_used_mem_mib));
+
+            setText('sysUptime', `${Number(sys.uptime_seconds || 0).toFixed(0)} s`);
+            setText('sysLoad', `${sys.load_1 || 0} / ${sys.load_5 || 0} / ${sys.load_15 || 0}`);
+            setText('sysUpdatedAt', data.generated_at || '-');
+
+            setText('rootUsed', gib(rootDisk.used_gib));
+            setText('rootFree', gib(rootDisk.free_gib));
+            setText('rootPct', pct(rootDisk.used_pct));
+
+            setText('instUsed', gib(instDisk.used_gib));
+            setText('instFree', gib(instDisk.free_gib));
+            setText('instPct', pct(instDisk.used_pct));
+
+            setUsageBar('usageHostRamFill', 'usageHostRamLabel', host.used_mem_pct);
+            setUsageBar('usageHostCpuFill', 'usageHostCpuLabel', host.cpu_percent);
+            setUsageBar('usageRootDiskFill', 'usageRootDiskLabel', rootDisk.used_pct);
+            setUsageBar('usageInstDiskFill', 'usageInstDiskLabel', instDisk.used_pct);
+
+            pushHistory(data);
+
+            const bySubdomain = new Map((runtime.instances || []).map(item => [item.subdomain, item]));
+            document.querySelectorAll('#instanceMgmtBody tr[data-subdomain]').forEach((row) => {
+                const subdomain = row.getAttribute('data-subdomain') || '';
+                const cell = row.querySelector('.live-cell');
+                if (!cell) {
+                    return;
+                }
+                const stats = bySubdomain.get(subdomain);
+                if (!stats) {
+                    cell.textContent = 'RAM: - | CPU: -';
+                    return;
+                }
+                cell.textContent = `RAM: ${mib(stats.mem_mib)} | CPU: ${pct(stats.cpu_percent)}`;
+            });
+        } catch (error) {
+            // Keep last values if refresh fails.
+        }
+    };
+
+    updateSystem();
+    window.setInterval(updateSystem, 15000);
+})();
+</script>
 {% endblock %}

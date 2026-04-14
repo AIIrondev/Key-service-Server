@@ -40,4 +40,4 @@ RUN chmod +x /app/provision_instance.sh
 
 EXPOSE 4999
 
-CMD ["python", "main.py"]
+CMD ["gunicorn", "-c", "gunicorn.conf.py", "main:app"]

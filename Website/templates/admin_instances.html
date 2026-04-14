@@ -54,55 +54,6 @@
     </article>
 </section>
 
-<section class="live-monitor">
-    <div class="live-head">
-        <h2>Live Monitor (semi-live)</h2>
-        <p>Aktualisierung alle 15 Sekunden: RAM/CPU pro Instanz und Host-Auslastung.</p>
-    </div>
-    <div class="live-kpis">
-        <article class="live-kpi">
-            <p>Host RAM belegt</p>
-            <strong id="liveHostRam">-</strong>
-        </article>
-        <article class="live-kpi">
-            <p>Docker RAM (Invario)</p>
-            <strong id="liveDockerRam">-</strong>
-        </article>
-        <article class="live-kpi">
-            <p>Container (Invario)</p>
-            <strong id="liveContainerCount">-</strong>
-        </article>
-        <article class="live-kpi">
-            <p>Docker RAM (alle)</p>
-            <strong id="liveDockerRamAll">-</strong>
-        </article>
-        <article class="live-kpi">
-            <p>Container (alle)</p>
-            <strong id="liveContainerCountAll">-</strong>
-        </article>
-        <article class="live-kpi">
-            <p>Letztes Update</p>
-            <strong id="liveUpdatedAt">-</strong>
-        </article>
-    </div>
-    <div class="live-table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Instanz</th>
-                    <th>Status</th>
-                    <th>Container</th>
-                    <th>RAM (MiB)</th>
-                    <th>CPU (%)</th>
-                </tr>
-            </thead>
-            <tbody id="liveInstanceBody">
-                <tr><td colspan="5">Lade Live-Daten...</td></tr>
-            </tbody>
-        </table>
-    </div>
-</section>
-
 <section class="instance-form-wrap">
     <form method="post" class="instance-form">
         <input type="hidden" name="action" value="create">
@@ -294,54 +245,6 @@
     margin-bottom: 1.2rem;
 }
 
-.live-monitor {
-    border: 1px solid #d8e1e8;
-    background: #ffffff;
-    border-radius: 14px;
-    padding: 1rem;
-    margin-bottom: 1.2rem;
-}
-
-.live-head h2 {
-    margin: 0;
-}
-
-.live-head p {
-    margin: 0.25rem 0 0.75rem;
-    color: #4f6573;
-}
-
-.live-kpis {
-    display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 0.6rem;
-    margin-bottom: 0.8rem;
-}
-
-.live-kpi {
-    border: 1px solid #d8e1e8;
-    border-radius: 12px;
-    background: #f7fafc;
-    padding: 0.65rem;
-}
-
-.live-kpi p {
-    margin: 0;
-    font-size: 0.82rem;
-    color: #4b6170;
-}
-
-.live-kpi strong {
-    display: block;
-    margin-top: 0.3rem;
-    font-size: 1.08rem;
-    color: #11364a;
-}
-
-.live-table-wrap {
-    overflow-x: auto;
-}
-
 .instance-form,
 .instance-meta,
 .instance-table-wrap {
@@ -503,10 +406,6 @@ td {
     .instance-form-wrap {
         grid-template-columns: 1fr;
     }
-
-    .live-kpis {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
 }
 </style>
 
@@ -600,69 +499,6 @@ td {
             plugins: { legend: { display: false } }
         }
     });
-
-    const mib = (value) => {
-        const num = Number(value || 0);
-        return `${num.toFixed(1)} MiB`;
-    };
-
-    const percent = (value) => {
-        const num = Number(value || 0);
-        return `${num.toFixed(1)} %`;
-    };
-
-    const updateLive = async () => {
-        try {
-            const response = await fetch('/admin/instances/stats', { cache: 'no-store' });
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-
-            const payload = await response.json();
-            const host = payload.host || {};
-            const docker = payload.docker || {};
-            const instances = payload.instances || [];
-
-            const hostRam = `${mib(host.used_mem_mib)} / ${mib(host.total_mem_mib)} (${percent(host.used_mem_pct)})`;
-            document.getElementById('liveHostRam').textContent = hostRam;
-            document.getElementById('liveDockerRam').textContent = mib(docker.managed_used_mem_mib);
-            document.getElementById('liveContainerCount').textContent = String(docker.managed_container_count || 0);
-            document.getElementById('liveDockerRamAll').textContent = mib(docker.all_used_mem_mib);
-            document.getElementById('liveContainerCountAll').textContent = String(docker.all_container_count || 0);
-            document.getElementById('liveUpdatedAt').textContent = payload.generated_at || '-';
-
-            const body = document.getElementById('liveInstanceBody');
-            if (!body) {
-                return;
-            }
-
-            if (!instances.length) {
-                body.innerHTML = '<tr><td colspan="5">Keine Instanzdaten vorhanden.</td></tr>';
-                return;
-            }
-
-            body.innerHTML = instances.map((item) => {
-                const status = `${item.status || '-'} / ${item.nginx_status || '-'}`;
-                return `
-                    <tr>
-                        <td>${item.domain || item.subdomain || '-'}</td>
-                        <td>${status}</td>
-                        <td>${item.container_count || 0}</td>
-                        <td>${mib(item.mem_mib)}</td>
-                        <td>${percent(item.cpu_percent)}</td>
-                    </tr>
-                `;
-            }).join('');
-        } catch (error) {
-            const body = document.getElementById('liveInstanceBody');
-            if (body) {
-                body.innerHTML = '<tr><td colspan="5">Live-Daten konnten nicht geladen werden.</td></tr>';
-            }
-        }
-    };
-
-    updateLive();
-    window.setInterval(updateLive, 15000);
 
     const ownerSelect = document.getElementById('owner_username');
     const schoolInput = document.getElementById('school_name');

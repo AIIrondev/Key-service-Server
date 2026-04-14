@@ -1,12 +1,16 @@
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
-from flask import Flask, render_template, request, jsonify, flash, redirect, url_for, get_flashed_messages, session, send_file
+from flask import Flask, render_template, request, jsonify, flash, redirect, url_for, get_flashed_messages, session, send_file, after_this_request
 import os
 import json
+import atexit
 import calendar
 import re
 import subprocess
 import hashlib
 import shutil
+import tarfile
+import tempfile
+import threading
 from datetime import timedelta, datetime, date
 from functools import wraps
 from io import BytesIO
@@ -66,6 +70,33 @@ INSTANCE_PROVISION_SCRIPT = os.environ.get(
 )
 
 
+def _env_int(name: str, default: int) -> int:
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+MONGO_MAX_POOL_SIZE = max(_env_int("MONGO_MAX_POOL_SIZE", 24), 1)
+MONGO_MIN_POOL_SIZE = max(_env_int("MONGO_MIN_POOL_SIZE", 0), 0)
+MONGO_MAX_IDLE_MS = max(_env_int("MONGO_MAX_IDLE_MS", 60000), 1000)
+MONGO_CONNECT_TIMEOUT_MS = max(_env_int("MONGO_CONNECT_TIMEOUT_MS", 1500), 500)
+MONGO_SOCKET_TIMEOUT_MS = max(_env_int("MONGO_SOCKET_TIMEOUT_MS", 30000), 1000)
+MONGO_WAIT_QUEUE_TIMEOUT_MS = max(_env_int("MONGO_WAIT_QUEUE_TIMEOUT_MS", 2000), 500)
+
+_MONGO_CLIENT: MongoClient | None = None
+_MONGO_LOCK = threading.Lock()
+
+
+class _NoopMongoClientHandle:
+    def close(self):
+        # Backward-compatible no-op so existing finally blocks stay harmless.
+        return None
+
+
 def _issue_access_token() -> str:
     return create_access_token(identity="license-validation-client")
 
@@ -115,12 +146,37 @@ def _save_team_photo(file_obj, identifier: str) -> str | None:
 
 
 def _get_mongo_client() -> MongoClient:
-    return MongoClient(MONGO_URI, serverSelectionTimeoutMS=1200)
+    global _MONGO_CLIENT
+    if _MONGO_CLIENT is not None:
+        return _MONGO_CLIENT
+
+    with _MONGO_LOCK:
+        if _MONGO_CLIENT is None:
+            _MONGO_CLIENT = MongoClient(
+                MONGO_URI,
+                serverSelectionTimeoutMS=MONGO_CONNECT_TIMEOUT_MS,
+                connectTimeoutMS=MONGO_CONNECT_TIMEOUT_MS,
+                socketTimeoutMS=MONGO_SOCKET_TIMEOUT_MS,
+                maxPoolSize=MONGO_MAX_POOL_SIZE,
+                minPoolSize=MONGO_MIN_POOL_SIZE,
+                maxIdleTimeMS=MONGO_MAX_IDLE_MS,
+                waitQueueTimeoutMS=MONGO_WAIT_QUEUE_TIMEOUT_MS,
+            )
+    return _MONGO_CLIENT
+
+
+@atexit.register
+def _shutdown_mongo_client() -> None:
+    global _MONGO_CLIENT
+    client = _MONGO_CLIENT
+    _MONGO_CLIENT = None
+    if client is not None:
+        client.close()
 
 
 def _get_mongo_db():
     client = _get_mongo_client()
-    return client, client[MONGO_DB_NAME]
+    return _NoopMongoClientHandle(), client[MONGO_DB_NAME]
 
 
 def _normalize_user_doc(doc: dict | None) -> dict | None:
@@ -484,6 +540,108 @@ def _collect_runtime_stats(instances: list[dict]) -> dict:
     }
 
 
+def _read_uptime_load() -> dict:
+    uptime_seconds = 0.0
+    load_1 = 0.0
+    load_5 = 0.0
+    load_15 = 0.0
+
+    try:
+        with open("/proc/uptime", "r", encoding="utf-8") as handle:
+            uptime_seconds = float((handle.read().strip().split() or ["0"])[0])
+    except Exception:
+        uptime_seconds = 0.0
+
+    try:
+        with open("/proc/loadavg", "r", encoding="utf-8") as handle:
+            parts = handle.read().strip().split()
+            load_1 = float(parts[0])
+            load_5 = float(parts[1])
+            load_15 = float(parts[2])
+    except Exception:
+        pass
+
+    return {
+        "uptime_seconds": round(uptime_seconds, 1),
+        "load_1": round(load_1, 2),
+        "load_5": round(load_5, 2),
+        "load_15": round(load_15, 2),
+    }
+
+
+def _read_disk_usage(path: str) -> dict:
+    try:
+        usage = shutil.disk_usage(path)
+    except Exception:
+        return {"path": path, "total_gib": 0.0, "used_gib": 0.0, "free_gib": 0.0, "used_pct": 0.0}
+
+    total_gib = usage.total / (1024.0 ** 3)
+    used_gib = usage.used / (1024.0 ** 3)
+    free_gib = usage.free / (1024.0 ** 3)
+    used_pct = (used_gib / total_gib * 100.0) if total_gib > 0 else 0.0
+    return {
+        "path": path,
+        "total_gib": round(total_gib, 2),
+        "used_gib": round(used_gib, 2),
+        "free_gib": round(free_gib, 2),
+        "used_pct": round(used_pct, 2),
+    }
+
+
+def _collect_ops_counts() -> dict:
+    appointments_pending = 0
+    tickets_open = 0
+    users_total = 0
+
+    client = None
+    try:
+        client, col = _get_collection("appointments")
+        appointments_pending = col.count_documents({"status": "Angefragt"})
+    except PyMongoError:
+        appointments_pending = 0
+    finally:
+        if client:
+            client.close()
+
+    client = None
+    try:
+        client, col = _get_collection("support_tickets")
+        tickets_open = col.count_documents({"status": {"$in": ["Offen", "In Bearbeitung"]}})
+    except PyMongoError:
+        tickets_open = 0
+    finally:
+        if client:
+            client.close()
+
+    try:
+        users_total = len(_list_users_for_admin())
+    except Exception:
+        users_total = 0
+
+    return {
+        "appointments_pending": appointments_pending,
+        "tickets_open": tickets_open,
+        "users_total": users_total,
+    }
+
+
+def _build_server_management_snapshot(instances: list[dict]) -> dict:
+    runtime = _collect_runtime_stats(instances)
+    root_disk = _read_disk_usage("/")
+    instance_disk = _read_disk_usage(INSTANCE_BASE_DIR)
+    ops_counts = _collect_ops_counts()
+    uptime_load = _read_uptime_load()
+
+    return {
+        "generated_at": _utc_now_iso(),
+        "runtime": runtime,
+        "root_disk": root_disk,
+        "instance_disk": instance_disk,
+        "ops": ops_counts,
+        "system": uptime_load,
+    }
+
+
 def _upsert_school_instance(data: dict) -> None:
     subdomain = _sanitize_text(data.get("subdomain") or "", 63)
     if not subdomain:
@@ -675,6 +833,40 @@ def _collect_instance_logs(subdomain: str) -> tuple[bool, str]:
         "500",
     ]
     return _run_command(command, cwd=instance_dir, timeout=180)
+
+
+def _build_instance_backup_archive(subdomain: str) -> tuple[bool, str, str | None]:
+    instance_dir = _resolve_instance_dir(subdomain)
+    if not instance_dir:
+        return False, "Instanzverzeichnis nicht gefunden.", None
+
+    safe_name = _slugify_subdomain(subdomain)
+    stamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+    archive_base = os.path.join(tempfile.gettempdir(), f"instance-backup-{safe_name}-{stamp}")
+
+    try:
+        archive_path = shutil.make_archive(archive_base, "gztar", root_dir=instance_dir)
+    except Exception as exc:
+        return False, f"Backup-Archiv konnte nicht erstellt werden: {exc}", None
+
+    filename = f"instance-{safe_name}-backup-{stamp}.tar.gz"
+    return True, filename, archive_path
+
+
+def _safe_extract_tar_archive(archive_path: str, target_dir: str) -> tuple[bool, str]:
+    target_abs = os.path.abspath(target_dir)
+
+    try:
+        with tarfile.open(archive_path, "r:gz") as tf:
+            for member in tf.getmembers():
+                member_path = os.path.abspath(os.path.join(target_abs, member.name))
+                if not member_path.startswith(target_abs + os.sep) and member_path != target_abs:
+                    return False, "Unsicherer Pfad im Backup-Archiv erkannt."
+            tf.extractall(path=target_abs)
+    except Exception as exc:
+        return False, f"Backup konnte nicht entpackt werden: {exc}"
+
+    return True, "Backup erfolgreich entpackt."
 
 
 def _set_instance_library_enabled(instance_dir: str, enabled: bool) -> tuple[bool, str]:
@@ -1794,7 +1986,15 @@ def admin_system_tools():
         return redirect(url_for("admin_system_tools"))
 
     instances = _list_school_instances()
-    return render_template("admin_system.html", instances=instances)
+    system_snapshot = _build_server_management_snapshot(instances)
+    return render_template("admin_system.html", instances=instances, system_snapshot=system_snapshot)
+
+
+@app.route('/admin/system/stats')
+@admin_required
+def admin_system_stats():
+    instances = _list_school_instances()
+    return jsonify(_build_server_management_snapshot(instances))
 
 
 @app.route('/admin/system/logs/core')
@@ -1830,6 +2030,75 @@ def admin_download_instance_logs(subdomain):
         as_attachment=True,
         download_name=filename,
     )
+
+
+@app.route('/admin/system/backup/export/<subdomain>')
+@admin_required
+def admin_export_instance_backup(subdomain):
+    ok, filename, archive_path = _build_instance_backup_archive(subdomain)
+    if not ok or not archive_path:
+        flash(filename or "Backup-Export fehlgeschlagen.", "error")
+        return redirect(url_for("admin_system_tools"))
+
+    @after_this_request
+    def _cleanup_archive(response):
+        try:
+            os.remove(archive_path)
+        except OSError:
+            pass
+        return response
+
+    return send_file(
+        archive_path,
+        mimetype="application/gzip",
+        as_attachment=True,
+        download_name=filename,
+    )
+
+
+@app.route('/admin/system/backup/import/<subdomain>', methods=['POST'])
+@admin_required
+def admin_import_instance_backup(subdomain):
+    instance_dir = _resolve_instance_dir(subdomain)
+    if not instance_dir:
+        flash("Instanzverzeichnis nicht gefunden.", "error")
+        return redirect(url_for("admin_system_tools"))
+
+    upload = request.files.get("backup_file")
+    if not upload or not upload.filename:
+        flash("Bitte eine Backup-Datei auswählen.", "error")
+        return redirect(url_for("admin_system_tools"))
+
+    filename = secure_filename(upload.filename)
+    if not (filename.endswith(".tar.gz") or filename.endswith(".tgz")):
+        flash("Nur .tar.gz oder .tgz Backups sind erlaubt.", "error")
+        return redirect(url_for("admin_system_tools"))
+
+    fd, temp_path = tempfile.mkstemp(prefix="instance-restore-", suffix=".tar.gz")
+    os.close(fd)
+    try:
+        upload.save(temp_path)
+        ok, message = _safe_extract_tar_archive(temp_path, instance_dir)
+        if not ok:
+            flash(message, "error")
+            return redirect(url_for("admin_system_tools"))
+
+        restart_ok, restart_output = _restart_instance_stack(instance_dir)
+        if restart_ok:
+            flash(f"Backup für {subdomain} erfolgreich eingespielt und Instanz neu gestartet.", "success")
+            if restart_output:
+                flash(_tail_output(restart_output, 10), "info")
+        else:
+            flash(f"Backup eingespielt, aber Neustart fehlgeschlagen:\n{_tail_output(restart_output, 14)}", "error")
+    except Exception as exc:
+        flash(f"Backup konnte nicht eingespielt werden: {exc}", "error")
+    finally:
+        try:
+            os.remove(temp_path)
+        except OSError:
+            pass
+
+    return redirect(url_for("admin_system_tools"))
 
 
 @app.route('/admin/appointments/block-day', methods=['POST'])
