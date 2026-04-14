@@ -1,9 +1,0 @@
-[
-  {
-    "username": "Aiirondev",
-    "display_name": "Maximilian Gr\u00fcndinger",
-    "password_hash": "scrypt:32768:8:1$nfN2TTigH6GNrZig$548ac55b59b2c10f2730a4a45b4140c84eba33e2719f95175c05ab1f3a157959ff7a5d11c3d38bd2ea172b0143fa3a0e0e410b8bfcc81b8d91cfbbfc12b30399",
-    "is_admin": true,
-    "created_at": "2026-03-23T16:05:42Z"
-  }
-]

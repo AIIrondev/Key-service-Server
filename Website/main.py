@@ -3,6 +3,10 @@ from flask import Flask, render_template, request, jsonify, flash, redirect, url
 import os
 import json
 import calendar
+import re
+import subprocess
+import hashlib
+import shutil
 from datetime import timedelta, datetime, date
 from functools import wraps
 from io import BytesIO
@@ -43,6 +47,23 @@ INVOICE_UPLOAD_DIR = os.path.join(BASE_DIR, "static", "uploads", "invoices")
 TEAM_UPLOAD_DIR = os.path.join(BASE_DIR, "static", "uploads", "team")
 MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
 MONGO_DB_NAME = os.environ.get("MONGO_DB_NAME", "Invario_Website")
+INSTANCE_REPO_URL = os.environ.get("INSTANCE_REPO_URL", "https://github.com/AIIrondev/legendary-octo-garbanzo")
+INSTANCE_PARENT_DOMAIN = os.environ.get("INSTANCE_PARENT_DOMAIN", "meine-domain")
+INSTANCE_BASE_DIR = os.environ.get("INSTANCE_BASE_DIR", "/opt/inventarsystem-instances")
+INSTANCE_TLS_MODE = os.environ.get("INSTANCE_TLS_MODE", "development")
+INSTANCE_VERSION_OPTIONS = os.environ.get("INSTANCE_VERSION_OPTIONS", "latest,v0.3.1")
+INSTANCE_WILDCARD_CERT_FILE = os.environ.get(
+    "INSTANCE_WILDCARD_CERT_FILE",
+    "/etc/nginx/certs/wildcard.meine-domain.crt",
+)
+INSTANCE_WILDCARD_KEY_FILE = os.environ.get(
+    "INSTANCE_WILDCARD_KEY_FILE",
+    "/etc/nginx/certs/wildcard.meine-domain.key",
+)
+INSTANCE_PROVISION_SCRIPT = os.environ.get(
+    "INSTANCE_PROVISION_SCRIPT",
+    os.path.abspath(os.path.join(BASE_DIR, "provision_instance.sh")),
+)
 
 
 def _issue_access_token() -> str:
@@ -135,6 +156,571 @@ def _sanitize_text(text: str, max_length: int = 255) -> str:
     if len(text) > max_length:
         text = text[:max_length]
     return text
+
+
+def _slugify_subdomain(value: str) -> str:
+    cleaned = (value or "").strip().lower()
+    cleaned = cleaned.replace("ä", "ae").replace("ö", "oe").replace("ü", "ue").replace("ß", "ss")
+    cleaned = re.sub(r"[^a-z0-9-]+", "-", cleaned)
+    cleaned = re.sub(r"-{2,}", "-", cleaned).strip("-")
+    return cleaned[:63]
+
+
+def _is_valid_subdomain(value: str) -> bool:
+    if not value or len(value) < 3 or len(value) > 63:
+        return False
+    return bool(re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{1,61}[a-z0-9])", value))
+
+
+def _parse_key_value_output(raw: str) -> dict:
+    parsed = {}
+    for line in (raw or "").splitlines():
+        row = line.strip()
+        if not row or "=" not in row:
+            continue
+        key, value = row.split("=", 1)
+        parsed[key.strip()] = value.strip()
+    return parsed
+
+
+def _parse_instance_version_options() -> list[str]:
+    values = []
+    for item in (INSTANCE_VERSION_OPTIONS or "").split(","):
+        token = _sanitize_text(item or "", 80)
+        if token and token not in values:
+            values.append(token)
+    if not values:
+        values = ["latest"]
+    return values
+
+
+def _list_school_instances() -> list:
+    rows = []
+    client = None
+    try:
+        client, col = _get_collection("school_instances")
+        rows = list(col.find().sort([("updated_at", -1), ("created_at", -1)]))
+    except PyMongoError:
+        return []
+    finally:
+        if client:
+            client.close()
+
+    normalized = []
+    for row in rows:
+        normalized.append(
+            {
+                "id": str(row.get("_id") or ""),
+                "school_name": _sanitize_text(row.get("school_name") or "", 120),
+                "owner_username": _sanitize_text(row.get("owner_username") or "", 80),
+                "subdomain": _sanitize_text(row.get("subdomain") or "", 63),
+                "domain": _sanitize_text(row.get("domain") or "", 190),
+                "https_port": int(row.get("https_port") or 0),
+                "instance_dir": _sanitize_text(row.get("instance_dir") or "", 300),
+                "app_image_tag": _sanitize_text(row.get("app_image_tag") or "latest", 80),
+                "library_enabled": bool(row.get("library_enabled", False)),
+                "status": _sanitize_text(row.get("status") or "Unbekannt", 40),
+                "nginx_status": _sanitize_text(row.get("nginx_status") or "unbekannt", 80),
+                "last_message": _sanitize_text(row.get("last_message") or "", 500),
+                "updated_at": row.get("updated_at") or "",
+            }
+        )
+    return normalized
+
+
+def _list_available_instance_users() -> list:
+    users = _list_users_for_admin()
+    instances = _list_school_instances()
+    assigned = {
+        _sanitize_text(item.get("owner_username") or "", 80).lower()
+        for item in instances
+        if _sanitize_text(item.get("owner_username") or "", 80)
+    }
+    return [u for u in users if _sanitize_text(u.get("username") or "", 80).lower() not in assigned]
+
+
+def _list_instances_grouped_by_owner() -> dict[str, list[dict]]:
+    grouped: dict[str, list[dict]] = {}
+    for item in _list_school_instances():
+        owner = _sanitize_text(item.get("owner_username") or "", 80)
+        domain = _sanitize_text(item.get("domain") or "", 190)
+        subdomain = _sanitize_text(item.get("subdomain") or "", 63)
+        if not owner or not domain:
+            continue
+        grouped.setdefault(owner, []).append(
+            {
+                "domain": domain,
+                "subdomain": subdomain,
+                "status": _sanitize_text(item.get("status") or "", 40),
+            }
+        )
+    return grouped
+
+
+def _upsert_school_instance(data: dict) -> None:
+    subdomain = _sanitize_text(data.get("subdomain") or "", 63)
+    if not subdomain:
+        return
+
+    payload = {
+        "school_name": _sanitize_text(data.get("school_name") or "", 120),
+        "owner_username": _sanitize_text(data.get("owner_username") or "", 80),
+        "subdomain": subdomain,
+        "domain": _sanitize_text(data.get("domain") or "", 190),
+        "https_port": int(data.get("https_port") or 0),
+        "instance_dir": _sanitize_text(data.get("instance_dir") or "", 300),
+        "app_image_tag": _sanitize_text(data.get("app_image_tag") or "latest", 80),
+        "library_enabled": bool(data.get("library_enabled", False)),
+        "status": _sanitize_text(data.get("status") or "Unbekannt", 40),
+        "nginx_status": _sanitize_text(data.get("nginx_status") or "unbekannt", 80),
+        "last_message": _sanitize_text(data.get("last_message") or "", 500),
+        "updated_at": _utc_now_iso(),
+    }
+
+    client = None
+    try:
+        client, col = _get_collection("school_instances")
+        col.update_one(
+            {"subdomain": subdomain},
+            {"$set": payload, "$setOnInsert": {"created_at": _utc_now_iso()}},
+            upsert=True,
+        )
+    except PyMongoError:
+        return
+    finally:
+        if client:
+            client.close()
+
+
+def _run_instance_provision(
+    action: str,
+    school_name: str,
+    subdomain: str,
+    app_image_tag: str = "latest",
+    library_enabled: bool = False,
+) -> tuple[bool, str, dict]:
+    script_path = (INSTANCE_PROVISION_SCRIPT or "").strip()
+    if not script_path:
+        return False, "INSTANCE_PROVISION_SCRIPT ist nicht gesetzt.", {}
+
+    if not os.path.isfile(script_path):
+        return False, f"Provisioning-Skript nicht gefunden: {script_path}", {}
+
+    if not os.access(script_path, os.X_OK):
+        return False, f"Provisioning-Skript ist nicht ausführbar: {script_path}", {}
+
+    command = [
+        script_path,
+        "--action",
+        action,
+        "--repo",
+        INSTANCE_REPO_URL,
+        "--base-dir",
+        INSTANCE_BASE_DIR,
+        "--domain",
+        INSTANCE_PARENT_DOMAIN,
+        "--tls-mode",
+        INSTANCE_TLS_MODE,
+        "--wildcard-cert-file",
+        INSTANCE_WILDCARD_CERT_FILE,
+        "--wildcard-key-file",
+        INSTANCE_WILDCARD_KEY_FILE,
+        "--app-image-tag",
+        _sanitize_text(app_image_tag or "latest", 80),
+        "--library-enabled",
+        "1" if library_enabled else "0",
+        "--school-name",
+        school_name,
+        "--subdomain",
+        subdomain,
+    ]
+
+    try:
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            timeout=900,
+            check=False,
+            env={**os.environ, "LC_ALL": "C.UTF-8"},
+        )
+    except subprocess.TimeoutExpired:
+        return False, "Provisioning-Zeitlimit erreicht (15 Minuten).", {}
+    except Exception as exc:
+        return False, f"Provisioning konnte nicht gestartet werden: {exc}", {}
+
+    output = _parse_key_value_output(result.stdout)
+    message = output.get("MESSAGE") or output.get("ERROR") or (result.stderr or "").strip()
+
+    if result.returncode != 0:
+        if not message:
+            message = "Provisioning fehlgeschlagen. Details im Server-Log prüfen."
+        return False, message, output
+
+    return True, message or "Instanz erfolgreich gestartet.", output
+
+
+def _instance_dir_path(subdomain: str) -> str | None:
+    key = _sanitize_text(subdomain or "", 63)
+    if not _is_valid_subdomain(key):
+        return None
+
+    target = os.path.abspath(os.path.join(INSTANCE_BASE_DIR, key))
+    base_abs = os.path.abspath(INSTANCE_BASE_DIR)
+    if not target.startswith(base_abs + os.sep):
+        return None
+    return target
+
+
+def _resolve_instance_dir(subdomain: str) -> str | None:
+    key = _sanitize_text(subdomain or "", 63)
+    if not _is_valid_subdomain(key):
+        return None
+
+    target = os.path.abspath(os.path.join(INSTANCE_BASE_DIR, key))
+    base_abs = os.path.abspath(INSTANCE_BASE_DIR)
+    if not target.startswith(base_abs + os.sep):
+        return None
+    if not os.path.isdir(target):
+        return None
+    return target
+
+
+def _run_command(command: list[str], cwd: str | None = None, timeout: int = 900) -> tuple[bool, str]:
+    try:
+        result = subprocess.run(
+            command,
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+            env={**os.environ, "LC_ALL": "C.UTF-8"},
+        )
+    except subprocess.TimeoutExpired:
+        return False, "Befehl hat das Zeitlimit erreicht."
+    except Exception as exc:
+        return False, f"Befehl konnte nicht ausgeführt werden: {exc}"
+
+    output = ((result.stdout or "") + "\n" + (result.stderr or "")).strip()
+    if result.returncode != 0:
+        return False, output or "Befehl ist fehlgeschlagen."
+    return True, output or "OK"
+
+
+def _tail_output(text: str, lines: int = 24) -> str:
+    rows = [line for line in (text or "").splitlines() if line.strip()]
+    if not rows:
+        return "Keine Ausgabe"
+    return "\n".join(rows[-lines:])
+
+
+def _collect_core_logs() -> tuple[bool, str]:
+    compose_file = os.path.join(BASE_DIR, "docker-compose.yml")
+    command = [
+        "docker",
+        "compose",
+        "-f",
+        compose_file,
+        "logs",
+        "--no-color",
+        "--tail",
+        "500",
+        "website",
+        "mongodb",
+    ]
+    return _run_command(command, cwd=BASE_DIR, timeout=180)
+
+
+def _collect_instance_logs(subdomain: str) -> tuple[bool, str]:
+    instance_dir = _resolve_instance_dir(subdomain)
+    if not instance_dir:
+        return False, "Instanzverzeichnis nicht gefunden."
+
+    command = [
+        "docker",
+        "compose",
+        "--env-file",
+        ".docker-build.env",
+        "logs",
+        "--no-color",
+        "--tail",
+        "500",
+    ]
+    return _run_command(command, cwd=instance_dir, timeout=180)
+
+
+def _set_instance_library_enabled(instance_dir: str, enabled: bool) -> tuple[bool, str]:
+    config_path = os.path.join(instance_dir, "config.json")
+    if not os.path.isfile(config_path):
+        return False, "config.json nicht gefunden."
+
+    try:
+        with open(config_path, "r", encoding="utf-8") as handle:
+            config = json.load(handle)
+    except Exception as exc:
+        return False, f"config.json konnte nicht gelesen werden: {exc}"
+
+    modules = config.get("modules")
+    if not isinstance(modules, dict):
+        modules = {}
+        config["modules"] = modules
+
+    library = modules.get("library")
+    if not isinstance(library, dict):
+        library = {}
+        modules["library"] = library
+
+    library["enabled"] = bool(enabled)
+
+    try:
+        with open(config_path, "w", encoding="utf-8") as handle:
+            json.dump(config, handle, indent=2, ensure_ascii=False)
+            handle.write("\n")
+    except Exception as exc:
+        return False, f"config.json konnte nicht geschrieben werden: {exc}"
+
+    return True, "Bibliothekseinstellung gespeichert."
+
+
+def _restart_instance_stack(instance_dir: str) -> tuple[bool, str]:
+    restart_cmd = [
+        "docker",
+        "compose",
+        "--env-file",
+        ".docker-build.env",
+        "restart",
+        "app",
+        "nginx",
+        "mongodb",
+    ]
+    up_cmd = [
+        "docker",
+        "compose",
+        "--env-file",
+        ".docker-build.env",
+        "up",
+        "-d",
+        "--remove-orphans",
+    ]
+
+    # restart may fail for stopped services; ensure desired state with up -d afterwards.
+    _run_command(restart_cmd, cwd=instance_dir, timeout=420)
+
+    ok, output = _run_command(up_cmd, cwd=instance_dir, timeout=900)
+    if ok:
+        return True, output
+
+    # Missing app image is a common restart failure after tag changes.
+    if "local app image not found" in (output or "").lower() and os.path.isfile(os.path.join(instance_dir, "update.sh")):
+        upd_ok, upd_out = _run_command(["bash", "./update.sh"], cwd=instance_dir, timeout=2400)
+        if upd_ok:
+            ok2, out2 = _run_command(up_cmd, cwd=instance_dir, timeout=900)
+            if ok2:
+                return True, f"{upd_out}\n{out2}".strip()
+            return False, out2
+        return False, upd_out
+
+    return False, output
+
+
+def _delete_instance_stack(subdomain: str) -> tuple[bool, str]:
+    target_dir = _instance_dir_path(subdomain)
+    if not target_dir:
+        return False, "Ungültige Subdomain für Löschung."
+
+    details: list[str] = []
+
+    if os.path.isdir(target_dir):
+        compose_file = os.path.join(target_dir, "docker-compose.yml")
+        if os.path.isfile(compose_file):
+            down_cmd = [
+                "docker",
+                "compose",
+                "--env-file",
+                ".docker-build.env",
+                "down",
+                "--remove-orphans",
+                "--volumes",
+                "--timeout",
+                "40",
+            ]
+            down_ok, down_out = _run_command(down_cmd, cwd=target_dir, timeout=900)
+            if not down_ok:
+                return False, f"Docker-Stack konnte nicht gestoppt werden.\n{_tail_output(down_out, 12)}"
+            details.append("Docker-Stack gestoppt und Volumes entfernt.")
+
+        try:
+            shutil.rmtree(target_dir)
+            details.append("Instanzverzeichnis gelöscht.")
+        except Exception as exc:
+            return False, f"Instanzverzeichnis konnte nicht gelöscht werden: {exc}"
+    else:
+        details.append("Instanzverzeichnis war bereits entfernt.")
+
+    nginx_sites_available = "/etc/nginx/sites-available"
+    nginx_sites_enabled = "/etc/nginx/sites-enabled"
+    site_name = f"inventarsystem-{subdomain}.conf"
+    avail_file = os.path.join(nginx_sites_available, site_name)
+    enabled_file = os.path.join(nginx_sites_enabled, site_name)
+
+    removed_nginx_file = False
+    for path in (enabled_file, avail_file):
+        try:
+            if os.path.lexists(path):
+                os.remove(path)
+                removed_nginx_file = True
+        except Exception:
+            continue
+
+    if removed_nginx_file:
+        if os.path.isfile("/usr/sbin/nginx") or os.path.isfile("/usr/bin/nginx"):
+            test_ok, _ = _run_command(["nginx", "-t"], timeout=60)
+            if test_ok:
+                _run_command(["nginx", "-s", "reload"], timeout=60)
+        details.append("Nginx-Site entfernt.")
+
+    return True, " ".join(details) if details else "Instanz gelöscht."
+
+
+def _delete_school_instance(subdomain: str) -> bool:
+    key = _sanitize_text(subdomain or "", 63)
+    if not key:
+        return False
+
+    client = None
+    try:
+        client, col = _get_collection("school_instances")
+        result = col.delete_one({"subdomain": key})
+        return result.deleted_count > 0
+    except PyMongoError:
+        return False
+    finally:
+        if client:
+            client.close()
+
+
+def _instance_db_name(instance_dir: str) -> str:
+    config_path = os.path.join(instance_dir, "config.json")
+    try:
+        with open(config_path, "r", encoding="utf-8") as handle:
+            cfg = json.load(handle)
+        value = ((cfg or {}).get("mongodb") or {}).get("db")
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    except Exception:
+        pass
+    return "Inventarsystem"
+
+
+def _create_instance_admin_user(
+    subdomain: str,
+    username: str,
+    password: str,
+    first_name: str,
+    last_name: str,
+) -> tuple[bool, str]:
+    instance_dir = _resolve_instance_dir(subdomain)
+    if not instance_dir:
+        return False, "Instanzverzeichnis nicht gefunden."
+
+    user_name = _sanitize_text(username, 80)
+    pwd = (password or "").strip()
+    first = _sanitize_text(first_name or "Admin", 80) or "Admin"
+    last = _sanitize_text(last_name or "User", 80) or "User"
+
+    if not _validate_username(user_name):
+        return False, "Ungültiger Benutzername für Instanz-Admin."
+    if len(pwd) < 8:
+        return False, "Passwort muss mindestens 8 Zeichen haben."
+
+    pwd_hash = hashlib.sha512(pwd.encode("utf-8")).hexdigest()
+    db_name = _instance_db_name(instance_dir)
+
+    js_user = json.dumps(user_name)
+    js_hash = json.dumps(pwd_hash)
+    js_first = json.dumps(first)
+    js_last = json.dumps(last)
+
+    eval_script = (
+        "const username=" + js_user + ";"
+        "const hash=" + js_hash + ";"
+        "const first=" + js_first + ";"
+        "const last=" + js_last + ";"
+        "const existing=db.users.findOne({Username:username});"
+        "if(existing){"
+        "db.users.updateOne({Username:username},{$set:{Password:hash,Admin:true,name:first,last_name:last,updated_at:new Date().toISOString()}});"
+        "print('UPDATED');"
+        "}else{"
+        "db.users.insertOne({Username:username,Password:hash,Admin:true,active_ausleihung:null,name:first,last_name:last,favorites:[]});"
+        "print('CREATED');"
+        "}"
+    )
+
+    up_ok, up_out = _run_command(
+        ["docker", "compose", "--env-file", ".docker-build.env", "up", "-d", "mongodb"],
+        cwd=instance_dir,
+        timeout=180,
+    )
+    if not up_ok:
+        return False, f"MongoDB der Instanz konnte nicht gestartet werden: {_tail_output(up_out, 10)}"
+
+    ok, output = _run_command(
+        [
+            "docker",
+            "compose",
+            "--env-file",
+            ".docker-build.env",
+            "exec",
+            "-T",
+            "mongodb",
+            "mongosh",
+            "--quiet",
+            "--eval",
+            eval_script,
+            db_name,
+        ],
+        cwd=instance_dir,
+        timeout=240,
+    )
+
+    if not ok:
+        return False, f"Instanz-Admin konnte nicht angelegt werden: {_tail_output(output, 12)}"
+
+    state = "aktualisiert" if "UPDATED" in output else "erstellt"
+    return True, f"Instanz-Admin '{user_name}' wurde {state}."
+
+
+def _get_school_instance_by_subdomain(subdomain: str) -> dict | None:
+    key = _sanitize_text(subdomain or "", 63)
+    if not key:
+        return None
+
+    client = None
+    try:
+        client, col = _get_collection("school_instances")
+        return col.find_one({"subdomain": key})
+    except PyMongoError:
+        return None
+    finally:
+        if client:
+            client.close()
+
+
+def _get_instance_for_user(username: str, display_name: str) -> dict | None:
+    uname = _sanitize_text(username or "", 80)
+    if not uname:
+        return None
+
+    client = None
+    try:
+        client, col = _get_collection("school_instances")
+        return col.find_one({"owner_username": uname}, sort=[("updated_at", -1), ("created_at", -1)])
+    except PyMongoError:
+        return None
+    finally:
+        if client:
+            client.close()
 
 
 def _activate_test_license_for_user(username: str, school_name: str, package_name: str = "Normal") -> tuple[bool, str]:
@@ -697,6 +1283,319 @@ def admin_dashboard():
     )
 
 
+@app.route('/admin/instances', methods=['GET', 'POST'])
+@admin_required
+def admin_instances():
+    version_options = _parse_instance_version_options()
+    available_users = _list_available_instance_users()
+
+    if request.method == 'POST':
+        action = _sanitize_text(request.form.get("action") or "create", 20).lower()
+        posted_subdomain = _sanitize_text(request.form.get("subdomain") or "", 120)
+        school_name = _sanitize_text(request.form.get("school_name") or "", 120)
+        raw_subdomain = _sanitize_text(request.form.get("subdomain") or "", 120)
+        owner_username = _sanitize_text(request.form.get("owner_username") or "", 80)
+        app_image_tag = _sanitize_text(request.form.get("app_image_tag") or "latest", 80)
+        library_enabled = (request.form.get("library_enabled") or "").strip().lower() in {"1", "on", "true", "yes"}
+        subdomain = _slugify_subdomain(posted_subdomain or raw_subdomain or school_name)
+
+        if action == "delete":
+            if not _is_valid_subdomain(subdomain):
+                flash("Ungültige Subdomain für Löschung.", "error")
+                return redirect(url_for("admin_instances"))
+
+            existing_record = _get_school_instance_by_subdomain(subdomain)
+            target_dir = _instance_dir_path(subdomain)
+            dir_exists = bool(target_dir and os.path.isdir(target_dir))
+            if not existing_record and not dir_exists:
+                flash("Instanz nicht gefunden.", "error")
+                return redirect(url_for("admin_instances"))
+
+            delete_ok, delete_message = _delete_instance_stack(subdomain)
+            if not delete_ok:
+                flash(delete_message or "Instanz konnte nicht gelöscht werden.", "error")
+                return redirect(url_for("admin_instances"))
+
+            if existing_record and not _delete_school_instance(subdomain):
+                flash(
+                    "Instanz wurde technisch gelöscht, aber der Datenbankeintrag konnte nicht entfernt werden.",
+                    "error",
+                )
+                return redirect(url_for("admin_instances"))
+
+            flash(f"Instanz {subdomain} wurde gelöscht.", "success")
+            if delete_message:
+                flash(delete_message, "info")
+            return redirect(url_for("admin_instances"))
+
+        if action == "toggle_library":
+            target = _get_school_instance_by_subdomain(subdomain)
+            if not target:
+                flash("Instanz nicht gefunden.", "error")
+                return redirect(url_for("admin_instances"))
+
+            instance_dir = _resolve_instance_dir(subdomain)
+            if not instance_dir:
+                flash("Instanzverzeichnis nicht gefunden.", "error")
+                return redirect(url_for("admin_instances"))
+
+            target_enabled = (request.form.get("library_enabled") or "").strip().lower() in {"1", "on", "true", "yes"}
+            ok, message = _set_instance_library_enabled(instance_dir, target_enabled)
+            if not ok:
+                _upsert_school_instance(
+                    {
+                        "subdomain": subdomain,
+                        "status": "Fehler",
+                        "nginx_status": "error",
+                        "last_message": message,
+                    }
+                )
+                flash(message, "error")
+                return redirect(url_for("admin_instances"))
+
+            restart_ok, restart_output = _restart_instance_stack(instance_dir)
+            client = None
+            try:
+                client, col = _get_collection("school_instances")
+                col.update_one(
+                    {"subdomain": subdomain},
+                    {
+                        "$set": {
+                            "school_name": target.get("school_name") or "",
+                            "owner_username": target.get("owner_username") or "",
+                            "subdomain": subdomain,
+                            "domain": target.get("domain") or f"{subdomain}.{INSTANCE_PARENT_DOMAIN}",
+                            "https_port": int(target.get("https_port") or 0),
+                            "instance_dir": instance_dir,
+                            "app_image_tag": target.get("app_image_tag") or "latest",
+                            "library_enabled": target_enabled,
+                            "status": "Läuft" if restart_ok else "Fehler",
+                            "nginx_status": "ok" if restart_ok else "error",
+                            "last_message": "Bibliothek aktiviert/deaktiviert und Instanz neu gestartet." if restart_ok else _tail_output(restart_output, 18),
+                            "updated_at": _utc_now_iso(),
+                        },
+                        "$setOnInsert": {"created_at": _utc_now_iso()},
+                    },
+                    upsert=True,
+                )
+            except PyMongoError:
+                pass
+            finally:
+                if client:
+                    client.close()
+
+            if restart_ok:
+                flash(f"Bibliothek wurde {'aktiviert' if target_enabled else 'deaktiviert'} und die Instanz neu gestartet.", "success")
+                if restart_output:
+                    flash(_tail_output(restart_output, 12), "info")
+            else:
+                flash(f"Bibliothek wurde gespeichert, aber der Neustart ist fehlgeschlagen.\n{_tail_output(restart_output, 18)}", "error")
+            return redirect(url_for("admin_instances"))
+
+        if action not in {"create", "start"}:
+            flash("Ungültige Aktion für Instanzverwaltung.", "error")
+            return redirect(url_for("admin_instances"))
+
+        if not available_users:
+            flash("Keine freien Nutzer verfügbar. Bitte zuerst einen neuen Nutzer anlegen oder eine bestehende Instanz löschen.", "error")
+            return redirect(url_for("admin_instances"))
+
+        if not school_name:
+            flash("Bitte einen Schulnamen angeben.", "error")
+            return redirect(url_for("admin_instances"))
+
+        if not owner_username:
+            flash("Bitte einen Nutzer zuweisen.", "error")
+            return redirect(url_for("admin_instances"))
+
+        owner_doc = _find_user(owner_username)
+        if not owner_doc:
+            flash("Ausgewählter Nutzer wurde nicht gefunden.", "error")
+            return redirect(url_for("admin_instances"))
+
+        if not school_name:
+            school_name = _sanitize_text(owner_doc.get("display_name") or owner_username, 120)
+
+        if app_image_tag not in version_options:
+            flash("Ungültige Version ausgewählt.", "error")
+            return redirect(url_for("admin_instances"))
+
+        existing_for_owner = _get_instance_for_user(owner_username, "")
+        if existing_for_owner:
+            existing_sub = _sanitize_text(existing_for_owner.get("subdomain") or "", 63)
+            if existing_sub and existing_sub != subdomain:
+                flash(
+                    f"Nutzer {owner_username} ist bereits der Instanz {existing_sub} zugewiesen. "
+                    "Bitte erst diese Zuweisung ändern.",
+                    "error",
+                )
+                return redirect(url_for("admin_instances"))
+
+        if not _is_valid_subdomain(subdomain):
+            flash("Ungültige Subdomain. Erlaubt sind a-z, 0-9 und Bindestriche (3-63 Zeichen).", "error")
+            return redirect(url_for("admin_instances"))
+
+        success, message, details = _run_instance_provision(
+            action,
+            school_name,
+            subdomain,
+            app_image_tag=app_image_tag,
+            library_enabled=library_enabled,
+        )
+
+        instance_data = {
+            "school_name": school_name,
+            "owner_username": owner_username,
+            "subdomain": details.get("SUBDOMAIN") or subdomain,
+            "domain": details.get("DOMAIN") or f"{subdomain}.{INSTANCE_PARENT_DOMAIN}",
+            "https_port": int((details.get("HTTPS_PORT") or "0") or 0),
+            "instance_dir": details.get("INSTANCE_DIR") or os.path.join(INSTANCE_BASE_DIR, subdomain),
+            "app_image_tag": details.get("APP_IMAGE_TAG") or app_image_tag,
+            "library_enabled": library_enabled if details.get("LIBRARY_ENABLED") is None else details.get("LIBRARY_ENABLED") == "1",
+            "status": "Läuft" if success else "Fehler",
+            "nginx_status": details.get("NGINX_STATUS") or ("ok" if success else "error"),
+            "last_message": message,
+        }
+        _upsert_school_instance(instance_data)
+
+        if success:
+            flash(f"Instanz gestartet: {instance_data['domain']}", "success")
+            if message:
+                flash(message, "info")
+        else:
+            flash(message or "Instanz konnte nicht gestartet werden.", "error")
+
+        return redirect(url_for("admin_instances"))
+
+    instances = _list_school_instances()
+    return render_template(
+        "admin_instances.html",
+        instances=instances,
+        users=_list_users_for_admin(),
+        available_users=available_users,
+        version_options=version_options,
+        instance_repo_url=INSTANCE_REPO_URL,
+        parent_domain=INSTANCE_PARENT_DOMAIN,
+        base_dir=INSTANCE_BASE_DIR,
+        provision_script=INSTANCE_PROVISION_SCRIPT,
+    )
+
+
+@app.route('/admin/system', methods=['GET', 'POST'])
+@admin_required
+def admin_system_tools():
+    if request.method == 'POST':
+        action = _sanitize_text(request.form.get("action") or "", 40)
+        subdomain = _sanitize_text(request.form.get("subdomain") or "", 63)
+
+        if action == "restart_core":
+            compose_file = os.path.join(BASE_DIR, "docker-compose.yml")
+            ok, output = _run_command(
+                ["docker", "compose", "-f", compose_file, "restart", "website", "mongodb"],
+                cwd=BASE_DIR,
+                timeout=180,
+            )
+            flash("Core-Services wurden neugestartet." if ok else f"Core-Restart fehlgeschlagen:\n{_tail_output(output, 10)}", "success" if ok else "error")
+            return redirect(url_for("admin_system_tools"))
+
+        if action in {"backup_instance", "update_instance", "restart_instance"}:
+            instance_dir = _resolve_instance_dir(subdomain)
+            if not instance_dir:
+                flash("Instanz nicht gefunden oder ungültige Subdomain.", "error")
+                return redirect(url_for("admin_system_tools"))
+
+            if action == "backup_instance":
+                command = ["bash", "./backup.sh", "--mode", "auto"]
+                timeout = 1800
+                title = f"Backup für {subdomain}"
+            elif action == "update_instance":
+                command = ["bash", "./update.sh"]
+                timeout = 2400
+                title = f"Update für {subdomain}"
+            else:
+                title = f"Restart für {subdomain}"
+                ok, output = _restart_instance_stack(instance_dir)
+                if ok:
+                    flash(f"{title} erfolgreich.\n{_tail_output(output, 12)}", "success")
+                    _upsert_school_instance(
+                        {
+                            "subdomain": subdomain,
+                            "status": "Läuft",
+                            "nginx_status": "ok",
+                            "last_message": "Instanz über System-Tools neu gestartet.",
+                        }
+                    )
+                else:
+                    flash(f"{title} fehlgeschlagen.\n{_tail_output(output, 18)}", "error")
+                    _upsert_school_instance(
+                        {
+                            "subdomain": subdomain,
+                            "status": "Fehler",
+                            "nginx_status": "error",
+                            "last_message": _sanitize_text(_tail_output(output, 6), 500),
+                        }
+                    )
+                return redirect(url_for("admin_system_tools"))
+
+            ok, output = _run_command(command, cwd=instance_dir, timeout=timeout)
+            if ok:
+                flash(f"{title} erfolgreich.\n{_tail_output(output, 12)}", "success")
+            else:
+                flash(f"{title} fehlgeschlagen.\n{_tail_output(output, 18)}", "error")
+            return redirect(url_for("admin_system_tools"))
+
+        if action == "create_instance_admin":
+            username = _sanitize_text(request.form.get("admin_username") or "", 80)
+            password = (request.form.get("admin_password") or "").strip()
+            first_name = _sanitize_text(request.form.get("admin_first_name") or "Admin", 80)
+            last_name = _sanitize_text(request.form.get("admin_last_name") or "User", 80)
+
+            ok, msg = _create_instance_admin_user(subdomain, username, password, first_name, last_name)
+            flash(msg, "success" if ok else "error")
+            return redirect(url_for("admin_system_tools"))
+
+        flash("Unbekannte System-Aktion.", "error")
+        return redirect(url_for("admin_system_tools"))
+
+    instances = _list_school_instances()
+    return render_template("admin_system.html", instances=instances)
+
+
+@app.route('/admin/system/logs/core')
+@admin_required
+def admin_download_core_logs():
+    ok, output = _collect_core_logs()
+    if not ok:
+        flash(f"Core-Logs konnten nicht geladen werden.\n{_tail_output(output, 14)}", "error")
+        return redirect(url_for("admin_system_tools"))
+
+    filename = f"core-logs-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}.log"
+    return send_file(
+        BytesIO(output.encode("utf-8")),
+        mimetype="text/plain",
+        as_attachment=True,
+        download_name=filename,
+    )
+
+
+@app.route('/admin/system/logs/instance/<subdomain>')
+@admin_required
+def admin_download_instance_logs(subdomain):
+    ok, output = _collect_instance_logs(subdomain)
+    if not ok:
+        flash(f"Instanz-Logs konnten nicht geladen werden.\n{_tail_output(output, 14)}", "error")
+        return redirect(url_for("admin_system_tools"))
+
+    safe_name = _slugify_subdomain(subdomain)
+    filename = f"instance-{safe_name}-logs-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}.log"
+    return send_file(
+        BytesIO(output.encode("utf-8")),
+        mimetype="text/plain",
+        as_attachment=True,
+        download_name=filename,
+    )
+
+
 @app.route('/admin/appointments/block-day', methods=['POST'])
 @admin_required
 def admin_block_day():
@@ -951,6 +1850,44 @@ def my_invoices():
     return render_template("my_invoices.html", invoices=invoices)
 
 
+@app.route('/my/instance', methods=['GET', 'POST'])
+@login_required
+def my_instance_management():
+    username = _sanitize_text(session.get("username") or "", 80)
+    display_name = _sanitize_text(session.get("display_name") or username, 120)
+
+    current_instance = _get_instance_for_user(username, display_name)
+    current_subdomain = _sanitize_text((current_instance or {}).get("subdomain") or "", 63)
+    suggested_subdomain = _slugify_subdomain(display_name or username)
+
+    if request.method == 'POST':
+        flash("Nutzer können Instanzen nicht selbst erstellen oder ändern. Bitte den Administrator kontaktieren.", "error")
+        return redirect(url_for("my_instance_management"))
+
+    instance_doc = _get_instance_for_user(username, display_name)
+    instance_view = None
+    if instance_doc:
+        instance_view = {
+            "school_name": _sanitize_text(instance_doc.get("school_name") or display_name, 120),
+            "owner_username": _sanitize_text(instance_doc.get("owner_username") or "", 80),
+            "subdomain": _sanitize_text(instance_doc.get("subdomain") or "", 63),
+            "domain": _sanitize_text(instance_doc.get("domain") or "", 190),
+            "https_port": int(instance_doc.get("https_port") or 0),
+            "status": _sanitize_text(instance_doc.get("status") or "Unbekannt", 40),
+            "nginx_status": _sanitize_text(instance_doc.get("nginx_status") or "unbekannt", 80),
+            "last_message": _sanitize_text(instance_doc.get("last_message") or "", 500),
+            "updated_at": instance_doc.get("updated_at") or "",
+        }
+
+    return render_template(
+        "my_instance.html",
+        instance=instance_view,
+        suggested_subdomain=suggested_subdomain,
+        parent_domain=INSTANCE_PARENT_DOMAIN,
+        default_school_name=display_name,
+    )
+
+
 @app.route('/chat', methods=['GET', 'POST'])
 @login_required
 def user_chat():
@@ -1068,7 +2005,8 @@ def admin_users():
         return redirect(url_for("admin_users"))
 
     users = _list_users_for_admin()
-    return render_template("admin_users.html", users=users)
+    instances_by_owner = _list_instances_grouped_by_owner()
+    return render_template("admin_users.html", users=users, instances_by_owner=instances_by_owner)
 
 
 @app.route('/admin/team', methods=['GET', 'POST'])

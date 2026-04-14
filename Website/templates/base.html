@@ -385,6 +385,7 @@
                         <div class="dropdown-menu">
                             <a href="{{ url_for('my_licenses') }}">Meine Lizenzen</a>
                             <a href="{{ url_for('my_invoices') }}">Meine Rechnungen</a>
+                            <a href="{{ url_for('my_instance_management') }}">Meine Instanz</a>
                             <a href="{{ url_for('user_chat') }}">Chat mit Admin</a>
                             <a href="{{ url_for('user_tickets') }}">Support Tickets</a>
                         </div>
@@ -401,8 +402,10 @@
                                 <a href="{{ url_for('admin_invoices') }}">Rechnungsverwaltung</a>
                                 <a href="{{ url_for('admin_chats') }}">Admin-Chat</a>
                                 <a href="{{ url_for('admin_tickets') }}">Support-Center</a>
+                                <a href="{{ url_for('admin_system_tools') }}">System-Tools</a>
                                 <a href="{{ url_for('admin_blog') }}">Blog verwalten</a>
                                 <a href="{{ url_for('admin_team') }}">Team Cards</a>
+                                <a href="{{ url_for('admin_instances') }}">Schul-Instanzen</a>
                             </div>
                         </details>
                     {% endif %}

@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+
+{% block title %}Admin | Instanzen{% endblock %}
+
+{% block content %}
+<section class="instance-header">
+    <h1>Schul-Instanzen starten</h1>
+    <p>Neue Instanzen des Inventarsystems für Subdomains pro Schule anlegen, sowie die Bibliothek dauerhaft aktivieren oder deaktivieren.</p>
+</section>
+
+<section class="instance-form-wrap">
+    <form method="post" class="instance-form">
+        <input type="hidden" name="action" value="create">
+
+        <label for="owner_username">Zugewiesener Nutzer</label>
+        <select id="owner_username" name="owner_username" required {% if not available_users %}disabled{% endif %}>
+            {% if available_users %}
+                <option value="">Nutzer wählen</option>
+                {% for user in available_users %}
+                    <option value="{{ user.username }}" data-school-name="{{ user.display_name or user.username }}">{{ user.username }}{% if user.display_name %} - {{ user.display_name }}{% endif %}</option>
+                {% endfor %}
+            {% else %}
+                <option value="">Keine freien Nutzer verfügbar</option>
+            {% endif %}
+        </select>
+
+        {% if not available_users %}
+        <p class="warn-text">Alle Nutzer sind bereits einer Instanz zugewiesen. Lege einen neuen Nutzer an oder lösche eine bestehende Instanz.</p>
+        {% endif %}
+
+        <label for="school_name">Schulname</label>
+        <input id="school_name" name="school_name" type="text" placeholder="wird aus dem Nutzer übernommen" required>
+
+        <label for="app_image_tag">Version</label>
+        <select id="app_image_tag" name="app_image_tag" required>
+            {% for version in version_options %}
+                <option value="{{ version }}">{{ version }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="subdomain">Subdomain (optional)</label>
+        <input id="subdomain" name="subdomain" type="text" placeholder="wird aus Schulname abgeleitet">
+
+        <label class="check-row">
+            <input type="checkbox" name="library_enabled" value="1">
+            Bibliothek aktivieren
+        </label>
+
+        <button type="submit">Instanz erstellen und starten</button>
+    </form>
+
+    <aside class="instance-meta">
+        <h2>Systemdaten</h2>
+        <p><strong>Repository:</strong> {{ instance_repo_url }}</p>
+        <p><strong>Basis-Domain:</strong> {{ parent_domain }}</p>
+        <p><strong>Instanz-Pfad:</strong> {{ base_dir }}</p>
+        <p><strong>Provisioning-Skript:</strong> {{ provision_script }}</p>
+        <p class="note">Hinweis: Für Docker- und Nginx-Operationen benötigt der laufende Prozess die passenden Host-Berechtigungen.</p>
+    </aside>
+</section>
+
+<section class="instance-table-wrap">
+    <h2>Vorhandene Instanzen</h2>
+    {% if instances %}
+    <table>
+        <thead>
+            <tr>
+                <th>Schule</th>
+                <th>Nutzer</th>
+                <th>Subdomain</th>
+                <th>Version</th>
+                <th>Bibliothek</th>
+                <th>Aktion</th>
+                <th>HTTPS-Port</th>
+                <th>Status</th>
+                <th>Nginx</th>
+                <th>Letzte Meldung</th>
+                <th>Aktualisiert</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in instances %}
+            <tr>
+                <td>{{ item.school_name }}</td>
+                <td>{{ item.owner_username or '-' }}</td>
+                <td>
+                    {% if item.domain %}
+                        <a class="instance-domain-link" href="https://{{ item.domain }}" target="_blank" rel="noopener noreferrer">{{ item.domain }}</a>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ item.app_image_tag or 'latest' }}</td>
+                <td>{{ 'an' if item.library_enabled else 'aus' }}</td>
+                <td>
+                    <form method="post" class="inline-toggle-form">
+                        <input type="hidden" name="action" value="toggle_library">
+                        <input type="hidden" name="subdomain" value="{{ item.subdomain }}">
+                        <input type="hidden" name="library_enabled" value="{{ 0 if item.library_enabled else 1 }}">
+                        <button type="submit">{{ 'Bibliothek deaktivieren' if item.library_enabled else 'Bibliothek aktivieren' }}</button>
+                    </form>
+                    <form method="post" class="inline-toggle-form" onsubmit="return confirm('Instanz {{ item.subdomain }} wirklich löschen? Dieser Vorgang entfernt Container, Daten und Konfiguration.');">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="subdomain" value="{{ item.subdomain }}">
+                        <button type="submit" class="danger">Instanz löschen</button>
+                    </form>
+                </td>
+                <td>{{ item.https_port or '-' }}</td>
+                <td>
+                    <span class="pill {{ 'ok' if item.status == 'Läuft' else 'error' }}">{{ item.status }}</span>
+                </td>
+                <td>{{ item.nginx_status }}</td>
+                <td>{{ item.last_message }}</td>
+                <td>{{ item.updated_at }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Noch keine Instanzen vorhanden.</p>
+    {% endif %}
+</section>
+
+<style>
+.instance-header {
+    margin-bottom: 1rem;
+}
+
+.instance-form-wrap {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.2rem;
+}
+
+.instance-form,
+.instance-meta,
+.instance-table-wrap {
+    border: 1px solid #d8e1e8;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 1rem;
+}
+
+.instance-form {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.instance-form input,
+.instance-form select {
+    border: 1px solid #bcd0de;
+    border-radius: 10px;
+    padding: 0.55rem 0.65rem;
+    font: inherit;
+}
+
+.check-row {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 0.2rem;
+    font-weight: 600;
+}
+
+.instance-form button {
+    margin-top: 0.4rem;
+    border: none;
+    border-radius: 999px;
+    padding: 0.55rem 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    color: #ffffff;
+    background: linear-gradient(120deg, #0b5b89 0%, #0b4262 100%);
+}
+
+.warn-text {
+    margin: 0.2rem 0 0.1rem;
+    color: #8b2a27;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.instance-domain-link {
+    color: #0b5b89;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.instance-domain-link:hover {
+    text-decoration: underline;
+}
+
+.inline-toggle-form {
+    margin: 0;
+}
+
+.inline-toggle-form + .inline-toggle-form {
+    margin-top: 0.35rem;
+}
+
+.inline-toggle-form button {
+    border: 1px solid #bcd0de;
+    background: #ffffff;
+    color: #173f5a;
+    border-radius: 999px;
+    padding: 0.35rem 0.68rem;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.inline-toggle-form button:hover {
+    background: #f2f8fc;
+}
+
+.inline-toggle-form button.danger {
+    border-color: #e3adad;
+    color: #8b2a27;
+    background: #fef2f2;
+}
+
+.inline-toggle-form button.danger:hover {
+    background: #fde4e4;
+}
+
+.instance-meta h2,
+.instance-table-wrap h2 {
+    margin: 0 0 0.5rem;
+}
+
+.instance-meta p {
+    margin: 0.28rem 0;
+    font-size: 0.92rem;
+}
+
+.instance-meta .note {
+    margin-top: 0.65rem;
+    padding-top: 0.65rem;
+    border-top: 1px dashed #c7d2db;
+}
+
+.instance-table-wrap {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th,
+td {
+    text-align: left;
+    border-bottom: 1px solid #e7edf3;
+    padding: 0.62rem;
+    vertical-align: top;
+    font-size: 0.9rem;
+}
+
+.pill {
+    display: inline-flex;
+    border-radius: 999px;
+    padding: 0.18rem 0.62rem;
+    font-weight: 700;
+    font-size: 0.78rem;
+}
+
+.pill.ok {
+    background: #eaf8f1;
+    border: 1px solid #8cc9a6;
+    color: #0f5c3a;
+}
+
+.pill.error {
+    background: #fef2f2;
+    border: 1px solid #e3adad;
+    color: #8b2a27;
+}
+
+@media (max-width: 900px) {
+    .instance-form-wrap {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+(function() {
+    const ownerSelect = document.getElementById('owner_username');
+    const schoolInput = document.getElementById('school_name');
+    if (!ownerSelect || !schoolInput) {
+        return;
+    }
+
+    const updateSchoolName = () => {
+        const selectedOption = ownerSelect.options[ownerSelect.selectedIndex];
+        const schoolName = selectedOption ? (selectedOption.dataset.schoolName || '') : '';
+        if (schoolName) {
+            schoolInput.value = schoolName;
+        }
+    };
+
+    ownerSelect.addEventListener('change', updateSchoolName);
+    updateSchoolName();
+})();
+</script>
+{% endblock %}

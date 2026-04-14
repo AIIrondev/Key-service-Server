@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Admin | System-Tools{% endblock %}
+
+{% block content %}
+<section class="head">
+    <h1>System-Tools</h1>
+    <p>Nützliche Admin-Funktionen für Betrieb, Backup, Update, Restart und Log-Download.</p>
+</section>
+
+<section class="core-tools">
+    <h2>Core-Services</h2>
+    <div class="actions">
+        <form method="post">
+            <input type="hidden" name="action" value="restart_core">
+            <button type="submit">Website + MongoDB neu starten</button>
+        </form>
+        <a class="action-link" href="{{ url_for('admin_download_core_logs') }}">Core-Logs herunterladen</a>
+    </div>
+</section>
+
+<section class="instance-tools">
+    <h2>Instanz-Operationen</h2>
+    {% if instances %}
+    <table>
+        <thead>
+            <tr>
+                <th>Schule</th>
+                <th>Subdomain</th>
+                <th>Status</th>
+                <th>Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in instances %}
+            <tr>
+                <td>{{ item.school_name }}</td>
+                <td>{{ item.subdomain }}</td>
+                <td>{{ item.status }} / {{ item.nginx_status }}</td>
+                <td>
+                    <div class="actions row-actions">
+                        <form method="post">
+                            <input type="hidden" name="action" value="backup_instance">
+                            <input type="hidden" name="subdomain" value="{{ item.subdomain }}">
+                            <button type="submit">Backup</button>
+                        </form>
+                        <form method="post">
+                            <input type="hidden" name="action" value="update_instance">
+                            <input type="hidden" name="subdomain" value="{{ item.subdomain }}">
+                            <button type="submit">Update</button>
+                        </form>
+                        <form method="post">
+                            <input type="hidden" name="action" value="restart_instance">
+                            <input type="hidden" name="subdomain" value="{{ item.subdomain }}">
+                            <button type="submit">Restart</button>
+                        </form>
+                        <a class="action-link" href="{{ url_for('admin_download_instance_logs', subdomain=item.subdomain) }}">Logs</a>
+                    </div>
+                    <form method="post" class="inline-admin-form">
+                        <input type="hidden" name="action" value="create_instance_admin">
+                        <input type="hidden" name="subdomain" value="{{ item.subdomain }}">
+                        <input type="text" name="admin_username" placeholder="Admin-Username" required>
+                        <input type="password" name="admin_password" placeholder="Passwort (>=8)" required>
+                        <input type="text" name="admin_first_name" placeholder="Vorname" value="Admin">
+                        <input type="text" name="admin_last_name" placeholder="Nachname" value="User">
+                        <button type="submit">Admin erstellen</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Keine Instanzen vorhanden.</p>
+    {% endif %}
+</section>
+
+<style>
+.head { margin-bottom: 1rem; }
+.core-tools,
+.instance-tools {
+    border: 1px solid #d8e1e8;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+.actions { display: flex; flex-wrap: wrap; gap: 0.55rem; align-items: center; }
+.row-actions { gap: 0.4rem; }
+.actions form { margin: 0; }
+.inline-admin-form {
+    margin-top: 0.55rem;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.38rem;
+}
+.inline-admin-form input {
+    border: 1px solid #bcd0de;
+    border-radius: 8px;
+    padding: 0.38rem 0.5rem;
+    font: inherit;
+    min-width: 0;
+}
+button,
+.action-link {
+    border: 1px solid #bcd0de;
+    background: #ffffff;
+    padding: 0.42rem 0.72rem;
+    border-radius: 999px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    color: #173f5a;
+    display: inline-flex;
+    align-items: center;
+}
+button:hover,
+.action-link:hover { background: #f2f8fc; }
+table { width: 100%; border-collapse: collapse; }
+th, td {
+    text-align: left;
+    border-bottom: 1px solid #e7edf3;
+    padding: 0.62rem;
+    vertical-align: top;
+}
+@media (max-width: 860px) {
+    .actions { display: grid; }
+    .inline-admin-form { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}

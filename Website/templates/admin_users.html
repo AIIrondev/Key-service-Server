@@ -15,6 +15,7 @@
                 <th>Benutzername</th>
                 <th>Name</th>
                 <th>Rolle</th>
+                <th>Instanz-Links</th>
                 <th>Aktionen</th>
             </tr>
         </thead>
@@ -24,6 +25,18 @@
                 <td>{{ user.username }}</td>
                 <td>{{ user.display_name }}</td>
                 <td>{{ 'Admin' if user.is_admin else 'Nutzer' }}</td>
+                <td>
+                    {% set user_instances = instances_by_owner.get(user.username, []) %}
+                    {% if user_instances %}
+                        <div class="instance-links">
+                            {% for inst in user_instances %}
+                                <a href="https://{{ inst.domain }}" target="_blank" rel="noopener noreferrer">{{ inst.domain }}</a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <span class="no-instance">Keine zugewiesene Instanz</span>
+                    {% endif %}
+                </td>
                 <td>
                     <form method="post" class="actions">
                         <input type="hidden" name="username" value="{{ user.username }}">
@@ -51,6 +64,10 @@
 table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 0.7rem; border-bottom: 1px solid #e8eef2; }
 .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.instance-links { display: grid; gap: 0.35rem; }
+.instance-links a { color: #0b5b89; font-weight: 600; text-decoration: none; }
+.instance-links a:hover { text-decoration: underline; }
+.no-instance { color: #5e7283; }
 select { border: 1px solid #bcd0de; background: #fff; padding: 0.4rem 0.55rem; border-radius: 10px; font: inherit; }
 button { border: 1px solid #bcd0de; background: #fff; padding: 0.4rem 0.65rem; border-radius: 999px; font-weight: 700; cursor: pointer; }
 </style>

@@ -16,9 +16,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        NUITKA_JOBS: ${NUITKA_JOBS:-1}
-        NUITKA_LOW_MEMORY: ${NUITKA_LOW_MEMORY:-1}
     restart: unless-stopped
     depends_on:
       mongodb:
@@ -26,8 +23,21 @@ services:
     environment:
       MONGO_URI: mongodb://mongodb:27017
       MONGO_DB_NAME: Invario_Website
-      SESSION_COOKIE_SECURE: "0"
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-0}
       JWT_SECRET_KEY: change-this-in-production
+      INSTANCE_PROVISION_SCRIPT: /app/provision_instance.sh
+      INSTANCE_BASE_DIR: /opt/inventarsystem-instances
+      INSTANCE_PARENT_DOMAIN: ${INSTANCE_PARENT_DOMAIN:-meine-domain}
+      INSTANCE_REPO_URL: ${INSTANCE_REPO_URL:-https://github.com/AIIrondev/legendary-octo-garbanzo}
+      INSTANCE_TLS_MODE: ${INSTANCE_TLS_MODE:-development}
+      INSTANCE_WILDCARD_CERT_FILE: ${INSTANCE_WILDCARD_CERT_FILE:-/etc/nginx/certs/wildcard.meine-domain.crt}
+      INSTANCE_WILDCARD_KEY_FILE: ${INSTANCE_WILDCARD_KEY_FILE:-/etc/nginx/certs/wildcard.meine-domain.key}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /opt/inventarsystem-instances:/opt/inventarsystem-instances
+      - /etc/nginx/sites-available:/etc/nginx/sites-available
+      - /etc/nginx/sites-enabled:/etc/nginx/sites-enabled
+      - /etc/nginx/certs:/etc/nginx/certs
     ports:
       - "4999:4999"
 

@@ -33,15 +33,8 @@ if ! "${DOCKER_CMD[@]}" compose version >/dev/null 2>&1; then
   exit 1
 fi
 
-NUITKA_JOBS="${NUITKA_JOBS:-1}"
-NUITKA_LOW_MEMORY="${NUITKA_LOW_MEMORY:-1}"
-
-echo "==> Safe Nuitka build settings"
-echo "    NUITKA_JOBS=${NUITKA_JOBS}"
-echo "    NUITKA_LOW_MEMORY=${NUITKA_LOW_MEMORY}"
-
-echo "==> Building website image (Nuitka standalone conversion runs in Dockerfile)"
-NUITKA_JOBS="$NUITKA_JOBS" NUITKA_LOW_MEMORY="$NUITKA_LOW_MEMORY" "${DOCKER_CMD[@]}" compose build website
+echo "==> Building website image (pure Python runtime)"
+"${DOCKER_CMD[@]}" compose build website
 
 echo "==> Starting internal MongoDB + Website containers"
 "${DOCKER_CMD[@]}" compose up -d
@@ -51,4 +44,4 @@ echo "==> Container status"
 
 echo "Application is starting on: http://localhost:4999"
 echo "Use: docker compose logs -f website"
-echo "Tip: If build is still too heavy, run with NUITKA_JOBS=1 NUITKA_LOW_MEMORY=1 ./start_docker_build.sh"
+echo "Provisioning is available in the container via /app/provision_instance.sh"

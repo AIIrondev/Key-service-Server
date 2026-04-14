@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Meine Instanz{% endblock %}
+
+{% block content %}
+<section class="instance-head">
+    <h1>Meine Instanzverwaltung</h1>
+    <p>Hier sehen Sie ausschließlich Ihre zugewiesene Instanz und können diese direkt nutzen.</p>
+</section>
+
+<section class="instance-card">
+    <h2>Instanzdaten</h2>
+    {% if instance %}
+        <p><strong>Schule:</strong> {{ instance.school_name }}</p>
+        <p><strong>Domain:</strong> {{ instance.domain }}</p>
+        <p><strong>Subdomain:</strong> {{ instance.subdomain }}</p>
+        <p><strong>HTTPS-Port:</strong> {{ instance.https_port or '-' }}</p>
+        <p><strong>Status:</strong> {{ instance.status }}</p>
+        <p><strong>Nginx:</strong> {{ instance.nginx_status }}</p>
+        <p><strong>Letzte Meldung:</strong> {{ instance.last_message }}</p>
+        <p><strong>Aktualisiert:</strong> {{ instance.updated_at }}</p>
+        <p><strong>Zugang:</strong> <a href="https://{{ instance.domain }}" target="_blank" rel="noopener noreferrer">https://{{ instance.domain }}</a></p>
+    {% else %}
+        <p>Für Ihr Konto ist aktuell keine Instanz zugewiesen.</p>
+        <p>Bitte wenden Sie sich an den Administrator, um eine Instanz zugewiesen zu bekommen.</p>
+    {% endif %}
+</section>
+
+<style>
+.instance-head { margin-bottom: 1rem; }
+.instance-card {
+    max-width: 780px;
+    border: 1px solid #d8e1e8;
+    border-radius: 14px;
+    background: #ffffff;
+    padding: 1rem;
+}
+.instance-card h2 { margin: 0 0 0.6rem; }
+.instance-card p { margin: 0.28rem 0; }
+</style>
+{% endblock %}
