@@ -8,6 +8,101 @@
     <p>Neue Instanzen des Inventarsystems für Subdomains pro Schule anlegen, sowie die Bibliothek dauerhaft aktivieren oder deaktivieren.</p>
 </section>
 
+<section class="dashboard-grid">
+    <article class="kpi-card">
+        <p class="kpi-label">Instanzen gesamt</p>
+        <p class="kpi-value">{{ instance_dashboard.kpis.total }}</p>
+    </article>
+    <article class="kpi-card good">
+        <p class="kpi-label">Laufend</p>
+        <p class="kpi-value">{{ instance_dashboard.kpis.running }}</p>
+    </article>
+    <article class="kpi-card bad">
+        <p class="kpi-label">Fehlerhaft</p>
+        <p class="kpi-value">{{ instance_dashboard.kpis.error }}</p>
+    </article>
+    <article class="kpi-card">
+        <p class="kpi-label">Bibliothek aktiv</p>
+        <p class="kpi-value">{{ instance_dashboard.kpis.library_on }}</p>
+    </article>
+    <article class="kpi-card">
+        <p class="kpi-label">Nutzer zugewiesen</p>
+        <p class="kpi-value">{{ instance_dashboard.kpis.assigned_users }}</p>
+    </article>
+</section>
+
+<section class="charts-grid">
+    <article class="chart-card">
+        <h3>Status</h3>
+        <canvas id="statusChart" aria-label="Status Chart"></canvas>
+    </article>
+    <article class="chart-card">
+        <h3>Bibliothek</h3>
+        <canvas id="libraryChart" aria-label="Library Chart"></canvas>
+    </article>
+    <article class="chart-card wide">
+        <h3>Versionen</h3>
+        <canvas id="versionsChart" aria-label="Versions Chart"></canvas>
+    </article>
+    <article class="chart-card wide">
+        <h3>Instanzen pro Nutzer</h3>
+        <canvas id="ownersChart" aria-label="Owners Chart"></canvas>
+    </article>
+    <article class="chart-card wide">
+        <h3>Aktivität (letzte 7 Tage)</h3>
+        <canvas id="activityChart" aria-label="Activity Chart"></canvas>
+    </article>
+</section>
+
+<section class="live-monitor">
+    <div class="live-head">
+        <h2>Live Monitor (semi-live)</h2>
+        <p>Aktualisierung alle 15 Sekunden: RAM/CPU pro Instanz und Host-Auslastung.</p>
+    </div>
+    <div class="live-kpis">
+        <article class="live-kpi">
+            <p>Host RAM belegt</p>
+            <strong id="liveHostRam">-</strong>
+        </article>
+        <article class="live-kpi">
+            <p>Docker RAM (Invario)</p>
+            <strong id="liveDockerRam">-</strong>
+        </article>
+        <article class="live-kpi">
+            <p>Container (Invario)</p>
+            <strong id="liveContainerCount">-</strong>
+        </article>
+        <article class="live-kpi">
+            <p>Docker RAM (alle)</p>
+            <strong id="liveDockerRamAll">-</strong>
+        </article>
+        <article class="live-kpi">
+            <p>Container (alle)</p>
+            <strong id="liveContainerCountAll">-</strong>
+        </article>
+        <article class="live-kpi">
+            <p>Letztes Update</p>
+            <strong id="liveUpdatedAt">-</strong>
+        </article>
+    </div>
+    <div class="live-table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Instanz</th>
+                    <th>Status</th>
+                    <th>Container</th>
+                    <th>RAM (MiB)</th>
+                    <th>CPU (%)</th>
+                </tr>
+            </thead>
+            <tbody id="liveInstanceBody">
+                <tr><td colspan="5">Lade Live-Daten...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
 <section class="instance-form-wrap">
     <form method="post" class="instance-form">
         <input type="hidden" name="action" value="create">
@@ -126,11 +221,125 @@
     margin-bottom: 1rem;
 }
 
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.kpi-card {
+    border: 1px solid #d8e1e8;
+    background: linear-gradient(160deg, #ffffff 0%, #f4f8fb 100%);
+    border-radius: 14px;
+    padding: 0.85rem;
+}
+
+.kpi-card.good {
+    border-color: #8cc9a6;
+    background: linear-gradient(160deg, #ffffff 0%, #eaf8f1 100%);
+}
+
+.kpi-card.bad {
+    border-color: #e3adad;
+    background: linear-gradient(160deg, #ffffff 0%, #fef2f2 100%);
+}
+
+.kpi-label {
+    margin: 0;
+    font-size: 0.84rem;
+    color: #4b6170;
+    font-weight: 600;
+}
+
+.kpi-value {
+    margin: 0.3rem 0 0;
+    font-size: 1.58rem;
+    font-weight: 800;
+    color: #11364a;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+    margin-bottom: 1.2rem;
+}
+
+.chart-card {
+    border: 1px solid #d8e1e8;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 0.85rem;
+}
+
+.chart-card.wide {
+    grid-column: span 2;
+}
+
+.chart-card h3 {
+    margin: 0 0 0.45rem;
+    font-size: 1rem;
+}
+
+.chart-card canvas {
+    width: 100%;
+    max-height: 260px;
+}
+
 .instance-form-wrap {
     display: grid;
     grid-template-columns: 1.2fr 1fr;
     gap: 1rem;
     margin-bottom: 1.2rem;
+}
+
+.live-monitor {
+    border: 1px solid #d8e1e8;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 1rem;
+    margin-bottom: 1.2rem;
+}
+
+.live-head h2 {
+    margin: 0;
+}
+
+.live-head p {
+    margin: 0.25rem 0 0.75rem;
+    color: #4f6573;
+}
+
+.live-kpis {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.6rem;
+    margin-bottom: 0.8rem;
+}
+
+.live-kpi {
+    border: 1px solid #d8e1e8;
+    border-radius: 12px;
+    background: #f7fafc;
+    padding: 0.65rem;
+}
+
+.live-kpi p {
+    margin: 0;
+    font-size: 0.82rem;
+    color: #4b6170;
+}
+
+.live-kpi strong {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: 1.08rem;
+    color: #11364a;
+}
+
+.live-table-wrap {
+    overflow-x: auto;
 }
 
 .instance-form,
@@ -279,14 +488,182 @@ td {
 }
 
 @media (max-width: 900px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .chart-card.wide {
+        grid-column: span 1;
+    }
+
     .instance-form-wrap {
         grid-template-columns: 1fr;
+    }
+
+    .live-kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 </style>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
 (function() {
+    const dashboardData = {{ instance_dashboard|tojson }};
+
+    const buildChart = (id, config) => {
+        const element = document.getElementById(id);
+        if (!element) {
+            return;
+        }
+        new Chart(element, config);
+    };
+
+    buildChart('statusChart', {
+        type: 'doughnut',
+        data: {
+            labels: dashboardData.status.labels,
+            datasets: [{
+                data: dashboardData.status.values,
+                backgroundColor: ['#3aa675', '#cf4b49', '#8aa6b8']
+            }]
+        },
+        options: { plugins: { legend: { position: 'bottom' } } }
+    });
+
+    buildChart('libraryChart', {
+        type: 'pie',
+        data: {
+            labels: dashboardData.library.labels,
+            datasets: [{
+                data: dashboardData.library.values,
+                backgroundColor: ['#1b6f8e', '#c6d7e2']
+            }]
+        },
+        options: { plugins: { legend: { position: 'bottom' } } }
+    });
+
+    buildChart('versionsChart', {
+        type: 'bar',
+        data: {
+            labels: dashboardData.versions.labels,
+            datasets: [{
+                label: 'Instanzen',
+                data: dashboardData.versions.values,
+                backgroundColor: '#1b6f8e'
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    buildChart('ownersChart', {
+        type: 'bar',
+        data: {
+            labels: dashboardData.owners.labels,
+            datasets: [{
+                label: 'Instanzen',
+                data: dashboardData.owners.values,
+                backgroundColor: '#b3672e'
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            scales: { x: { beginAtZero: true, ticks: { precision: 0 } } },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    buildChart('activityChart', {
+        type: 'line',
+        data: {
+            labels: dashboardData.activity.labels,
+            datasets: [{
+                label: 'Updates',
+                data: dashboardData.activity.values,
+                borderColor: '#0b5b89',
+                backgroundColor: 'rgba(11, 91, 137, 0.15)',
+                fill: true,
+                tension: 0.25
+            }]
+        },
+        options: {
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    const mib = (value) => {
+        const num = Number(value || 0);
+        return `${num.toFixed(1)} MiB`;
+    };
+
+    const percent = (value) => {
+        const num = Number(value || 0);
+        return `${num.toFixed(1)} %`;
+    };
+
+    const updateLive = async () => {
+        try {
+            const response = await fetch('/admin/instances/stats', { cache: 'no-store' });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const payload = await response.json();
+            const host = payload.host || {};
+            const docker = payload.docker || {};
+            const instances = payload.instances || [];
+
+            const hostRam = `${mib(host.used_mem_mib)} / ${mib(host.total_mem_mib)} (${percent(host.used_mem_pct)})`;
+            document.getElementById('liveHostRam').textContent = hostRam;
+            document.getElementById('liveDockerRam').textContent = mib(docker.managed_used_mem_mib);
+            document.getElementById('liveContainerCount').textContent = String(docker.managed_container_count || 0);
+            document.getElementById('liveDockerRamAll').textContent = mib(docker.all_used_mem_mib);
+            document.getElementById('liveContainerCountAll').textContent = String(docker.all_container_count || 0);
+            document.getElementById('liveUpdatedAt').textContent = payload.generated_at || '-';
+
+            const body = document.getElementById('liveInstanceBody');
+            if (!body) {
+                return;
+            }
+
+            if (!instances.length) {
+                body.innerHTML = '<tr><td colspan="5">Keine Instanzdaten vorhanden.</td></tr>';
+                return;
+            }
+
+            body.innerHTML = instances.map((item) => {
+                const status = `${item.status || '-'} / ${item.nginx_status || '-'}`;
+                return `
+                    <tr>
+                        <td>${item.domain || item.subdomain || '-'}</td>
+                        <td>${status}</td>
+                        <td>${item.container_count || 0}</td>
+                        <td>${mib(item.mem_mib)}</td>
+                        <td>${percent(item.cpu_percent)}</td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (error) {
+            const body = document.getElementById('liveInstanceBody');
+            if (body) {
+                body.innerHTML = '<tr><td colspan="5">Live-Daten konnten nicht geladen werden.</td></tr>';
+            }
+        }
+    };
+
+    updateLive();
+    window.setInterval(updateLive, 15000);
+
     const ownerSelect = document.getElementById('owner_username');
     const schoolInput = document.getElementById('school_name');
     if (!ownerSelect || !schoolInput) {

@@ -257,6 +257,233 @@ def _list_instances_grouped_by_owner() -> dict[str, list[dict]]:
     return grouped
 
 
+def _parse_iso_timestamp(value: str) -> datetime | None:
+    raw = (value or "").strip()
+    if not raw:
+        return None
+    try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+
+def _build_instance_dashboard(instances: list[dict]) -> dict:
+    total = len(instances)
+    running = len([item for item in instances if _sanitize_text(item.get("status") or "", 40) == "Läuft"])
+    error = len(
+        [
+            item
+            for item in instances
+            if _sanitize_text(item.get("status") or "", 40) == "Fehler"
+            or _sanitize_text(item.get("nginx_status") or "", 80).lower() == "error"
+        ]
+    )
+    library_on = len([item for item in instances if bool(item.get("library_enabled"))])
+    assigned_users = len(
+        {
+            _sanitize_text(item.get("owner_username") or "", 80)
+            for item in instances
+            if _sanitize_text(item.get("owner_username") or "", 80)
+        }
+    )
+
+    version_counts: dict[str, int] = {}
+    owner_counts: dict[str, int] = {}
+    for item in instances:
+        version = _sanitize_text(item.get("app_image_tag") or "latest", 80) or "latest"
+        owner = _sanitize_text(item.get("owner_username") or "Unzugewiesen", 80) or "Unzugewiesen"
+        version_counts[version] = version_counts.get(version, 0) + 1
+        owner_counts[owner] = owner_counts.get(owner, 0) + 1
+
+    version_items = sorted(version_counts.items(), key=lambda row: row[1], reverse=True)
+    owner_items = sorted(owner_counts.items(), key=lambda row: row[1], reverse=True)[:8]
+
+    day_keys = []
+    today = date.today()
+    for back in range(6, -1, -1):
+        day_keys.append((today - timedelta(days=back)).isoformat())
+    updates_by_day = {day: 0 for day in day_keys}
+
+    for item in instances:
+        parsed = _parse_iso_timestamp(_sanitize_text(item.get("updated_at") or "", 40))
+        if not parsed:
+            continue
+        day_key = parsed.date().isoformat()
+        if day_key in updates_by_day:
+            updates_by_day[day_key] += 1
+
+    labels = [datetime.fromisoformat(day).strftime("%d.%m") for day in day_keys]
+    values = [updates_by_day[day] for day in day_keys]
+
+    return {
+        "kpis": {
+            "total": total,
+            "running": running,
+            "error": error,
+            "library_on": library_on,
+            "assigned_users": assigned_users,
+        },
+        "status": {
+            "labels": ["Läuft", "Fehler", "Sonstige"],
+            "values": [running, error, max(total - running - error, 0)],
+        },
+        "library": {
+            "labels": ["Aktiv", "Inaktiv"],
+            "values": [library_on, max(total - library_on, 0)],
+        },
+        "versions": {
+            "labels": [item[0] for item in version_items],
+            "values": [item[1] for item in version_items],
+        },
+        "owners": {
+            "labels": [item[0] for item in owner_items],
+            "values": [item[1] for item in owner_items],
+        },
+        "activity": {
+            "labels": labels,
+            "values": values,
+        },
+    }
+
+
+def _parse_size_to_mib(value: str) -> float:
+    text = (value or "").strip()
+    if not text:
+        return 0.0
+
+    match = re.match(r"^([0-9]*\.?[0-9]+)\s*([kmgt]?i?b)$", text.lower())
+    if not match:
+        return 0.0
+
+    number = float(match.group(1))
+    unit = match.group(2)
+    factor_map = {
+        "b": 1.0 / (1024.0 * 1024.0),
+        "kib": 1.0 / 1024.0,
+        "kb": 1.0 / 1024.0,
+        "mib": 1.0,
+        "mb": 1.0,
+        "gib": 1024.0,
+        "gb": 1024.0,
+        "tib": 1024.0 * 1024.0,
+        "tb": 1024.0 * 1024.0,
+    }
+    return number * factor_map.get(unit, 0.0)
+
+
+def _read_meminfo_mib() -> tuple[float, float]:
+    total_kib = 0.0
+    available_kib = 0.0
+    try:
+        with open("/proc/meminfo", "r", encoding="utf-8") as handle:
+            for row in handle:
+                if row.startswith("MemTotal:"):
+                    total_kib = float(row.split()[1])
+                elif row.startswith("MemAvailable:"):
+                    available_kib = float(row.split()[1])
+    except Exception:
+        return 0.0, 0.0
+    return total_kib / 1024.0, available_kib / 1024.0
+
+
+def _collect_runtime_stats(instances: list[dict]) -> dict:
+    ok, output = _run_command(
+        ["docker", "stats", "--no-stream", "--format", "{{.Name}}|{{.CPUPerc}}|{{.MemUsage}}"],
+        timeout=120,
+    )
+
+    container_stats = {}
+    total_used_mib = 0.0
+
+    if ok:
+        for row in (output or "").splitlines():
+            line = row.strip()
+            if not line or "|" not in line:
+                continue
+            parts = line.split("|")
+            if len(parts) < 3:
+                continue
+
+            name = parts[0].strip()
+            cpu_raw = parts[1].strip().replace("%", "")
+            mem_raw = parts[2].strip()
+            used_raw = mem_raw.split("/")[0].strip() if "/" in mem_raw else mem_raw
+
+            try:
+                cpu_percent = float(cpu_raw) if cpu_raw else 0.0
+            except ValueError:
+                cpu_percent = 0.0
+
+            mem_mib = _parse_size_to_mib(used_raw)
+            total_used_mib += mem_mib
+            container_stats[name] = {
+                "cpu_percent": round(cpu_percent, 2),
+                "mem_mib": round(mem_mib, 2),
+                "mem_raw": mem_raw,
+            }
+
+    managed_prefixes = [f"{_sanitize_text(item.get('subdomain') or '', 63)}-" for item in instances if _sanitize_text(item.get('subdomain') or '', 63)]
+    managed_prefixes.append("website-")
+
+    managed_container_stats = {
+        name: stats
+        for name, stats in container_stats.items()
+        if any(name.startswith(prefix) for prefix in managed_prefixes)
+    }
+
+    managed_used_mib = round(sum(item.get("mem_mib", 0.0) for item in managed_container_stats.values()), 2)
+
+    per_instance = []
+    for item in instances:
+        subdomain = _sanitize_text(item.get("subdomain") or "", 63)
+        domain = _sanitize_text(item.get("domain") or "", 190)
+        if not subdomain:
+            continue
+
+        prefix = f"{subdomain}-"
+        related = []
+        for container_name, stats in container_stats.items():
+            if container_name.startswith(prefix):
+                related.append({"name": container_name, **stats})
+
+        mem_sum = round(sum(entry.get("mem_mib", 0.0) for entry in related), 2)
+        cpu_sum = round(sum(entry.get("cpu_percent", 0.0) for entry in related), 2)
+        per_instance.append(
+            {
+                "subdomain": subdomain,
+                "domain": domain,
+                "status": _sanitize_text(item.get("status") or "Unbekannt", 40),
+                "nginx_status": _sanitize_text(item.get("nginx_status") or "unbekannt", 80),
+                "containers": related,
+                "container_count": len(related),
+                "mem_mib": mem_sum,
+                "cpu_percent": cpu_sum,
+            }
+        )
+
+    per_instance.sort(key=lambda row: row.get("mem_mib", 0.0), reverse=True)
+    total_mem_mib, available_mem_mib = _read_meminfo_mib()
+    used_mem_mib = max(total_mem_mib - available_mem_mib, 0.0)
+    used_mem_pct = (used_mem_mib / total_mem_mib * 100.0) if total_mem_mib > 0 else 0.0
+
+    return {
+        "generated_at": _utc_now_iso(),
+        "host": {
+            "total_mem_mib": round(total_mem_mib, 2),
+            "available_mem_mib": round(available_mem_mib, 2),
+            "used_mem_mib": round(used_mem_mib, 2),
+            "used_mem_pct": round(used_mem_pct, 2),
+        },
+        "docker": {
+            "all_container_count": len(container_stats),
+            "all_used_mem_mib": round(total_used_mib, 2),
+            "managed_container_count": len(managed_container_stats),
+            "managed_used_mem_mib": managed_used_mib,
+        },
+        "instances": per_instance,
+    }
+
+
 def _upsert_school_instance(data: dict) -> None:
     subdomain = _sanitize_text(data.get("subdomain") or "", 63)
     if not subdomain:
@@ -1468,17 +1695,26 @@ def admin_instances():
         return redirect(url_for("admin_instances"))
 
     instances = _list_school_instances()
+    instance_dashboard = _build_instance_dashboard(instances)
     return render_template(
         "admin_instances.html",
         instances=instances,
         users=_list_users_for_admin(),
         available_users=available_users,
+        instance_dashboard=instance_dashboard,
         version_options=version_options,
         instance_repo_url=INSTANCE_REPO_URL,
         parent_domain=INSTANCE_PARENT_DOMAIN,
         base_dir=INSTANCE_BASE_DIR,
         provision_script=INSTANCE_PROVISION_SCRIPT,
     )
+
+
+@app.route('/admin/instances/stats')
+@admin_required
+def admin_instances_stats():
+    instances = _list_school_instances()
+    return jsonify(_collect_runtime_stats(instances))
 
 
 @app.route('/admin/system', methods=['GET', 'POST'])
