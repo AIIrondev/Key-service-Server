@@ -229,10 +229,14 @@ run_instance_start() {
 setup_or_update_repo() {
   local target_dir="$1"
   local repo_url="$2"
+  local installer_url="https://raw.githubusercontent.com/AIIrondev/legendary-octo-garbanzo/main/install.sh"
+  local installer_script=""
 
-  if [ -d "$target_dir/.git" ]; then
-    git -C "$target_dir" fetch --all --prune
-    git -C "$target_dir" pull --ff-only origin main || true
+  if [ -f "$target_dir/start.sh" ]; then
+    # Existing installation: keep it docker-only and update via project tooling.
+    if [ -x "$target_dir/update.sh" ]; then
+      (cd "$target_dir" && bash ./update.sh >/dev/null 2>&1 || true)
+    fi
     return 0
   fi
 
@@ -241,7 +245,24 @@ setup_or_update_repo() {
   fi
 
   mkdir -p "$target_dir"
-  git clone "$repo_url" "$target_dir"
+  installer_script="$(mktemp)"
+  if ! wget -qO- "$installer_url" > "$installer_script"; then
+    rm -f "$installer_script"
+    fail "Installer konnte nicht geladen werden: $installer_url"
+  fi
+
+  # Patch only the target directory variable so we can install per instance.
+  if ! sed -i "s|^PROJECT_DIR=.*$|PROJECT_DIR=\"$target_dir\"|" "$installer_script"; then
+    rm -f "$installer_script"
+    fail "Installer konnte nicht vorbereitet werden."
+  fi
+
+  if ! bash "$installer_script" --skip-cleanup-old; then
+    rm -f "$installer_script"
+    fail "Installer-Ausführung fehlgeschlagen."
+  fi
+
+  rm -f "$installer_script"
 }
 
 write_nginx_site() {
@@ -434,9 +455,9 @@ is_valid_subdomain "$SUBDOMAIN" || fail "Ungueltige Subdomain: $SUBDOMAIN"
 INSTANCE_DIR="$BASE_DIR/$SUBDOMAIN"
 FULL_DOMAIN="$SUBDOMAIN.$PARENT_DOMAIN"
 
-require_cmd git
 require_cmd docker
 require_cmd bash
+require_cmd wget
 
 mkdir -p "$BASE_DIR"
 

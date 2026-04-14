@@ -835,6 +835,54 @@ def _collect_instance_logs(subdomain: str) -> tuple[bool, str]:
     return _run_command(command, cwd=instance_dir, timeout=180)
 
 
+SLIM_BACKUP_EXCLUDE_DIRS = {
+    ".git",
+    ".github",
+    "logs",
+    "certs",
+    "test-data",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    "node_modules",
+    ".venv",
+    "venv",
+    "tmp",
+    "temp",
+}
+
+SLIM_BACKUP_EXCLUDE_FILES = {
+    ".env",
+    ".env.local",
+    ".env.production",
+}
+
+SLIM_BACKUP_EXCLUDE_SUFFIXES = (
+    ".log",
+    ".tmp",
+    ".cache",
+    ".pid",
+)
+
+
+def _is_excluded_from_slim_backup(rel_path: str, is_dir: bool) -> bool:
+    parts = [p for p in rel_path.split(os.sep) if p and p != "."]
+    if not parts:
+        return False
+
+    if any(part in SLIM_BACKUP_EXCLUDE_DIRS for part in parts):
+        return True
+
+    name = parts[-1]
+    if not is_dir and name in SLIM_BACKUP_EXCLUDE_FILES:
+        return True
+
+    if not is_dir and name.lower().endswith(SLIM_BACKUP_EXCLUDE_SUFFIXES):
+        return True
+
+    return False
+
+
 def _build_instance_backup_archive(subdomain: str) -> tuple[bool, str, str | None]:
     instance_dir = _resolve_instance_dir(subdomain)
     if not instance_dir:
@@ -842,14 +890,33 @@ def _build_instance_backup_archive(subdomain: str) -> tuple[bool, str, str | Non
 
     safe_name = _slugify_subdomain(subdomain)
     stamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
-    archive_base = os.path.join(tempfile.gettempdir(), f"instance-backup-{safe_name}-{stamp}")
+    archive_path = os.path.join(tempfile.gettempdir(), f"instance-backup-{safe_name}-{stamp}.tar.gz")
 
     try:
-        archive_path = shutil.make_archive(archive_base, "gztar", root_dir=instance_dir)
+        with tarfile.open(archive_path, "w:gz") as tf:
+            for root, dirs, files in os.walk(instance_dir):
+                rel_root = os.path.relpath(root, instance_dir)
+                if rel_root == ".":
+                    rel_root = ""
+
+                kept_dirs = []
+                for dirname in dirs:
+                    rel_dir = os.path.join(rel_root, dirname) if rel_root else dirname
+                    if _is_excluded_from_slim_backup(rel_dir, is_dir=True):
+                        continue
+                    kept_dirs.append(dirname)
+                dirs[:] = kept_dirs
+
+                for filename in files:
+                    rel_file = os.path.join(rel_root, filename) if rel_root else filename
+                    if _is_excluded_from_slim_backup(rel_file, is_dir=False):
+                        continue
+                    full_path = os.path.join(root, filename)
+                    tf.add(full_path, arcname=rel_file)
     except Exception as exc:
         return False, f"Backup-Archiv konnte nicht erstellt werden: {exc}", None
 
-    filename = f"instance-{safe_name}-backup-{stamp}.tar.gz"
+    filename = f"instance-{safe_name}-slim-backup-{stamp}.tar.gz"
     return True, filename, archive_path
 
 

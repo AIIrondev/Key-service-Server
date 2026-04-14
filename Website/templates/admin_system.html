@@ -161,7 +161,7 @@
                             <input type="hidden" name="subdomain" value="{{ item.subdomain }}">
                             <button type="submit">Backup</button>
                         </form>
-                        <a class="action-link" href="{{ url_for('admin_export_instance_backup', subdomain=item.subdomain) }}">Backup exportieren</a>
+                        <a class="action-link" href="{{ url_for('admin_export_instance_backup', subdomain=item.subdomain) }}">Slim-Backup exportieren</a>
                         <form method="post">
                             <input type="hidden" name="action" value="update_instance">
                             <input type="hidden" name="subdomain" value="{{ item.subdomain }}">
