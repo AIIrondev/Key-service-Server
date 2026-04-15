@@ -647,24 +647,51 @@ def _upsert_school_instance(data: dict) -> None:
     if not subdomain:
         return
 
-    payload = {
-        "school_name": _sanitize_text(data.get("school_name") or "", 120),
-        "owner_username": _sanitize_text(data.get("owner_username") or "", 80),
-        "subdomain": subdomain,
-        "domain": _sanitize_text(data.get("domain") or "", 190),
-        "https_port": int(data.get("https_port") or 0),
-        "instance_dir": _sanitize_text(data.get("instance_dir") or "", 300),
-        "app_image_tag": _sanitize_text(data.get("app_image_tag") or "latest", 80),
-        "library_enabled": bool(data.get("library_enabled", False)),
-        "status": _sanitize_text(data.get("status") or "Unbekannt", 40),
-        "nginx_status": _sanitize_text(data.get("nginx_status") or "unbekannt", 80),
-        "last_message": _sanitize_text(data.get("last_message") or "", 500),
-        "updated_at": _utc_now_iso(),
-    }
-
     client = None
     try:
         client, col = _get_collection("school_instances")
+        existing = col.find_one({"subdomain": subdomain}) or {}
+
+        def _pick_text(field: str, max_len: int, fallback: str = "") -> str:
+            if field in data:
+                raw = data.get(field)
+                if raw is not None and (not isinstance(raw, str) or raw.strip()):
+                    return _sanitize_text(raw, max_len)
+            return _sanitize_text(existing.get(field) or fallback, max_len)
+
+        def _pick_int(field: str, fallback: int = 0) -> int:
+            if field in data:
+                raw = data.get(field)
+                if raw not in (None, ""):
+                    try:
+                        return int(raw)
+                    except (TypeError, ValueError):
+                        pass
+            try:
+                return int(existing.get(field) or fallback)
+            except (TypeError, ValueError):
+                return fallback
+
+        if "library_enabled" in data:
+            library_enabled = bool(data.get("library_enabled", False))
+        else:
+            library_enabled = bool(existing.get("library_enabled", False))
+
+        payload = {
+            "school_name": _pick_text("school_name", 120),
+            "owner_username": _pick_text("owner_username", 80),
+            "subdomain": subdomain,
+            "domain": _pick_text("domain", 190),
+            "https_port": _pick_int("https_port", 0),
+            "instance_dir": _pick_text("instance_dir", 300),
+            "app_image_tag": _pick_text("app_image_tag", 80, "latest") or "latest",
+            "library_enabled": library_enabled,
+            "status": _pick_text("status", 40, "Unbekannt") or "Unbekannt",
+            "nginx_status": _pick_text("nginx_status", 80, "unbekannt") or "unbekannt",
+            "last_message": _pick_text("last_message", 500),
+            "updated_at": _utc_now_iso(),
+        }
+
         col.update_one(
             {"subdomain": subdomain},
             {"$set": payload, "$setOnInsert": {"created_at": _utc_now_iso()}},
@@ -791,6 +818,105 @@ def _run_command(command: list[str], cwd: str | None = None, timeout: int = 900)
     if result.returncode != 0:
         return False, output or "Befehl ist fehlgeschlagen."
     return True, output or "OK"
+
+
+def _collect_command_candidates(base_binaries: list[str], args: list[str]) -> list[list[str]]:
+    candidates: list[list[str]] = []
+    seen: set[tuple[str, ...]] = set()
+    has_sudo = shutil.which("sudo") is not None
+
+    for binary in base_binaries:
+        resolved = ""
+        if "/" in binary:
+            if os.path.isfile(binary) and os.access(binary, os.X_OK):
+                resolved = binary
+        else:
+            found = shutil.which(binary)
+            if found:
+                resolved = found
+
+        if not resolved:
+            continue
+
+        regular = tuple([resolved, *args])
+        if regular not in seen:
+            candidates.append(list(regular))
+            seen.add(regular)
+
+        if has_sudo:
+            privileged = tuple(["sudo", resolved, *args])
+            if privileged not in seen:
+                candidates.append(list(privileged))
+                seen.add(privileged)
+
+    return candidates
+
+
+def _reload_host_nginx() -> tuple[bool, str]:
+    test_candidates = _collect_command_candidates(
+        ["nginx", "/usr/sbin/nginx", "/usr/bin/nginx"],
+        ["-t"],
+    )
+    if test_candidates:
+        test_errors: list[str] = []
+        test_ok = False
+        for command in test_candidates:
+            ok, output = _run_command(command, timeout=60)
+            if ok:
+                test_ok = True
+                break
+            test_errors.append(f"{' '.join(command)} -> {_tail_output(output, 3)}")
+        if not test_ok:
+            details = " | ".join(test_errors[-2:]) if test_errors else "Kein Detail vorhanden."
+            return False, f"Nginx-Konfigurationstest fehlgeschlagen. {details}"
+
+    reload_candidates: list[list[str]] = []
+    reload_candidates.extend(
+        _collect_command_candidates(
+            ["nginx", "/usr/sbin/nginx", "/usr/bin/nginx"],
+            ["-s", "reload"],
+        )
+    )
+    reload_candidates.extend(_collect_command_candidates(["systemctl"], ["reload", "nginx"]))
+
+    if not reload_candidates:
+        return False, "Kein Nginx-Reload-Befehl verfügbar (nginx/systemctl nicht gefunden)."
+
+    reload_errors: list[str] = []
+    for command in reload_candidates:
+        ok, output = _run_command(command, timeout=60)
+        if ok:
+            return True, f"Nginx neu geladen via: {' '.join(command)}"
+        reload_errors.append(f"{' '.join(command)} -> {_tail_output(output, 3)}")
+
+    details = " | ".join(reload_errors[-2:]) if reload_errors else "Kein Detail vorhanden."
+    return False, f"Nginx-Reload fehlgeschlagen. {details}"
+
+
+def _host_reload_hint() -> str:
+    return "Bitte auf dem Host ausführen: sudo nginx -t && sudo systemctl reload nginx"
+
+
+def _promote_manual_nginx_status(reload_message: str) -> int:
+    client = None
+    try:
+        client, col = _get_collection("school_instances")
+        result = col.update_many(
+            {"nginx_status": "manual_required"},
+            {
+                "$set": {
+                    "nginx_status": "ok",
+                    "last_message": _sanitize_text(reload_message, 500),
+                    "updated_at": _utc_now_iso(),
+                }
+            },
+        )
+        return int(result.modified_count or 0)
+    except PyMongoError:
+        return 0
+    finally:
+        if client:
+            client.close()
 
 
 def _tail_output(text: str, lines: int = 24) -> str:
@@ -1784,6 +1910,40 @@ def admin_instances():
         app_image_tag = _sanitize_text(request.form.get("app_image_tag") or "latest", 80)
         library_enabled = (request.form.get("library_enabled") or "").strip().lower() in {"1", "on", "true", "yes"}
         subdomain = _slugify_subdomain(posted_subdomain or raw_subdomain or school_name)
+
+        if action == "reload_nginx":
+            reload_ok, reload_message = _reload_host_nginx()
+            if not reload_ok:
+                lowered = (reload_message or "").lower()
+                if "nicht gefunden" in lowered or "not found" in lowered or "kein nginx-reload-befehl" in lowered:
+                    flash("Host-Nginx kann aus dem Website-Container nicht direkt neu geladen werden.", "error")
+                    flash(_host_reload_hint(), "info")
+                    flash("Nach erfolgreichem Host-Reload bitte 'Reload auf Host bestätigt' ausführen.", "info")
+                else:
+                    flash(reload_message or "Nginx-Reload fehlgeschlagen.", "error")
+                return redirect(url_for("admin_instances"))
+
+            updated_rows = _promote_manual_nginx_status(
+                "Nginx erfolgreich neu geladen (Admin-Aktion)."
+            )
+            flash("Nginx wurde erfolgreich neu geladen.", "success")
+            if updated_rows > 0:
+                flash(f"{updated_rows} Instanz(en) von manual_required auf ok gesetzt.", "info")
+            else:
+                flash("Keine Instanz mit nginx_status=manual_required gefunden.", "info")
+            if reload_message:
+                flash(reload_message, "info")
+            return redirect(url_for("admin_instances"))
+
+        if action == "confirm_nginx_reload":
+            updated_rows = _promote_manual_nginx_status(
+                "Host-Nginx manuell neu geladen und in Admin bestätigt."
+            )
+            if updated_rows > 0:
+                flash(f"{updated_rows} Instanz(en) von manual_required auf ok gesetzt.", "success")
+            else:
+                flash("Keine Instanz mit nginx_status=manual_required gefunden.", "info")
+            return redirect(url_for("admin_instances"))
 
         if action == "delete":
             if not _is_valid_subdomain(subdomain):

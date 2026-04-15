@@ -106,7 +106,19 @@
 </section>
 
 <section class="instance-table-wrap">
-    <h2>Vorhandene Instanzen</h2>
+    <div class="table-head">
+        <h2>Vorhandene Instanzen</h2>
+        <div class="table-actions">
+            <form method="post" class="inline-toggle-form">
+                <input type="hidden" name="action" value="reload_nginx">
+                <button type="submit">Nginx neu laden &amp; Status aktualisieren</button>
+            </form>
+            <form method="post" class="inline-toggle-form">
+                <input type="hidden" name="action" value="confirm_nginx_reload">
+                <button type="submit">Reload auf Host bestätigt</button>
+            </form>
+        </div>
+    </div>
     {% if instances %}
     <table>
         <thead>
@@ -252,6 +264,21 @@
     background: #ffffff;
     border-radius: 14px;
     padding: 1rem;
+}
+
+.table-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.table-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
 }
 
 .instance-form {
