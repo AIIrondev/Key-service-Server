@@ -8,6 +8,15 @@ HOSTS_FILE="/etc/hosts"
 START_MARK="# >>> invario-dev-hosts >>>"
 END_MARK="# <<< invario-dev-hosts <<<"
 
+HOST_IP="${DEV_HOSTS_IP:-}"
+if [[ -z "$HOST_IP" ]]; then
+  HOST_IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
+fi
+
+if [[ -z "$HOST_IP" ]]; then
+  HOST_IP="127.0.0.1"
+fi
+
 if ! command -v docker >/dev/null 2>&1; then
   echo "docker fehlt; Hosts-Sync übersprungen"
   exit 0
@@ -29,7 +38,7 @@ trap 'rm -f "$TMP_BLOCK"' EXIT
   while IFS= read -r line; do
     domain="$(echo "$line" | tr -d '\r' | xargs)"
     if [[ -n "$domain" ]]; then
-      echo "127.0.0.1 $domain"
+      echo "$HOST_IP $domain"
     fi
   done <<< "$DOMAINS_RAW"
   echo "$END_MARK"

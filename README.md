@@ -157,6 +157,7 @@ Im Ordner `Website/` gibt es zwei Launcher-Skripte:
 - `./launch_dev.sh`
 	- setzt `INSTANCE_TLS_MODE=development`
 	- erzeugt pro Subdomain self-signed Zertifikate (wenn moeglich)
+	- synchronisiert die Dev-Hosts jetzt beim Start und danach regelmaessig neu
 	- setzt `SESSION_COOKIE_SECURE=0`
 
 - `./launch_prod.sh`

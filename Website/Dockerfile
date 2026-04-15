@@ -10,6 +10,7 @@ RUN apt-get update \
        git \
        iproute2 \
        docker.io \
+         sudo \
        curl \
        openssl \
        ca-certificates \

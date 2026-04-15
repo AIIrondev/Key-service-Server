@@ -237,8 +237,6 @@ run_instance_start() {
 setup_or_update_repo() {
   local target_dir="$1"
   local repo_url="$2"
-  local installer_url="https://raw.githubusercontent.com/AIIrondev/legendary-octo-garbanzo/main/install.sh"
-  local installer_script=""
 
   if [ -f "$target_dir/start.sh" ]; then
     # Existing installation: keep it docker-only and update via project tooling.
@@ -252,25 +250,15 @@ setup_or_update_repo() {
     fail "Zielverzeichnis ist nicht leer: $target_dir"
   fi
 
-  mkdir -p "$target_dir"
-  installer_script="$(mktemp)"
-  if ! wget -qO- "$installer_url" > "$installer_script"; then
-    rm -f "$installer_script"
-    fail "Installer konnte nicht geladen werden: $installer_url"
+  # Clone directly instead of running the upstream installer, which expects
+  # host-level systemd/cron setup and can fail inside containers.
+  if [ -d "$target_dir" ]; then
+    rmdir "$target_dir" 2>/dev/null || true
   fi
 
-  # Patch only the target directory variable so we can install per instance.
-  if ! sed -i "s|^PROJECT_DIR=.*$|PROJECT_DIR=\"$target_dir\"|" "$installer_script"; then
-    rm -f "$installer_script"
-    fail "Installer konnte nicht vorbereitet werden."
+  if ! git clone --depth 1 "$repo_url" "$target_dir" >/dev/null 2>&1; then
+    fail "Repository konnte nicht geklont werden: $repo_url"
   fi
-
-  if ! bash "$installer_script" --skip-cleanup-old; then
-    rm -f "$installer_script"
-    fail "Installer-Ausführung fehlgeschlagen."
-  fi
-
-  rm -f "$installer_script"
 }
 
 write_nginx_site() {
@@ -465,7 +453,7 @@ FULL_DOMAIN="$SUBDOMAIN.$PARENT_DOMAIN"
 
 require_cmd docker
 require_cmd bash
-require_cmd wget
+require_cmd git
 
 mkdir -p "$BASE_DIR"
 
