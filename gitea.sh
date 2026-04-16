@@ -126,6 +126,16 @@ start_services() {
   start_gitea_service
   start_website_service
 
+  if [ -x "$SCRIPT_DIR/nginx.sh" ]; then
+    echo "Aktualisiere Nginx Reverse Proxy..."
+    sudo "$SCRIPT_DIR/nginx.sh" apply || echo "Warnung: Nginx konnte nicht automatisch aktualisiert werden."
+  fi
+
+  if [ -x "$WEBSITE_DIR/sync_dev_hosts.sh" ]; then
+    echo "Aktualisiere Hosts-Datei fuer Subdomains..."
+    sudo "$WEBSITE_DIR/sync_dev_hosts.sh" || echo "Warnung: Hosts-Sync konnte nicht automatisch aktualisiert werden."
+  fi
+
   echo "-------------------------------------------------------"
   echo "Docker Services wurden gestartet!"
   echo "Gitea Intern:  $GITEA_BIND_IP:$GITEA_HTTP_PORT"
@@ -135,8 +145,8 @@ start_services() {
   echo "Web Domain:    $WEBSITE_DOMAIN"
   echo "Aktueller Host: $(current_host_info)"
   echo ""
-  echo "Nginx wird jetzt ueber ein separates Skript verwaltet."
-  echo "Fuehre danach aus: sudo ./nginx.sh apply"
+  echo "Nginx Reverse Proxy wurde automatisch aktualisiert, falls verfuegbar."
+  echo "Hosts-Datei wurde automatisch synchronisiert, falls verfuegbar."
   echo "-------------------------------------------------------"
 }
 

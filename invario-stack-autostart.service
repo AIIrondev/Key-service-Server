@@ -1,0 +1,15 @@
+[Unit]
+Description=Invario Stack Autostart
+After=docker.service network-online.target
+Wants=docker.service network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/home/max/Dokumente/repos/Key-service-Server
+ExecStart=/home/max/Dokumente/repos/Key-service-Server/start-stack-on-boot.sh
+RemainAfterExit=yes
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target

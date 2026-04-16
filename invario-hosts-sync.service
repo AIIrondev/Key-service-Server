@@ -1,0 +1,23 @@
+[Unit]
+Description=Invario Subdomains /etc/hosts Synchronization
+Documentation=man:systemd.service(5)
+After=docker.service
+Wants=docker.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/max/Dokumente/repos/Key-service-Server/Website
+ExecStart=/home/max/Dokumente/repos/Key-service-Server/Website/sync_dev_hosts.sh
+Restart=always
+RestartSec=60
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=invario-hosts-sync
+
+# Umgebungsvariablen
+Environment="DEV_HOSTS_IP="
+Environment="PROD_HOSTS_REFRESH_INTERVAL=3600"
+
+[Install]
+WantedBy=multi-user.target

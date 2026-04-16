@@ -18,6 +18,12 @@ echo "  DEV_HOSTS_REFRESH_INTERVAL=$DEV_HOSTS_REFRESH_INTERVAL"
 docker compose build website
 docker compose up -d
 
+NGINX_SCRIPT="$SCRIPT_DIR/../nginx.sh"
+if [[ -x "$NGINX_SCRIPT" ]]; then
+	echo "Aktualisiere Nginx Reverse Proxy..."
+	sudo "$NGINX_SCRIPT" apply || echo "Warnung: Nginx konnte nicht automatisch aktualisiert werden."
+fi
+
 if [[ -x "$SCRIPT_DIR/sync_dev_hosts.sh" ]]; then
 	"$SCRIPT_DIR/sync_dev_hosts.sh" || true
 	if [[ "${DEV_HOSTS_REFRESH_INTERVAL}" != "0" ]]; then
