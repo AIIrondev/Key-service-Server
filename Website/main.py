@@ -1,4 +1,3 @@
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 from flask import Flask, render_template, request, jsonify, flash, redirect, url_for, get_flashed_messages, session, send_file, after_this_request
 import os
 import json
@@ -21,20 +20,14 @@ from markupsafe import escape
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from bson.objectid import ObjectId
-import verify
-import backup
-
 import user as user_store
 
 app = Flask(__name__)
 app.secret_key = "ASDfhbsdfseiufhgildsrfrjg874368546987s6e8468f4s"
-app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", app.secret_key)
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=12)
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Strict"
 app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_COOKIE_SECURE", "0") == "1"
 app.config["PREFERRED_URL_SCHEME"] = "https" if os.environ.get("SESSION_COOKIE_SECURE") == "1" else "http"
-jwt = JWTManager(app)
 
 
 @app.after_request
@@ -95,10 +88,6 @@ class _NoopMongoClientHandle:
     def close(self):
         # Backward-compatible no-op so existing finally blocks stay harmless.
         return None
-
-
-def _issue_access_token() -> str:
-    return create_access_token(identity="license-validation-client")
 
 
 def _utc_now_iso() -> str:
@@ -1429,53 +1418,6 @@ def _get_instance_for_user(username: str, display_name: str) -> dict | None:
             client.close()
 
 
-def _activate_test_license_for_user(username: str, school_name: str, package_name: str = "Normal") -> tuple[bool, str]:
-    """Create a one-time test license for the user if none exists yet."""
-    user_name = _sanitize_text(username or "", 80)
-    school = _sanitize_text(school_name or "", 200)
-    if not user_name:
-        return False, "Benutzername fehlt für Test-Key."
-
-    client = None
-    try:
-        client, col = _get_collection("licenses")
-
-        normalized_package = _sanitize_text(package_name or "Normal", 40)
-        if normalized_package not in {"Normal", "Pro", "Bücherei", "Bücherei"}:
-            normalized_package = "Normal"
-
-        existing = col.find_one(
-            {
-                "username": user_name,
-                "status": {"$in": ["Aktiv", "Pausiert"]},
-                "plan": {"$regex": "^Test"},
-            }
-        )
-        if existing:
-            return False, "Ein Test-Key ist für dieses Schulkonto bereits vorhanden."
-
-        test_key = f"TEST-{verify.key_generator()[:18].upper()}"
-        col.insert_one(
-            {
-                "username": user_name,
-                "school_name": school or user_name,
-                "license_key": test_key,
-                "plan": f"Test {normalized_package}",
-                "status": "Aktiv",
-                "valid_until": (datetime.utcnow() + timedelta(days=30)).date().isoformat(),
-                "hwid_uuid": "",
-                "created_at": _utc_now_iso(),
-                "updated_at": _utc_now_iso(),
-            }
-        )
-        return True, test_key
-    except PyMongoError:
-        return False, "Test-Key konnte nicht aktiviert werden."
-    finally:
-        if client:
-            client.close()
-
-
 def _with_public_id(doc: dict | None) -> dict | None:
     if not doc:
         return doc
@@ -1726,10 +1668,9 @@ def login():
             session['username'] = stored_user.get("username")
             session['display_name'] = stored_user.get("display_name") or stored_user.get("username")
             session['is_admin'] = stored_user.get("is_admin", False)
-            session['access_token'] = _issue_access_token()
 
             if request.is_json:
-                return jsonify({"access_token": session['access_token'], "token_type": "Bearer"}), 200
+                return jsonify({"status": "ok"}), 200
 
             return redirect(url_for('default'))
 
@@ -1748,7 +1689,6 @@ def register():
         school_name = (request.form.get("school_name") or "").strip()
         contact_person = (request.form.get("contact_person") or "").strip()
         email = (request.form.get("email") or "").strip().lower()
-        activate_test_key = (request.form.get("activate_test_key") or "").strip().lower() in {"1", "on", "true", "yes"}
         password = request.form.get("password") or ""
         password_repeat = request.form.get("password_repeat") or ""
 
@@ -1787,13 +1727,6 @@ def register():
                 flash("Benutzer konnte nicht erstellt werden.", "error")
                 return redirect(url_for("register"))
 
-            if activate_test_key:
-                activated, message = _activate_test_license_for_user(username, school_name)
-                if activated:
-                    flash(f"Test-Key aktiviert: {message}", "success")
-                else:
-                    flash(message, "error")
-
             if is_first_user:
                 user_store.make_admin(username)
         except Exception:
@@ -1810,16 +1743,6 @@ def register():
 def appointments():
     software_packages = [
         {
-            "slug": "test",
-            "name": "Testversion",
-            "headline": "30 Tage kostenlos zum Ausprobieren",
-            "features": [
-                "Sofortiger Zugang mit Test-Key",
-                "Ideal für Erstbewertung im Schulalltag",
-                "Ohne langfristige Bindung",
-            ],
-        },
-        {
             "slug": "normal",
             "name": "Normal",
             "headline": "Stabiler Einstieg für den Schulalltag",
@@ -1834,7 +1757,7 @@ def appointments():
             "name": "Pro",
             "headline": "Für Schulen mit erweitertem Bedarf",
             "features": [
-                "Erweiterte Lizenzverwaltung",
+                "Erweiterte Instanzverwaltung",
                 "Detailberichte und Admin-Insights",
                 "Priorisierter Support",
             ],
@@ -1851,56 +1774,10 @@ def appointments():
         },
     ]
 
-    active_test_license = None
-    if session.get("username"):
-        client = None
-        try:
-            client, col = _get_collection("licenses")
-            active_test_license = col.find_one(
-                {
-                    "username": session.get("username"),
-                    "status": {"$in": ["Aktiv", "Pausiert"]},
-                    "plan": {"$regex": "^Test"},
-                },
-                {"_id": 0},
-            )
-        except PyMongoError:
-            active_test_license = None
-        finally:
-            if client:
-                client.close()
-
     return render_template(
         "appointments.html",
         software_packages=software_packages,
-        active_test_license=active_test_license,
     )
-
-
-@app.route('/appointments/start-test', methods=['POST'])
-@login_required
-def start_test_package():
-    package_raw = _sanitize_text(request.form.get("package") or "normal", 40).lower()
-    package_map = {
-        "test": "Normal",
-        "normal": "Normal",
-        "pro": "Pro",
-        "buecherei": "Bücherei",
-    }
-    selected_package = package_map.get(package_raw)
-    if not selected_package:
-        flash("Ungültiges Paket ausgewählt.", "error")
-        return redirect(url_for("appointments"))
-
-    school_name = _sanitize_text(session.get("display_name") or session.get("username") or "", 200)
-    activated, message = _activate_test_license_for_user(session.get("username") or "", school_name, selected_package)
-
-    if activated:
-        flash(f"Testversion für Paket {selected_package} gestartet. Key: {message}", "success")
-    else:
-        flash(message, "error")
-
-    return redirect(url_for("appointments"))
 
 
 @app.route('/appointments/book-option', methods=['POST'])
@@ -2643,29 +2520,6 @@ def blog_post(post_id):
     return render_template("blog_post.html", post=post)
 
 
-@app.route('/my/licenses', methods=['GET', 'POST'])
-@login_required
-def my_licenses():
-    if request.method == 'POST':
-        flash("Weitergabe von Lizenzen ist deaktiviert.", "error")
-        return redirect(url_for("my_licenses"))
-
-    licenses = []
-    client = None
-    try:
-        client, col = _get_collection("licenses")
-        licenses = list(col.find({"username": session.get("username")}).sort("created_at", -1))
-        for item in licenses:
-            item["id"] = str(item.get("_id"))
-    except PyMongoError:
-        flash("Lizenzdaten konnten nicht geladen werden.", "error")
-    finally:
-        if client:
-            client.close()
-
-    return render_template("my_licenses.html", licenses=licenses)
-
-
 @app.route('/my/invoices')
 @login_required
 def my_invoices():
@@ -3056,86 +2910,6 @@ def admin_tickets():
     return render_template("admin_tickets.html", tickets=tickets)
 
 
-@app.route('/admin/licenses', methods=['GET', 'POST'])
-@admin_required
-def admin_licenses():
-    client = None
-    if request.method == 'POST':
-        action = _sanitize_text(request.form.get("action") or "", 50)
-        license_id = _sanitize_text(request.form.get("license_id") or "", 64)
-
-        try:
-            client, col = _get_collection("licenses")
-
-            if action == "create":
-                username = _sanitize_text(request.form.get("username") or "", 80)
-                school_name = _sanitize_text(request.form.get("school_name") or "", 200)
-                license_key = _sanitize_text(request.form.get("license_key") or "", 120)
-                plan = _sanitize_text(request.form.get("plan") or "Standard", 80)
-                status = _sanitize_text(request.form.get("status") or "Aktiv", 40)
-                valid_until = _sanitize_text(request.form.get("valid_until") or "", 40)
-
-                if not username or not school_name:
-                    flash("Bitte Benutzername und Schule angeben.", "error")
-                    return redirect(url_for("admin_licenses"))
-
-                col.insert_one(
-                    {
-                        "username": username,
-                        "school_name": school_name,
-                        "license_key": license_key or f"LIC-{int(datetime.utcnow().timestamp())}-{username[:3].upper()}",
-                        "plan": plan,
-                        "status": status,
-                        "valid_until": valid_until or "2027-12-31",
-                        "created_at": _utc_now_iso(),
-                    }
-                )
-                flash("Lizenz angelegt.", "success")
-
-            elif action == "update" and license_id:
-                col.update_one(
-                    {"_id": ObjectId(license_id)},
-                    {
-                        "$set": {
-                            "school_name": _sanitize_text(request.form.get("school_name") or "", 200),
-                            "license_key": _sanitize_text(request.form.get("license_key") or "", 120),
-                            "plan": _sanitize_text(request.form.get("plan") or "Standard", 80),
-                            "status": _sanitize_text(request.form.get("status") or "Aktiv", 40),
-                            "valid_until": _sanitize_text(request.form.get("valid_until") or "", 40),
-                        }
-                    },
-                )
-                flash("Lizenz aktualisiert.", "success")
-
-            elif action == "delete" and license_id:
-                col.delete_one({"_id": ObjectId(license_id)})
-                flash("Lizenz gelöscht.", "success")
-            else:
-                flash("Ungültige Aktion.", "error")
-        except Exception:
-            flash("Lizenzverwaltung fehlgeschlagen.", "error")
-        finally:
-            if client:
-                client.close()
-
-        return redirect(url_for("admin_licenses"))
-
-    licenses = []
-    try:
-        client, col = _get_collection("licenses")
-        licenses = list(col.find().sort("created_at", -1))
-        for item in licenses:
-            item["id"] = str(item.get("_id"))
-    except PyMongoError:
-        flash("Lizenzen konnten nicht geladen werden.", "error")
-    finally:
-        if client:
-            client.close()
-
-    users = _list_users_for_admin()
-    return render_template("admin_licenses.html", licenses=licenses, users=users)
-
-
 @app.route('/admin/invoices', methods=['GET', 'POST'])
 @admin_required
 def admin_invoices():
@@ -3250,159 +3024,11 @@ def impressum():
 def nutzungsbedingungen():
     return render_template("nutzungsbedingungen.html")
 
-@app.route("/admin/lizenz_key")
-@app.route("/admin/license-management")
-@admin_required
-def admin_license_keys():
-    if 'username' not in session:
-        return redirect(url_for('login'))
-
-    keys = verify.load_file()
-    users = _list_users_for_admin()
-    return render_template("lizenz-managment.html", keys=keys, users=users)
-
-
-@app.route("/admin/generate_new", methods=["POST"])
-@admin_required
-def generate_new():
-    if 'username' not in session:
-        return redirect(url_for('login'))
-
-    new_license = verify.new_key()
-    if not new_license:
-        flash("License generation failed (database unavailable).", "error")
-        return redirect(url_for('admin_license_keys'))
-
-    flash(f"New key generated: {new_license}", "success")
-    return redirect(url_for('admin_license_keys'))
-
-
-@app.route("/admin/allocate_key", methods=["POST"])
-@admin_required
-def allocate_key():
-    if 'username' not in session:
-        return redirect(url_for('login'))
-
-    username = _sanitize_text(request.form.get("username") or "", 80)
-    license_key = _sanitize_text(request.form.get("license_key") or "", 160)
-
-    if not username or not license_key:
-        flash("Bitte Benutzer und Lizenz-Key auswählen.", "error")
-        return redirect(url_for('admin_license_keys'))
-
-    if not _find_user(username):
-        flash("Ausgewaehlter Benutzer wurde nicht gefunden.", "error")
-        return redirect(url_for('admin_license_keys'))
-
-    client = None
-    try:
-        client, col = _get_collection("licenses")
-        result = col.update_one(
-            {"license_key": license_key},
-            {
-                "$set": {
-                    "username": username,
-                    "updated_at": _utc_now_iso(),
-                }
-            },
-        )
-        if result.matched_count == 0:
-            flash("Lizenz-Key nicht gefunden.", "error")
-            return redirect(url_for('admin_license_keys'))
-    except PyMongoError:
-        flash("Key-Zuweisung fehlgeschlagen.", "error")
-        return redirect(url_for('admin_license_keys'))
-    finally:
-        if client:
-            client.close()
-
-    flash("Lizenz-Key wurde erfolgreich zugewiesen.", "success")
-    return redirect(url_for('admin_license_keys'))
-
-
-@app.route("/admin/remove_key/<user_id>", methods=["POST"])
-@admin_required
-def remove_key(user_id):
-    if 'username' not in session:
-        return redirect(url_for('login'))
-
-    if verify.remove_key(user_id):
-        flash(f"Key for user {user_id} removed", "success")
-    else:
-        flash(f"No key found for user {user_id}", "error")
-
-    return redirect(url_for('admin_license_keys'))
-
-
-
-@app.route('/admin/download_backup', methods=['GET'])
-@admin_required
-def download_backup():
-    if 'username' not in session:
-        return redirect(url_for('login'))
-
-    licenses_data = backup.export_backup()
-    json_str = json.dumps(licenses_data, indent=2)
-    return send_file(
-        BytesIO(json_str.encode('utf-8')),
-        mimetype='application/json',
-        as_attachment=True,
-        download_name='licenses_backup.json'
-    )
-
-
-@app.route('/admin/upload_backup', methods=['POST'])
-@admin_required
-def upload_backup():
-    if 'username' not in session:
-        return redirect(url_for('login'))
-
-    if 'file' not in request.files:
-        flash('No file provided', 'error')
-        return redirect(url_for('admin_license_keys'))
-
-    file = request.files['file']
-    
-    if file.filename == '':
-        flash('No file selected', 'error')
-        return redirect(url_for('admin_license_keys'))
-
-    try:
-        content = file.read().decode('utf-8')
-        data = json.loads(content)
-        
-        if backup.import_backup(data):
-            flash('Licenses backup restored successfully', 'success')
-        else:
-            flash('Failed to restore backup - invalid format', 'error')
-    except json.JSONDecodeError:
-        flash('Invalid JSON file', 'error')
-    except Exception as e:
-        flash(f'Error uploading backup: {str(e)}', 'error')
-
-    return redirect(url_for('admin_license_keys'))
-
-@app.route("/validate__information", methods=['POST'])
-def validate__information():
-    data = request.get_json(silent=True)
-    if not data:
-        return jsonify({"error": "No JSON data provided"}), 400
-    license_key = data.get("license")
-    hwid_uuid = data.get("hwid")
-    if not license_key or not hwid_uuid:
-        return jsonify({"error": "Missing 'license' or 'hwid' in JSON data"}), 400
-    if verify.check(license_key, hwid_uuid):
-        return jsonify({"status": "ok"}), 200
-    else:
-        return jsonify({"status": "invalid"}), 402
-
-
 @app.route('/logout')
 def logout():
     session.pop('username', None)
     session.pop('display_name', None)
     session.pop('is_admin', None)
-    session.pop('access_token', None)
     flash('Logged out successfully', 'info')
     return redirect(url_for('login'))
 

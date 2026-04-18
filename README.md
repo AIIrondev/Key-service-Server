@@ -108,6 +108,27 @@ Berechtigungen für Provisioning:
 - Schreibrechte auf /etc/nginx/sites-available und /etc/nginx/sites-enabled
 - nginx -t und nginx reload/signal-Rechte
 
+## Admin Homepage: Live-Logs
+
+Die Admin-Seite unter /admin/system zeigt jetzt Live-Logs direkt im Frontend.
+
+Enthaltene Quellen:
+
+- Core Docker Logs (website + mongodb)
+- invario-hosts-sync.service
+- invario-stack-autostart.service
+- nginx.service
+
+Verhalten:
+
+- Auto-Refresh alle 20 Sekunden
+- Manuelles Aktualisieren per Button
+- Auswahl der Log-Quelle per Dropdown
+
+Hinweis:
+
+- Wenn die Website ohne Zugriff auf systemd/journalctl läuft (z. B. in eingeschränkten Containern), bleiben Core-Docker-Logs verfügbar, während Service-Logs als nicht verfügbar angezeigt werden können.
+
 ## Betriebsmodi Website
 
 - Development: [Website/launch_dev.sh](Website/launch_dev.sh)
@@ -150,3 +171,11 @@ Optionen:
 - --skip-nginx
 - --skip-hosts-sync
 - --skip-autostart
+
+## Quick Verify
+
+```bash
+sudo ./gitea.sh status
+sudo systemctl status invario-hosts-sync --no-pager
+sudo systemctl status invario-stack-autostart --no-pager
+```

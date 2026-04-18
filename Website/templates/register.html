@@ -91,7 +91,7 @@
 {% block content %}
 <section class="auth-wrap">
     <h1>Schulregistrierung</h1>
-    <p>Registrieren Sie Ihre Schule, um Buchungen, Lizenzen und Support zentral zu verwalten.</p>
+    <p>Registrieren Sie Ihre Schule, um Buchungen, Instanzen und Support zentral zu verwalten.</p>
     <form method="POST" action="{{ url_for('register') }}">
         <div class="field">
             <label for="school_name">Name der Schule</label>
@@ -117,10 +117,6 @@
             <label for="password_repeat">Passwort wiederholen</label>
             <input id="password_repeat" name="password_repeat" type="password" autocomplete="new-password" required>
         </div>
-        <label class="checkbox-line" for="activate_test_key">
-            <input id="activate_test_key" name="activate_test_key" type="checkbox" value="1">
-            <span>Direkt bei Registrierung einen Test-Key aktivieren</span>
-        </label>
         <button class="auth-btn" type="submit">Konto erstellen</button>
     </form>
     <p class="auth-meta">Bereits registriert? <a href="{{ url_for('login') }}">Zum Login</a></p>

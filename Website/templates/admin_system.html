@@ -123,15 +123,6 @@
         </form>
         <a class="action-link" href="{{ url_for('admin_download_core_logs') }}">Core-Logs herunterladen</a>
     </div>
-
-    <h2 style="margin-top: 1rem;">Backup-Export / Einspielen</h2>
-    <div class="actions">
-        <a class="action-link" href="{{ url_for('download_backup') }}">Lizenz-Backup exportieren</a>
-        <form method="post" action="{{ url_for('upload_backup') }}" enctype="multipart/form-data" class="inline-restore-form">
-            <input type="file" name="file" accept=".json,application/json" required>
-            <button type="submit">Lizenz-Backup einspielen</button>
-        </form>
-    </div>
 </section>
 
 <section class="panel logs-panel">

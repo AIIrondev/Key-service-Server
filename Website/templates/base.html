@@ -383,7 +383,6 @@
                     <details class="nav-dropdown">
                         <summary class="nav-btn">Nutzerbereich</summary>
                         <div class="dropdown-menu">
-                            <a href="{{ url_for('my_licenses') }}">Meine Lizenzen</a>
                             <a href="{{ url_for('my_invoices') }}">Meine Rechnungen</a>
                             <a href="{{ url_for('my_instance_management') }}">Meine Instanz</a>
                             <a href="{{ url_for('user_chat') }}">Chat mit Admin</a>
@@ -397,8 +396,6 @@
                             <div class="dropdown-menu">
                                 <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
                                 <a href="{{ url_for('admin_users') }}">Userverwaltung</a>
-                                <a href="{{ url_for('admin_licenses') }}">Lizenzverwaltung</a>
-                                <a href="{{ url_for('admin_license_keys') }}">Lizenz-Key Verwaltung</a>
                                 <a href="{{ url_for('admin_invoices') }}">Rechnungsverwaltung</a>
                                 <a href="{{ url_for('admin_chats') }}">Admin-Chat</a>
                                 <a href="{{ url_for('admin_tickets') }}">Support-Center</a>
