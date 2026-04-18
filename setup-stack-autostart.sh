@@ -5,15 +5,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVICE_NAME="invario-stack-autostart"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 SERVICE_TEMPLATE="$SCRIPT_DIR/${SERVICE_NAME}.service"
-BOOT_SCRIPT="$SCRIPT_DIR/start-stack-on-boot.sh"
 
 if [[ "${EUID}" -ne 0 ]]; then
   echo "This script must be run as root. Use: sudo $0"
-  exit 1
-fi
-
-if [[ ! -x "$BOOT_SCRIPT" ]]; then
-  echo "Missing executable boot script: $BOOT_SCRIPT"
   exit 1
 fi
 

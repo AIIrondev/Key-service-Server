@@ -7,7 +7,7 @@ Wants=docker.service network-online.target
 Type=oneshot
 User=root
 WorkingDirectory=/home/max/Dokumente/repos/Key-service-Server
-ExecStart=/home/max/Dokumente/repos/Key-service-Server/start-stack-on-boot.sh
+ExecStart=/home/max/Dokumente/repos/Key-service-Server/gitea.sh start
 RemainAfterExit=yes
 TimeoutStartSec=0
 

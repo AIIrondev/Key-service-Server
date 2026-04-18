@@ -820,6 +820,30 @@ def _run_command(command: list[str], cwd: str | None = None, timeout: int = 900)
     return True, output or "OK"
 
 
+def _instance_compose_file(instance_dir: str) -> str | None:
+    preferred = os.path.join(instance_dir, "docker-compose-multitenant.yml")
+    fallback = os.path.join(instance_dir, "docker-compose.yml")
+
+    if os.path.isfile(preferred):
+        return preferred
+    if os.path.isfile(fallback):
+        return fallback
+    return None
+
+
+def _instance_compose_cmd(instance_dir: str, args: list[str]) -> list[str] | None:
+    compose_file = _instance_compose_file(instance_dir)
+    if not compose_file:
+        return None
+
+    cmd = ["docker", "compose", "-f", compose_file]
+    env_file = os.path.join(instance_dir, ".docker-build.env")
+    if os.path.isfile(env_file):
+        cmd.extend(["--env-file", ".docker-build.env"])
+    cmd.extend(args)
+    return cmd
+
+
 def _collect_command_candidates(base_binaries: list[str], args: list[str]) -> list[list[str]]:
     candidates: list[list[str]] = []
     seen: set[tuple[str, ...]] = set()
@@ -943,21 +967,109 @@ def _collect_core_logs() -> tuple[bool, str]:
     return _run_command(command, cwd=BASE_DIR, timeout=180)
 
 
+def _truncate_log_blob(text: str, max_lines: int = 220, max_chars: int = 32000) -> str:
+    rows = (text or "").splitlines()
+    if len(rows) > max_lines:
+        rows = rows[-max_lines:]
+    clipped = "\n".join(rows).strip()
+    if len(clipped) > max_chars:
+        clipped = clipped[-max_chars:]
+    return clipped or "Keine Ausgabe"
+
+
+def _run_first_success(candidates: list[list[str]], cwd: str | None = None, timeout: int = 120) -> tuple[bool, str, str]:
+    if not candidates:
+        return False, "Kein Befehl verfügbar.", ""
+
+    failures: list[str] = []
+    for command in candidates:
+        ok, output = _run_command(command, cwd=cwd, timeout=timeout)
+        if ok:
+            return True, output, " ".join(command)
+        failures.append(f"{' '.join(command)} -> {_tail_output(output, 3)}")
+
+    return False, " | ".join(failures[-2:]) if failures else "Kein Detail vorhanden.", ""
+
+
+def _collect_core_live_logs(lines: int = 220) -> dict:
+    compose_file = os.path.join(BASE_DIR, "docker-compose.yml")
+    command = [
+        "docker",
+        "compose",
+        "-f",
+        compose_file,
+        "logs",
+        "--no-color",
+        "--tail",
+        str(max(lines, 20)),
+        "website",
+        "mongodb",
+    ]
+    ok, output = _run_command(command, cwd=BASE_DIR, timeout=180)
+    return {
+        "ok": ok,
+        "label": "Docker Compose (website, mongodb)",
+        "logs": _truncate_log_blob(output),
+    }
+
+
+def _collect_systemd_service_snapshot(service_name: str, lines: int = 160) -> dict:
+    status_ok, status_out, status_cmd = _run_first_success(
+        _collect_command_candidates(["systemctl"], ["is-active", service_name]),
+        timeout=60,
+    )
+    status = (status_out or "").strip().splitlines()[-1] if status_ok else "unavailable"
+
+    logs_ok, logs_out, logs_cmd = _run_first_success(
+        _collect_command_candidates(
+            ["journalctl"],
+            ["-u", service_name, "--no-pager", "-n", str(max(lines, 40))],
+        ),
+        timeout=120,
+    )
+
+    if logs_ok:
+        logs_text = _truncate_log_blob(logs_out)
+    else:
+        logs_text = _truncate_log_blob(f"Service-Logs konnten nicht geladen werden.\n{logs_out}")
+
+    return {
+        "service": service_name,
+        "status": status,
+        "status_ok": status_ok,
+        "status_command": status_cmd,
+        "logs_ok": logs_ok,
+        "logs_command": logs_cmd,
+        "logs": logs_text,
+    }
+
+
+def _collect_homepage_service_logs() -> dict:
+    services = [
+        "invario-hosts-sync.service",
+        "invario-stack-autostart.service",
+        "nginx.service",
+    ]
+    snapshots = [_collect_systemd_service_snapshot(service) for service in services]
+    return {
+        "generated_at": _utc_now_iso(),
+        "core": _collect_core_live_logs(),
+        "services": snapshots,
+    }
+
+
 def _collect_instance_logs(subdomain: str) -> tuple[bool, str]:
     instance_dir = _resolve_instance_dir(subdomain)
     if not instance_dir:
         return False, "Instanzverzeichnis nicht gefunden."
 
-    command = [
-        "docker",
-        "compose",
-        "--env-file",
-        ".docker-build.env",
-        "logs",
-        "--no-color",
-        "--tail",
-        "500",
-    ]
+    command = _instance_compose_cmd(
+        instance_dir,
+        ["logs", "--no-color", "--tail", "500"],
+    )
+    if not command:
+        return False, "Compose-Datei der Instanz wurde nicht gefunden."
+
     return _run_command(command, cwd=instance_dir, timeout=180)
 
 
@@ -1096,25 +1208,13 @@ def _set_instance_library_enabled(instance_dir: str, enabled: bool) -> tuple[boo
 
 
 def _restart_instance_stack(instance_dir: str) -> tuple[bool, str]:
-    restart_cmd = [
-        "docker",
-        "compose",
-        "--env-file",
-        ".docker-build.env",
-        "restart",
-        "app",
-        "nginx",
-        "mongodb",
-    ]
-    up_cmd = [
-        "docker",
-        "compose",
-        "--env-file",
-        ".docker-build.env",
-        "up",
-        "-d",
-        "--remove-orphans",
-    ]
+    restart_cmd = _instance_compose_cmd(instance_dir, ["restart", "app", "nginx", "mongodb", "redis"])
+    if not restart_cmd:
+        return False, "Compose-Datei der Instanz wurde nicht gefunden."
+
+    up_cmd = _instance_compose_cmd(instance_dir, ["up", "-d", "--remove-orphans"])
+    if not up_cmd:
+        return False, "Compose-Datei der Instanz wurde nicht gefunden."
 
     # restart may fail for stopped services; ensure desired state with up -d afterwards.
     _run_command(restart_cmd, cwd=instance_dir, timeout=420)
@@ -1144,19 +1244,14 @@ def _delete_instance_stack(subdomain: str) -> tuple[bool, str]:
     details: list[str] = []
 
     if os.path.isdir(target_dir):
-        compose_file = os.path.join(target_dir, "docker-compose.yml")
-        if os.path.isfile(compose_file):
-            down_cmd = [
-                "docker",
-                "compose",
-                "--env-file",
-                ".docker-build.env",
-                "down",
-                "--remove-orphans",
-                "--volumes",
-                "--timeout",
-                "40",
-            ]
+        compose_file = _instance_compose_file(target_dir)
+        if compose_file:
+            down_cmd = _instance_compose_cmd(
+                target_dir,
+                ["down", "--remove-orphans", "--volumes", "--timeout", "40"],
+            )
+            if not down_cmd:
+                return False, "Compose-Datei der Instanz wurde nicht gefunden."
             down_ok, down_out = _run_command(down_cmd, cwd=target_dir, timeout=900)
             if not down_ok:
                 return False, f"Docker-Stack konnte nicht gestoppt werden.\n{_tail_output(down_out, 12)}"
@@ -1269,20 +1364,17 @@ def _create_instance_admin_user(
         "}"
     )
 
-    up_ok, up_out = _run_command(
-        ["docker", "compose", "--env-file", ".docker-build.env", "up", "-d", "mongodb"],
-        cwd=instance_dir,
-        timeout=180,
-    )
+    up_cmd = _instance_compose_cmd(instance_dir, ["up", "-d", "mongodb"])
+    if not up_cmd:
+        return False, "Compose-Datei der Instanz wurde nicht gefunden."
+
+    up_ok, up_out = _run_command(up_cmd, cwd=instance_dir, timeout=180)
     if not up_ok:
         return False, f"MongoDB der Instanz konnte nicht gestartet werden: {_tail_output(up_out, 10)}"
 
-    ok, output = _run_command(
+    exec_cmd = _instance_compose_cmd(
+        instance_dir,
         [
-            "docker",
-            "compose",
-            "--env-file",
-            ".docker-build.env",
             "exec",
             "-T",
             "mongodb",
@@ -1292,9 +1384,11 @@ def _create_instance_admin_user(
             eval_script,
             db_name,
         ],
-        cwd=instance_dir,
-        timeout=240,
     )
+    if not exec_cmd:
+        return False, "Compose-Datei der Instanz wurde nicht gefunden."
+
+    ok, output = _run_command(exec_cmd, cwd=instance_dir, timeout=240)
 
     if not ok:
         return False, f"Instanz-Admin konnte nicht angelegt werden: {_tail_output(output, 12)}"
@@ -2222,6 +2316,12 @@ def admin_system_tools():
 def admin_system_stats():
     instances = _list_school_instances()
     return jsonify(_build_server_management_snapshot(instances))
+
+
+@app.route('/admin/system/logs/live')
+@admin_required
+def admin_system_live_logs():
+    return jsonify(_collect_homepage_service_logs())
 
 
 @app.route('/admin/system/logs/core')

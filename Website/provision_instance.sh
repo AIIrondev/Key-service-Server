@@ -17,6 +17,9 @@ WILDCARD_KEY_FILE="/etc/nginx/certs/wildcard.meine-domain.key"
 NGINX_SITES_AVAILABLE="/etc/nginx/sites-available"
 NGINX_SITES_ENABLED="/etc/nginx/sites-enabled"
 
+RELEASE_BUNDLE_ASSET="inventarsystem-docker-bundle.tar.gz"
+RELEASE_IMAGE_ASSET_PREFIX="inventarsystem-image-"
+
 print_kv() {
   local key="$1"
   local value="$2"
@@ -84,7 +87,217 @@ NUITKA_BUILD=0
 INVENTAR_HTTP_PORT=$http_port
 INVENTAR_HTTPS_PORT=$https_port
 INVENTAR_APP_IMAGE=ghcr.io/aiirondev/legendary-octo-garbanzo:$app_image_tag
+INVENTAR_MULTITENANT_ENABLED=true
+INVENTAR_SESSION_BACKEND=redis
+INVENTAR_REDIS_HOST=redis
+INVENTAR_REDIS_PORT=6379
+INVENTAR_QUERY_CACHE_ENABLED=true
 EOF
+}
+
+preferred_compose_file() {
+  if [ -f "docker-compose-multitenant.yml" ]; then
+    printf '%s' "docker-compose-multitenant.yml"
+    return 0
+  fi
+
+  printf '%s' "docker-compose.yml"
+}
+
+repo_slug_from_url() {
+  local repo_url="$1"
+  local normalized=""
+
+  normalized="$repo_url"
+  normalized="${normalized#https://github.com/}"
+  normalized="${normalized#http://github.com/}"
+  normalized="${normalized#git@github.com:}"
+  normalized="${normalized%.git}"
+
+  if [[ "$normalized" =~ ^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$ ]]; then
+    printf '%s' "$normalized"
+    return 0
+  fi
+
+  return 1
+}
+
+fetch_release_metadata() {
+  local repo_slug="$1"
+  local requested_tag="$2"
+  local out_file="$3"
+  local api_url=""
+
+  if [ "$requested_tag" = "latest" ]; then
+    api_url="https://api.github.com/repos/$repo_slug/releases/latest"
+  else
+    api_url="https://api.github.com/repos/$repo_slug/releases/tags/$requested_tag"
+  fi
+
+  if ! curl -fsSL "$api_url" -o "$out_file"; then
+    return 1
+  fi
+
+  return 0
+}
+
+extract_release_info() {
+  local meta_file="$1"
+
+  python3 - <<'PY' "$meta_file" "$RELEASE_BUNDLE_ASSET" "$RELEASE_IMAGE_ASSET_PREFIX"
+import json
+import sys
+
+meta_file, bundle_asset, image_prefix = sys.argv[1], sys.argv[2], sys.argv[3]
+
+with open(meta_file, "r", encoding="utf-8") as fh:
+    data = json.load(fh)
+
+tag = (data.get("tag_name") or "").strip()
+bundle_url = ""
+image_url = ""
+
+for asset in data.get("assets", []):
+    name = (asset.get("name") or "").strip()
+    url = (asset.get("browser_download_url") or "").strip()
+    if not url:
+        continue
+    if name == bundle_asset:
+        bundle_url = url
+    if tag and name == f"{image_prefix}{tag}.tar.gz":
+        image_url = url
+
+print(tag)
+print(bundle_url)
+print(image_url)
+PY
+}
+
+pin_compose_app_image() {
+  local instance_dir="$1"
+  local resolved_tag="$2"
+  local compose_file=""
+
+  for compose_file in "$instance_dir/docker-compose.yml" "$instance_dir/docker-compose-multitenant.yml"; do
+    [ -f "$compose_file" ] || continue
+
+    python3 - <<'PY' "$compose_file" "$resolved_tag"
+import re
+import sys
+
+compose_file, tag = sys.argv[1], sys.argv[2]
+target_image = f"ghcr.io/aiirondev/legendary-octo-garbanzo:{tag}"
+
+with open(compose_file, "r", encoding="utf-8") as fh:
+    lines = fh.readlines()
+
+out = []
+in_app = False
+in_build = False
+image_set = False
+
+for line in lines:
+    stripped = line.lstrip(" ")
+    indent = len(line) - len(stripped)
+
+    if not in_app and re.match(r"^\s{2}app:\s*$", line):
+        in_app = True
+        image_set = False
+        out.append(line)
+        out.append(f"    image: {target_image}\n")
+        continue
+
+    if in_app:
+        if indent == 2 and re.match(r"^[A-Za-z0-9_-]+:\s*$", stripped):
+            in_app = False
+            in_build = False
+
+        if in_app:
+            if in_build:
+                if indent > 4:
+                    continue
+                in_build = False
+
+            if re.match(r"^\s{4}build:\s*$", line):
+                in_build = True
+                continue
+
+            if re.match(r"^\s{4}image:\s*", line):
+                if image_set:
+                    continue
+                out.append(f"    image: {target_image}\n")
+                image_set = True
+                continue
+
+    out.append(line)
+
+with open(compose_file, "w", encoding="utf-8") as fh:
+    fh.writelines(out)
+PY
+  done
+}
+
+install_from_release() {
+  local target_dir="$1"
+  local repo_url="$2"
+  local requested_tag="$3"
+  local tmp_dir=""
+  local repo_slug=""
+  local meta_file=""
+  local bundle_path=""
+  local image_path=""
+  local tag=""
+  local bundle_url=""
+  local image_url=""
+
+  repo_slug="$(repo_slug_from_url "$repo_url")" || fail "Repository-URL nicht unterstützbar für Release-Install: $repo_url"
+
+  tmp_dir="$(mktemp -d)"
+
+  meta_file="$tmp_dir/release.json"
+
+  if ! fetch_release_metadata "$repo_slug" "$requested_tag" "$meta_file"; then
+    fail "Release-Metadaten konnten nicht geladen werden (Repo: $repo_slug, Tag: $requested_tag)."
+  fi
+
+  mapfile -t release_info < <(extract_release_info "$meta_file")
+  tag="${release_info[0]:-}"
+  bundle_url="${release_info[1]:-}"
+  image_url="${release_info[2]:-}"
+
+  [ -n "$tag" ] || fail "Release-Metadaten enthalten keinen gültigen Tag."
+  [ -n "$bundle_url" ] || fail "Release-Asset fehlt: $RELEASE_BUNDLE_ASSET"
+  [ -n "$image_url" ] || fail "Release-Image-Asset fehlt: ${RELEASE_IMAGE_ASSET_PREFIX}${tag}.tar.gz"
+
+  bundle_path="$tmp_dir/$RELEASE_BUNDLE_ASSET"
+  image_path="$tmp_dir/${RELEASE_IMAGE_ASSET_PREFIX}${tag}.tar.gz"
+
+  curl -fsSL "$bundle_url" -o "$bundle_path" || fail "Release-Bundle konnte nicht geladen werden."
+  curl -fsSL "$image_url" -o "$image_path" || fail "Release-Image konnte nicht geladen werden."
+
+  mkdir -p "$target_dir"
+  tar -xzf "$bundle_path" -C "$target_dir" || fail "Release-Bundle konnte nicht entpackt werden."
+  docker load -i "$image_path" >/dev/null 2>&1 || fail "Docker-Image konnte nicht geladen werden."
+  docker tag "ghcr.io/aiirondev/legendary-octo-garbanzo:$tag" "ghcr.io/aiirondev/legendary-octo-garbanzo:latest" >/dev/null 2>&1 || true
+
+  pin_compose_app_image "$target_dir" "$tag"
+  rm -rf "$tmp_dir" >/dev/null 2>&1 || true
+  print_kv "APP_IMAGE_TAG" "$tag"
+}
+
+ensure_requested_app_image() {
+  local app_image_tag="$1"
+  local app_image="ghcr.io/aiirondev/legendary-octo-garbanzo:$app_image_tag"
+
+  if docker image inspect "$app_image" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if ! docker pull "$app_image" >/dev/null 2>&1; then
+    return 1
+  fi
+
+  return 0
 }
 
 set_library_enabled() {
@@ -122,13 +335,16 @@ PY
 }
 
 normalize_instance_compose() {
-  local compose_file="docker-compose.yml"
-  [ -f "$compose_file" ] || return 0
+  local compose_file=""
 
-  python3 - <<'PY'
+  for compose_file in "docker-compose.yml" "docker-compose-multitenant.yml"; do
+    [ -f "$compose_file" ] || continue
+
+    python3 - <<'PY' "$compose_file"
 from pathlib import Path
+import sys
 
-path = Path("docker-compose.yml")
+path = Path(sys.argv[1])
 content = path.read_text(encoding="utf-8")
 lines = content.splitlines()
 
@@ -185,21 +401,67 @@ if content.endswith("\n"):
 if normalized != content:
   path.write_text(normalized, encoding="utf-8")
 PY
+  done
 }
 
 run_instance_start() {
   local start_output
   local retry_output
   local update_output
+  local compose_file
+  local has_redis=0
+
+  compose_file="$(preferred_compose_file)"
+  if [ -f "$compose_file" ] && grep -Eq '^\s{2}redis:\s*$' "$compose_file"; then
+    has_redis=1
+  fi
 
   stack_is_running() {
     local running_services
-    running_services="$(docker compose --env-file .docker-build.env ps --status running --services 2>/dev/null || true)"
+    running_services="$(docker compose -f "$compose_file" --env-file .docker-build.env ps --status running --services 2>/dev/null || true)"
     printf '%s\n' "$running_services" | grep -Fxq app || return 1
     printf '%s\n' "$running_services" | grep -Fxq nginx || return 1
     printf '%s\n' "$running_services" | grep -Fxq mongodb || return 1
+    if [ "$has_redis" = "1" ]; then
+      printf '%s\n' "$running_services" | grep -Fxq redis || return 1
+    fi
     return 0
   }
+
+  if [ "$compose_file" = "docker-compose-multitenant.yml" ]; then
+    if start_output="$(docker compose -f "$compose_file" --env-file .docker-build.env up -d --remove-orphans 2>&1)"; then
+      print_kv "MESSAGE" "Instanz gestartet (Inventarsystem Multiinstancing aktiv)."
+      return 0
+    fi
+
+    if stack_is_running; then
+      print_kv "MESSAGE" "Instanz gestartet (Multiinstancing läuft, Healthcheck im Startskript war nicht erreichbar)."
+      return 0
+    fi
+
+    if printf '%s' "$start_output" | grep -qi "local app image not found"; then
+      if [ ! -x ./update.sh ]; then
+        fail "Multiinstancing-Start fehlgeschlagen und update.sh fehlt. Letzte Meldung: $(printf '%s' "$start_output" | tail -n1)"
+      fi
+
+      if ! update_output="$(bash ./update.sh 2>&1)"; then
+        if stack_is_running; then
+          print_kv "MESSAGE" "Instanz gestartet (update.sh meldete Healthcheck-Fehler, Multiinstancing-Dienste laufen)."
+          return 0
+        fi
+        fail "update.sh fehlgeschlagen: $(printf '%s' "$update_output" | tail -n1)"
+      fi
+
+      if retry_output="$(docker compose -f "$compose_file" --env-file .docker-build.env up -d --remove-orphans 2>&1)"; then
+        print_kv "MESSAGE" "Instanz gestartet (Multiinstancing-Image automatisch per update.sh geladen)."
+        return 0
+      fi
+
+      fail "Multiinstancing-Start nach update.sh fehlgeschlagen: $(printf '%s' "$retry_output" | tail -n1)"
+    fi
+
+    fail "Multiinstancing-Start fehlgeschlagen: $(printf '%s' "$start_output" | tail -n1)"
+  fi
 
   if start_output="$(INVENTAR_SETUP_CRON=0 INVENTAR_HTTP_PORT="$HTTP_PORT" INVENTAR_HTTPS_PORT="$HTTPS_PORT" bash ./start.sh --no-cron 2>&1)"; then
     return 0
@@ -237,10 +499,11 @@ run_instance_start() {
 setup_or_update_repo() {
   local target_dir="$1"
   local repo_url="$2"
+  local app_image_tag="$3"
 
   if [ -f "$target_dir/start.sh" ]; then
-    # Existing installation: keep it docker-only and update via project tooling.
-    if [ -x "$target_dir/update.sh" ]; then
+    # Existing installation: keep update flow inside Inventarsystem tooling.
+    if [ "$app_image_tag" = "latest" ] && [ -x "$target_dir/update.sh" ]; then
       (cd "$target_dir" && bash ./update.sh >/dev/null 2>&1 || true)
     fi
     return 0
@@ -250,15 +513,7 @@ setup_or_update_repo() {
     fail "Zielverzeichnis ist nicht leer: $target_dir"
   fi
 
-  # Clone directly instead of running the upstream installer, which expects
-  # host-level systemd/cron setup and can fail inside containers.
-  if [ -d "$target_dir" ]; then
-    rmdir "$target_dir" 2>/dev/null || true
-  fi
-
-  if ! git clone --depth 1 "$repo_url" "$target_dir" >/dev/null 2>&1; then
-    fail "Repository konnte nicht geklont werden: $repo_url"
-  fi
+  install_from_release "$target_dir" "$repo_url" "$app_image_tag"
 }
 
 write_nginx_site() {
@@ -453,7 +708,9 @@ FULL_DOMAIN="$SUBDOMAIN.$PARENT_DOMAIN"
 
 require_cmd docker
 require_cmd bash
-require_cmd git
+require_cmd curl
+require_cmd tar
+require_cmd python3
 
 mkdir -p "$BASE_DIR"
 
@@ -466,9 +723,13 @@ if [ -z "$HTTP_PORT" ]; then
 fi
 
 if [ "$ACTION" = "create" ] || [ "$ACTION" = "start" ]; then
-  setup_or_update_repo "$INSTANCE_DIR" "$REPO_URL"
+  setup_or_update_repo "$INSTANCE_DIR" "$REPO_URL" "$APP_IMAGE_TAG"
 
   [ -f "$INSTANCE_DIR/start.sh" ] || fail "start.sh im Zielrepository nicht gefunden: $INSTANCE_DIR"
+
+  if ! ensure_requested_app_image "$APP_IMAGE_TAG"; then
+    fail "App-Image konnte nicht geladen werden: ghcr.io/aiirondev/legendary-octo-garbanzo:$APP_IMAGE_TAG"
+  fi
 
   write_env_file "$INSTANCE_DIR" "$HTTP_PORT" "$HTTPS_PORT" "$APP_IMAGE_TAG"
   set_library_enabled "$INSTANCE_DIR" "$LIBRARY_ENABLED"

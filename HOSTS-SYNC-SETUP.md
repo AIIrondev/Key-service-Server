@@ -5,18 +5,20 @@ Nach jedem Neustart waren die Subdomains nicht mehr im `/etc/hosts` eingetragen,
 
 ## Lösung
 
-Diese Lösung bietet **3 Ebenen der Automatisierung**:
+Diese Lösung bietet drei Ebenen der Automatisierung:
 
-### 1. ✅ Automatische Sync bei Container-Start
-**Datei:** `launch_prod.sh` und `launch_dev.sh`
+Hinweis für neue Systeme: `sudo ./setup-first-install.sh` richtet den Hosts-Sync-Service zusammen mit dem restlichen Basis-Setup automatisch ein.
+
+### 1. Automatische Sync bei Container-Start
+Dateien: `Website/launch_prod.sh` und `Website/launch_dev.sh`
 
 - Nach `docker compose up` wird `sync_dev_hosts.sh` automatisch aufgerufen
 - Ein Background-Daemon sorgt für regelmäßige Synchronisation
 - **Development:** Alle 30 Sekunden (konfigurierbar via `DEV_HOSTS_REFRESH_INTERVAL`)
 - **Production:** Alle 3600 Sekunden/1 Stunde (konfigurierbar via `PROD_HOSTS_REFRESH_INTERVAL`)
 
-### 2. ✅ systemd Service für permanente Automatisierung
-**Dateien:** `invario-hosts-sync.service`, `setup-hosts-sync.sh`
+### 2. systemd Service für permanente Automatisierung
+Dateien: `invario-hosts-sync.service`, `setup-hosts-sync.sh`
 
 Der systemd-Service stellt sicher, dass die Hosts-Synchronisation auch nach System-Reboots aktiviert bleibt.
 
@@ -44,7 +46,7 @@ sudo rm /etc/systemd/system/invario-hosts-sync.service
 sudo systemctl daemon-reload
 ```
 
-### 3. ✅ Manuelle Synchronisation
+### 3. Manuelle Synchronisation
 Jederzeit manuell möglich:
 ```bash
 cd /home/max/Dokumente/repos/Key-service-Server/Website
@@ -89,7 +91,7 @@ sudo systemctl restart invario-hosts-sync
 
 ### Hosts werden nicht aktualisiert
 ```bash
-# Manuell test
+# Manuell testen
 ./Website/sync_dev_hosts.sh
 
 # MongoDB-Verbindung prüfen
@@ -97,8 +99,8 @@ docker compose ps mongodb
 docker compose logs mongodb
 ```
 
-### Berechtigungen-Fehler
-Das Script benötigt Zugriff auf `/etc/hosts`. Normalerweise wird es als `root` ausgeführt:
+### Berechtigungen
+Das Skript benötigt Zugriff auf `/etc/hosts`. Normalerweise wird es als `root` ausgeführt:
 ```bash
 # Wenn nötig mit sudo
 sudo ./Website/sync_dev_hosts.sh

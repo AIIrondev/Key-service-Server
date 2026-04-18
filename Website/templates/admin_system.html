@@ -134,6 +134,18 @@
     </div>
 </section>
 
+<section class="panel logs-panel">
+    <h2>Live-Logs (Core + Services)</h2>
+    <p class="logs-hint">Zeigt die letzten Zeilen der normalen Dienste direkt im Admin-Frontend an. Aktualisiert automatisch alle 20 Sekunden.</p>
+    <div class="logs-toolbar">
+        <label for="logSourceSelect">Quelle</label>
+        <select id="logSourceSelect"></select>
+        <button type="button" id="refreshLiveLogsBtn">Jetzt aktualisieren</button>
+        <span id="liveLogsUpdatedAt">Stand: -</span>
+    </div>
+    <pre id="liveLogsOutput" class="log-output">Lade Logs ...</pre>
+</section>
+
 <section class="instance-tools panel">
     <h2>Instanz-Operationen</h2>
     {% if instances %}
@@ -357,6 +369,48 @@ button,
 .actions { display: flex; flex-wrap: wrap; gap: 0.55rem; align-items: center; }
 .row-actions { gap: 0.4rem; }
 .actions form { margin: 0; }
+.logs-panel {
+    margin-top: 0;
+}
+.logs-hint {
+    margin-bottom: 0.6rem;
+    color: var(--term-muted);
+}
+.logs-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.55rem;
+}
+.logs-toolbar label,
+.logs-toolbar span {
+    color: var(--term-muted);
+    font-size: 0.85rem;
+}
+.logs-toolbar select {
+    border: 1px solid var(--term-border);
+    border-radius: 8px;
+    background: #0b1114;
+    color: var(--term-text);
+    padding: 0.36rem 0.5rem;
+    font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+}
+.log-output {
+    margin: 0;
+    border: 1px solid var(--term-border);
+    border-radius: 10px;
+    background: #05090b;
+    color: #cbeed0;
+    min-height: 260px;
+    max-height: 520px;
+    overflow: auto;
+    padding: 0.72rem;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
 .inline-admin-form {
     margin-top: 0.55rem;
     display: grid;
@@ -436,6 +490,10 @@ td {
     const pct = (value) => `${Number(value || 0).toFixed(1)} %`;
     const clampPct = (value) => Math.max(0, Math.min(100, Number(value || 0)));
     const historyLimit = 24;
+    const liveLogsState = {
+        sources: [],
+        selected: ''
+    };
 
     const history = {
         labels: [],
@@ -605,6 +663,85 @@ td {
         }
     };
 
+    const setLiveLogSources = (sources) => {
+        const select = document.getElementById('logSourceSelect');
+        if (!select) {
+            return;
+        }
+
+        const previous = liveLogsState.selected;
+        select.innerHTML = '';
+
+        (sources || []).forEach((source) => {
+            const option = document.createElement('option');
+            option.value = source.key;
+            option.textContent = source.label;
+            select.appendChild(option);
+        });
+
+        if (!sources || !sources.length) {
+            liveLogsState.sources = [];
+            liveLogsState.selected = '';
+            return;
+        }
+
+        liveLogsState.sources = sources;
+        const hasPrevious = sources.some((item) => item.key === previous);
+        liveLogsState.selected = hasPrevious ? previous : sources[0].key;
+        select.value = liveLogsState.selected;
+    };
+
+    const renderLiveLogs = () => {
+        const output = document.getElementById('liveLogsOutput');
+        const source = liveLogsState.sources.find((item) => item.key === liveLogsState.selected);
+        if (!output) {
+            return;
+        }
+        if (!source) {
+            output.textContent = 'Keine Log-Quelle verfügbar.';
+            return;
+        }
+        output.textContent = source.logs || 'Keine Ausgabe';
+    };
+
+    const updateLiveLogs = async () => {
+        try {
+            const response = await fetch('/admin/system/logs/live', { cache: 'no-store' });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            const sources = [];
+            const core = data.core || {};
+            sources.push({
+                key: 'core',
+                label: `Core Docker (${core.ok ? 'ok' : 'error'})`,
+                logs: core.logs || 'Keine Ausgabe'
+            });
+
+            (data.services || []).forEach((service) => {
+                const name = service.service || 'service';
+                const status = service.status || 'unavailable';
+                sources.push({
+                    key: `svc:${name}`,
+                    label: `${name} (${status})`,
+                    logs: service.logs || 'Keine Ausgabe'
+                });
+            });
+
+            setLiveLogSources(sources);
+            setText('liveLogsUpdatedAt', `Stand: ${data.generated_at || '-'}`);
+            renderLiveLogs();
+        } catch (error) {
+            setText('liveLogsUpdatedAt', 'Stand: Fehler beim Laden');
+            const output = document.getElementById('liveLogsOutput');
+            if (output) {
+                output.textContent = 'Live-Logs konnten nicht geladen werden.';
+            }
+        }
+    };
+
     const setUsageBar = (fillId, labelId, valuePct) => {
         const pctValue = clampPct(valuePct);
         const fill = document.getElementById(fillId);
@@ -679,6 +816,24 @@ td {
 
     updateSystem();
     window.setInterval(updateSystem, 15000);
+
+    const logSourceSelect = document.getElementById('logSourceSelect');
+    if (logSourceSelect) {
+        logSourceSelect.addEventListener('change', (event) => {
+            liveLogsState.selected = event.target.value || '';
+            renderLiveLogs();
+        });
+    }
+
+    const refreshLiveLogsBtn = document.getElementById('refreshLiveLogsBtn');
+    if (refreshLiveLogsBtn) {
+        refreshLiveLogsBtn.addEventListener('click', () => {
+            updateLiveLogs();
+        });
+    }
+
+    updateLiveLogs();
+    window.setInterval(updateLiveLogs, 20000);
 })();
 </script>
 {% endblock %}
