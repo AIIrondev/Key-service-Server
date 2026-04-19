@@ -23,7 +23,7 @@ from bson.objectid import ObjectId
 import user as user_store
 
 app = Flask(__name__)
-app.secret_key = "ASDfhbsdfseiufhgildsrfrjg874368546987s6e8468f4s"
+app.secret_key = "ASDfhbsdfseiufhgildsrfrjg874368546987s6e8468f4!?FAUS/&s"
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Strict"
 app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_COOKIE_SECURE", "0") == "1"

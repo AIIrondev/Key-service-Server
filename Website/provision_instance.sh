@@ -202,7 +202,7 @@ for line in lines:
 
     if not in_app and re.match(r"^\s{2}app:\s*$", line):
         in_app = True
-        image_set = False
+        image_set = True
         out.append(line)
         out.append(f"    image: {target_image}\n")
         continue
@@ -352,6 +352,8 @@ out = []
 in_nginx = False
 in_ports = False
 ports_indent = ""
+in_app = False
+seen_app_image = False
 i = 0
 
 while i < len(lines):
@@ -366,6 +368,10 @@ while i < len(lines):
     i += 1
     continue
 
+  if indent == 2 and stripped.endswith(":"):
+    in_app = stripped.startswith("app:")
+    seen_app_image = False
+
   if in_nginx and indent == 2 and stripped.endswith(":") and not stripped.startswith("nginx:"):
     in_nginx = False
     in_ports = False
@@ -373,6 +379,12 @@ while i < len(lines):
   if stripped.startswith("container_name:") and indent == 4:
     i += 1
     continue
+
+  if in_app and indent == 4 and stripped.startswith("image:"):
+    if seen_app_image:
+      i += 1
+      continue
+    seen_app_image = True
 
   if in_nginx and stripped.startswith("ports:") and indent == 4:
     out.append(line)
