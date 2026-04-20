@@ -13,7 +13,7 @@ class instace:
         - name -> String
 
         Output:
-        bool if the initiation works (True: generation worked; False: didnt work)
+        - bool if the initiation works (True: generation worked; False: didnt work)
         """
         pass
 
@@ -22,6 +22,7 @@ class ussage:
         pass
 
     def ram():
+        """"""
         pass
 
     def cpu():
