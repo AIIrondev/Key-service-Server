@@ -75,7 +75,17 @@ class instace:
     - stopping
     - restarting
     - list all Clients
+
+    modules:
+    - new(name:str)
+    - remove(name:str)
+    - status(name:str)
+    - restart(name:str)
+    - list()
     """
+
+    def __init__():
+        return list()
 
     def new(name: str) -> bool:
         """
@@ -159,9 +169,20 @@ class instace:
         return result
 
 class ussage:
+    """
+    This will give informations about anything like:
+    - RAM Ussage of the server
+    - CPU Ussage of the server
+    - Strorage that is in use
+    
+    modules:
+    - ram()
+    - cpu()
+    - storage()
+    """
     def ram() -> int:
         """
-        Docker ram ussage
+        RAM ussage of the complete system
 
         Output:
         - ram ussage -> interger in GB
