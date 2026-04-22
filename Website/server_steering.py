@@ -5,7 +5,7 @@ import requests
 _var = "/home/max/Dokumente/repos/legendary-octo-garbanzo"
 _cmd = "run-tenant-cmd.sh"
 
-def clear_special(var:str) -> str:
+def clear_special(var_:str) -> str:
     """
     Clears the variable of any special carakters 
 
@@ -17,19 +17,19 @@ def clear_special(var:str) -> str:
     """
     # Refactor the name varible to match the subdomain requirements
     try:
-        name = name.lower()
+        var_ = var_.lower()
         special_caracters1 = '^°!"§$%&/()=?\ß{[]}´`*~#,;.:<>|@€µ'
         special_caracters2 = 'äüö'
         for char in special_caracters1:
-            name = name.replace(char, "")
+            var_ = var_.replace(char, "")
         for i in special_caracters2:
             match i:
                 case "ü":
-                    name = name.replace(i, "ue")
+                    var_ = var_.replace(i, "ue")
                 case "ä":
-                    name = name.replace(i, "ae")
+                    var_ = var_.replace(i, "ae")
                 case "ö":
-                    name = name.replace(i, "oe")
+                    var_ = var_.replace(i, "oe")
     except:
         return False
 
