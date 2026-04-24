@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, flash, redirect, url_for, get_flashed_messages, session, send_file, after_this_request
+from flask import Flask, render_template, request, jsonify, flash, redirect, url_for, get_flashed_messages, session, send_file, after_this_request, g
 import os
 import json
 import atexit
@@ -22,12 +22,57 @@ from pymongo.errors import PyMongoError
 from bson.objectid import ObjectId
 import user as user_store
 
+# Tenant-aware configuration imports
+import tenant_resolver
+import tenant_config
+import tenant_guards
+import tenant_templates
+
 app = Flask(__name__)
 app.secret_key = "ASDfhbsdfseiufhgildsrfrjg874368546987s6e8468f4!?FAUS/&s"
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Strict"
 app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_COOKIE_SECURE", "0") == "1"
 app.config["PREFERRED_URL_SCHEME"] = "https" if os.environ.get("SESSION_COOKIE_SECURE") == "1" else "http"
+
+
+# ============================================================================
+# TENANT-AWARE CONFIGURATION SETUP
+# ============================================================================
+
+# Register Jinja2 context processor for tenant-aware template helpers
+app.context_processor(tenant_templates.inject_tenant_context)
+
+
+@app.before_request
+def resolve_tenant_context():
+    """
+    Resolve the active tenant for the current request and store in g.
+    This runs before every request, making the tenant available to all handlers.
+    """
+    parent_domain = os.environ.get("INSTANCE_PARENT_DOMAIN", "meine-domain")
+    tenant_id = tenant_resolver.resolve_tenant(parent_domain)
+    g.tenant_id = tenant_id
+
+
+@app.errorhandler(403)
+def forbidden_error(error):
+    """
+    Custom error handler for 403 Forbidden responses.
+    Provides tenant-aware error messages for disabled modules.
+    """
+    if request.accept_mimetypes.best_match(['application/json', 'text/html']) == 'application/json':
+        return jsonify({
+            'error': 'Access denied',
+            'message': 'This resource is not available for your organization.'
+        }), 403
+    
+    return render_template('error_403.html', 
+                         tenant_id=g.get('tenant_id', 'default')), 403
+
+
+# ============================================================================
+
 
 
 @app.after_request
