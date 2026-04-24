@@ -168,6 +168,7 @@ class instace:
             counter += 1
         return result
 
+
 class ussage:
     """
     This will give informations about anything like:
