@@ -2,8 +2,20 @@ import os
 import requests
 
 
-_var = "/home/max/Dokumente/repos/legendary-octo-garbanzo"
+_var = "/opt/legendary-octo-garbanzo"
 _cmd = "run-tenant-cmd.sh"
+
+def add_dns(name: str) -> bool:
+    """
+    Adds the subdomain to the DNS Routes
+
+    Input:
+    - name (Name of the subdomain) -> String
+
+    Output:
+    - bool (True if adding of the Subdomain is active)
+    """
+    pass
 
 def clear_special(var_:str) -> str:
     """
