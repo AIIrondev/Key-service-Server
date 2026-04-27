@@ -8,6 +8,20 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>{% block title %}Digitale Schulverwaltung{% endblock %}</title>
+    {# Basic SEO meta tags, can be overridden per-template by setting `meta_description` #}
+    <meta name="description" content="{{ meta_description|default('Invario — Lehrmittel-, Inventar- und Ausleihverwaltung für Schulen. Sicher, einfach, nachvollziehbar.') }}">
+    <link rel="canonical" href="{{ request.url_root.rstrip('/') }}{{ request.path }}">
+    <!-- OpenGraph / Twitter -->
+    <meta property="og:site_name" content="Invario">
+    <meta property="og:title" content="{% block title %}Digitale Schulverwaltung{% endblock %}">
+    <meta property="og:description" content="{{ meta_description|default('Invario — Lehrmittel-, Inventar- und Ausleihverwaltung für Schulen. Sicher, einfach, nachvollziehbar.') }}">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url_root.rstrip('/') }}{{ request.path }}">
+    <meta property="og:image" content="{{ url_for('static', filename='images/logo-1.jpeg') }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block title %}Digitale Schulverwaltung{% endblock %}">
+    <meta name="twitter:description" content="{{ meta_description|default('Invario — Lehrmittel-, Inventar- und Ausleihverwaltung für Schulen. Sicher, einfach, nachvollziehbar.') }}">
+    <meta name="twitter:image" content="{{ url_for('static', filename='images/logo-1.jpeg') }}">
     {% block head %}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

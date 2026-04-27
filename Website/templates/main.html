@@ -1,5 +1,8 @@
 {% extends "base.html" %}
 
+{# SEO: per-page description used in base.html meta tags #}
+{% set meta_description = "Invario bündelt Lehrmittelverwaltung, Inventar und Ausleihe für Schulen – sicher, transparent und einfach zu bedienen." %}
+
 {% block title %}Digitale Schulverwaltung mit Sicherheitsfokus{% endblock %}
 
 {% block head %}
@@ -550,6 +553,21 @@
 {% endblock %}
 
 {% block content %}
+<script type="application/ld+json">
+{
+	"@context": "https://schema.org",
+	"@type": "WebSite",
+	"name": "Invario",
+	"url": "{{ request.url_root.rstrip('/') }}",
+	"description": "{{ meta_description }}",
+	"publisher": {
+		"@type": "Organization",
+		"name": "Invario",
+		"url": "{{ request.url_root.rstrip('/') }}",
+		"logo": "{{ url_for('static', filename='images/logo-1.jpeg') }}"
+	}
+}
+</script>
 <section class="hero" id="top">
 	<div>
 		<span class="eyebrow">Lehrmittelverwaltungssoftware für Schulen</span>

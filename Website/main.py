@@ -1615,6 +1615,47 @@ def default():
     return render_template("main.html")
 
 
+@app.route('/health')
+def health():
+    return jsonify({"status": "ok", "time": _utc_now_iso()}), 200
+
+
+@app.route('/robots.txt')
+def robots_txt():
+    path = os.path.join(BASE_DIR, 'static', 'robots.txt')
+    if os.path.exists(path):
+        return send_file(path, mimetype='text/plain')
+    return (
+        "User-agent: *\nDisallow: /admin/\nAllow: /\nSitemap: /sitemap.xml\n",
+        200,
+        {"Content-Type": "text/plain"},
+    )
+
+
+@app.route('/sitemap.xml')
+def sitemap_xml():
+    site_root = request.url_root.rstrip('/')
+    sitemap_path = os.path.join(BASE_DIR, 'static', 'sitemap.xml')
+    if os.path.exists(sitemap_path):
+        try:
+            with open(sitemap_path, 'r', encoding='utf-8') as fh:
+                content = fh.read().replace('{{ SITE_ROOT }}', site_root)
+            return app.response_class(content, mimetype='application/xml')
+        except Exception:
+            pass
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        '  <url>\n'
+        f'    <loc>{site_root}</loc>\n'
+        '    <changefreq>daily</changefreq>\n'
+        '    <priority>1.0</priority>\n'
+        '  </url>\n'
+        '</urlset>'
+    )
+    return app.response_class(xml, mimetype='application/xml')
+
+
 @app.route('/dienstleistungen')
 def dienstleistungen():
     return render_template("dienstleistungen.html")
