@@ -117,31 +117,24 @@
 
 
         .brand {
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            gap: 1.2rem;
+            gap: 0.72rem;
             font-family: "Merriweather", Georgia, serif;
-            font-size: 1.35rem;
+            font-size: 1.22rem;
             font-weight: 700;
             letter-spacing: 0.03em;
             color: var(--brand-strong);
-            background: linear-gradient(90deg, #f3f1ea 60%, #e0eadf 100%);
-            padding: 0.3rem 1.2rem 0.3rem 0.3rem;
-            border-radius: 18px;
         }
 
         .brand img {
-            width: 72px;
-            height: 72px;
-            border-radius: 18px;
-            object-fit: contain;
-            border: 2px solid #e0eadf;
-            box-shadow: 0 8px 24px rgba(19, 49, 54, 0.10);
-            background: linear-gradient(135deg, #f8f5ee 0%, #e0eadf 100%);
-            transition: transform 0.2s;
-        }
-        .brand img:hover {
-            transform: scale(1.04) rotate(-2deg);
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 1px solid #bccdc4;
+            box-shadow: 0 8px 16px rgba(19, 49, 54, 0.14);
+            background: #ffffff;
         }
 
         .nav-links {
@@ -373,9 +366,9 @@
 <body>
     <nav class="site-nav">
         <div class="site-shell site-nav-inner">
-            <a class="brand" href="{{ url_for('default') }}" style="flex:1;max-width:340px;">
-                <img src="{{ url_for('static', filename='images/Logo-clear.png') }}" alt="Invario Logo" style="width:100%;height:auto;max-width:140px;min-width:72px;">
-                <span style="flex:1;text-align:left;">Invario</span>
+            <a class="brand" href="{{ url_for('default') }}">
+                <img src="{{ url_for('static', filename='images/Logo-clear.png') }}" alt="Invario Logo">
+                <span>Invario</span>
             </a>
             <div class="nav-links" aria-label="Main Navigation">
                 <a href="{{ url_for('default') }}">Start</a>
