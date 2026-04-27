@@ -36,9 +36,6 @@ RUN set -eu; \
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
-RUN chmod +x /app/provision_instance.sh
-
 EXPOSE 4999
 
 CMD ["gunicorn", "-c", "gunicorn.conf.py", "main:app"]
