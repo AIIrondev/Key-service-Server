@@ -36,6 +36,9 @@ RUN set -eu; \
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy application sources into the image (templates, static, main app, config)
+COPY . /app
+
 EXPOSE 4999
 
 CMD ["gunicorn", "-c", "gunicorn.conf.py", "main:app"]

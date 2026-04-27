@@ -135,6 +135,40 @@ Hinweis:
 - Development: [Website/launch_dev.sh](Website/launch_dev.sh)
 - Production: [Website/launch_prod.sh](Website/launch_prod.sh)
 
+### Neues: Start-Health-Check im `launch_dev.sh`
+
+`Website/launch_dev.sh` führt jetzt vor dem Build eine kurze Prüfung durch und wartet nach dem Start auf eine erreichbare HTTP-Antwort:
+
+- Vor dem Build wird geprüft, ob `gunicorn.conf.py` im `Website/`-Verzeichnis vorhanden ist; falls nicht, bricht das Skript mit einer erklärenden Fehlermeldung ab.
+- Nach `docker compose up -d` wartet das Skript bis zu 60 Sekunden (Intervall 2s) auf einen erfolgreichen HTTP-Request (`/`) auf `127.0.0.1:4999`.
+- Schlägt der Health-Check fehl, sammelt das Skript automatisch folgende Diagnosedaten und gibt Hinweise aus:
+  - `docker compose ps`
+  - `docker logs --tail 200 website-website-1`
+
+Dies hilft, wiederkehrende Probleme (fehlende Dateien, fehlerhafte Container-Starts, nginx-Fehlkonfiguration) schneller zu finden.
+
+Empfohlene manuelle Prüfbefehle (bei Problemen):
+
+```bash
+# Status aller Container (zeigt Port-Mappings)
+docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+
+# Prüfen, ob Host auf 4999 lauscht
+ss -ltnp | grep 4999 || true
+
+# Direktes Request vom Host (verbose)
+curl -v http://127.0.0.1:4999/ --max-time 10
+
+# Logs des Website-Containers (letzte 200 Zeilen)
+docker logs --tail 200 website-website-1
+
+# Testen von innerhalb des Containers (falls curl nicht installiert, nutze wget)
+docker exec -it website-website-1 curl -v http://127.0.0.1:4999/ || \
+  docker exec -it website-website-1 wget -qO- http://127.0.0.1:4999/
+```
+
+Wenn du möchtest, passe ich das Timeout oder den Health-Endpoint (`/health`) an.
+
 Beispiel Production:
 
 ```bash
