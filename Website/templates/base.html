@@ -10,6 +10,7 @@
     <title>{% block title %}Digitale Schulverwaltung{% endblock %}</title>
     {# Basic SEO meta tags, can be overridden per-template by setting `meta_description` #}
     <meta name="description" content="{{ meta_description|default('Invario — Lehrmittel-, Inventar- und Ausleihverwaltung für Schulen. Sicher, einfach, nachvollziehbar.') }}">
+    <meta name="robots" content="index, follow">
     <link rel="canonical" href="{{ request.url_root.rstrip('/') }}{{ request.path }}">
     <!-- OpenGraph / Twitter -->
     <meta property="og:site_name" content="Invario">
@@ -378,7 +379,7 @@
     {% endblock %}
 </head>
 <body>
-    <nav class="site-nav">
+    <nav class="site-nav" role="navigation" aria-label="Hauptnavigation">
         <div class="site-shell site-nav-inner">
             <a class="brand" href="{{ url_for('default') }}">
                 <img src="{{ url_for('static', filename='images/Logo-clear.png') }}" alt="Invario Logo">
@@ -425,7 +426,7 @@
             </div>
         </div>
     </nav>
-    <main class="site-shell main-wrap">
+    <main class="site-shell main-wrap" role="main">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 <div class="flashes">

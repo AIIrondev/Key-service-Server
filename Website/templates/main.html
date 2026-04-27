@@ -555,25 +555,71 @@
 {% block content %}
 <script type="application/ld+json">
 {
-	"@context": "https://schema.org",
-	"@type": "WebSite",
-	"name": "Invario",
-	"url": "{{ request.url_root.rstrip('/') }}",
-	"description": "{{ meta_description }}",
-	"publisher": {
-		"@type": "Organization",
-		"name": "Invario",
-		"url": "{{ request.url_root.rstrip('/') }}",
-		"logo": "{{ url_for('static', filename='images/logo-1.jpeg') }}"
-	}
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "{{ request.url_root.rstrip('/') }}#website",
+      "url": "{{ request.url_root.rstrip('/') }}",
+      "name": "Invario",
+      "description": "{{ meta_description }}",
+      "inLanguage": "de-DE",
+      "publisher": { "@id": "{{ request.url_root.rstrip('/') }}#organization" },
+      "potentialAction": {
+        "@type": "ContactAction",
+        "target": "{{ request.url_root.rstrip('/') }}/kontakt"
+      }
+    },
+    {
+      "@type": "Organization",
+      "@id": "{{ request.url_root.rstrip('/') }}#organization",
+      "name": "Invario",
+      "url": "{{ request.url_root.rstrip('/') }}",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "{{ url_for('static', filename='images/logo-1.jpeg') }}"
+      },
+      "contactPoint": [
+        {
+          "@type": "ContactPoint",
+          "contactType": "customer support",
+          "url": "{{ request.url_root.rstrip('/') }}/kontakt",
+          "availableLanguage": ["de", "en"]
+        }
+      ]
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "{{ request.url_root.rstrip('/') }}#software",
+      "name": "Invario",
+      "url": "{{ request.url_root.rstrip('/') }}",
+      "description": "{{ meta_description }}",
+      "operatingSystem": "Web",
+      "applicationCategory": "EducationApplication",
+      "softwareVersion": "1.0",
+      "image": "{{ url_for('static', filename='images/logo-1.jpeg') }}",
+      "author": { "@id": "{{ request.url_root.rstrip('/') }}#organization" },
+      "publisher": { "@id": "{{ request.url_root.rstrip('/') }}#organization" },
+      "inLanguage": "de-DE"
+    },
+    {
+      "@type": "WebPage",
+      "@id": "{{ request.url_root.rstrip('/') }}#webpage",
+      "url": "{{ request.url_root.rstrip('/') }}",
+      "name": "Invario Startseite",
+      "description": "{{ meta_description }}",
+      "isPartOf": { "@id": "{{ request.url_root.rstrip('/') }}#website" },
+      "mainEntity": { "@id": "{{ request.url_root.rstrip('/') }}#software" }
+    }
+  ]
 }
 </script>
-<section class="hero" id="top">
+<header class="hero" id="top" aria-label="Seitenstart">
 	<div>
 		<span class="eyebrow">Lehrmittelverwaltungssoftware für Schulen</span>
-		<h1>Lehrmittel, Schul-IT und Ausleihen in einem sicheren System.</h1>
+		<h1>Invario ist die sichere Schulsoftware für Lehrmittelverwaltung, Inventar und Ausleihe.</h1>
 		<p>
-			Invario ist eine Lehrmittelverwaltungssoftware, die Schulbibliothek, Inventar und digitale Ausleihe zusammenführt. Prozesse bleiben bewusst schlank und schnell, während Sicherheitsfunktionen wie rollenbasierte Rechte, Sitzungsabsicherung und nachvollziehbare Protokolle im Hintergrund dauerhaft aktiv sind.
+			Invario hilft Schulen, Lehrmittel, Medien und Ausleihprozesse übersichtlich, digital und DSGVO-konform zu organisieren. Die Oberfläche bleibt für Lehrkräfte und Bibliothekspersonal verständlich, während Sicherheitsfunktionen im Hintergrund für Verlässlichkeit sorgen.
 		</p>
 		<div class="cta-row">
 			{% if 'username' in session %}
@@ -612,7 +658,7 @@
 			</div>
 		</aside>
 	</div>
-</section>
+</header>
 
 <section class="primary-focus" id="zielgruppen" aria-label="Zielgruppen">
 	<div class="primary-focus-content">
