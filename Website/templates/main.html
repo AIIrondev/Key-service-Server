@@ -563,9 +563,7 @@
 			{% else %}
 				<a class="btn btn-primary" href="{{ url_for('login') }}">Buchungsoption nutzen</a>
 			{% endif %}
-			<a class="btn btn-secondary" href="{{ url_for('dienstleistungen') }}">Leistungen ansehen</a>
-			<a class="btn btn-secondary" href="{{ url_for('team') }}">Team ansehen</a>
-			<a class="btn btn-secondary" href="{{ url_for('kontakt') }}">Direkt kontaktieren</a>
+			<a class="btn btn-secondary" href="{{ url_for('kontakt') }}">Kontakt aufnehmen</a>
 		</div>
 	</div>
 	<div class="hero-right">
@@ -598,8 +596,73 @@
 	</div>
 </section>
 
+<section class="primary-focus" id="zielgruppen" aria-label="Zielgruppen">
+	<div class="primary-focus-content">
+		<span class="eyebrow">Für wen ist das?</span>
+		<h2>Passend für jede Schulform</h2>
+		<div class="primary-points">
+			<span>Grundschule: Übersicht für Klassen 1–4</span>
+			<span>Weiterführende Schulen: Effizienz für Klassen 5–13</span>
+			<span>Oberschulen: Verwaltung für FOS/BOS</span>
+		</div>
+	</div>
+</section>
+
+<section class="section" id="ablauf" style="animation-delay: 100ms;">
+	<h2>So verläuft die Zusammenarbeit</h2>
+	<p>Ein klarer Prozess sorgt für Sicherheit, besonders bei begrenzten Zeitfenstern im Schulbetrieb.</p>
+	<div class="process" aria-label="Ablauf in fünf Schritten">
+		<div class="step"><strong>1. Kennenlernen</strong><small>Ziele klären</small></div>
+		<div class="step"><strong>2. Struktur</strong><small>Bestehende Abläufe erfassen</small></div>
+		<div class="step"><strong>3. Einrichtung</strong><small>System passgenau einstellen</small></div>
+		<div class="step"><strong>4. Schulung</strong><small>Praxisnah einführen</small></div>
+		<div class="step"><strong>5. Betrieb</strong><small>Persönlich begleiten</small></div>
+	</div>
+</section>
+
+<section class="section" id="nutzen" style="animation-delay: 180ms;">
+	<h2>Nutzen-Inseln aus dem Schulalltag</h2>
+	<div class="section-grid">
+		<article class="card">
+			<h3>Bücher sicher ausgeben und zurücknehmen</h3>
+			<p>Mit Barcode oder QR-Code werden Bücher und Materialien schnell und nachvollziehbar ausgegeben und zurückgenommen – ohne Zettelwirtschaft.</p>
+		</article>
+		<article class="card">
+			<h3>Den Überblick über Laptops und iPads behalten</h3>
+			<p>IT-Geräte, Tablets und Medien werden gemeinsam verwaltet. Verantwortlichkeiten und Rückgaben sind jederzeit einsehbar.</p>
+		</article>
+		<article class="card">
+			<h3>Lehrmittel für die Unterrichtsplanung</h3>
+			<p>Lehrkräfte planen Materialbedarf im Voraus und vermeiden so Engpässe und Doppelbestellungen.</p>
+		</article>
+	</div>
+</section>
+
+<section class="section" id="sicherheit" style="animation-delay: 220ms;">
+	<h2>Datenschutz & Sicherheit</h2>
+	<div class="section-grid">
+		<article class="card">
+			<h3>Rollen- und Bereichstrennung</h3>
+			<p>Bibliothek, Verwaltung und IT erhalten abgestufte Rechte, sodass jede Rolle nur ihre benötigten Funktionen sieht.</p>
+		</article>
+		<article class="card">
+			<h3>Protokollierung und Nachweis</h3>
+			<p>Ausgaben, Rücknahmen und kritische Admin-Aktionen werden dokumentiert und sind jederzeit auditierbar.</p>
+		</article>
+		<article class="card">
+			<h3>Gesicherte Web-Session</h3>
+			<p>Sicherheits-Header, HttpOnly-Cookies und klare Session-Richtlinien schützen den laufenden Betrieb vor typischen Webangriffen.</p>
+		</article>
+	</div>
+</section>
+
+<section class="section" id="hilfe" style="animation-delay: 240ms;">
+	<h2>Wir lassen Sie nicht allein</h2>
+	<p>Sie erhalten persönliche Schulung und Support – telefonisch, per E-Mail oder direkt vor Ort. So bleibt keine Frage offen und die Hemmschwelle vor der Digitalisierung sinkt.</p>
+</section>
+
 <section class="testimonials">
-	<h2>Das sagen unsere Schulen</h2>
+	<h2>Das sagen andere Schulleitungen</h2>
 	<div class="testimonials-grid">
 		<div class="testimonial-card">
 			<div class="testimonial-stars">
@@ -609,7 +672,7 @@
 				<span class="star">★</span>
 				<span class="star">★</span>
 			</div>
-			<p class="testimonial-text">"Mit Invario haben wir unsere Lehrmittelausleihe um 70% beschleunigt. Die Schüler wissen sofort, welche Materialien verfügbar sind, ohne die Bibliothek zu stören."</p>
+			<p class="testimonial-text">"Mit Invario haben wir unsere Lehrmittelausleihe um 70% beschleunigt. Die Oberfläche ist intuitiv und unsere Bibliothekare sparen täglich Zeit."</p>
 			<div class="testimonial-author">
 				<div class="testimonial-avatar">SR</div>
 				<div class="testimonial-info">
@@ -652,138 +715,6 @@
 				</div>
 			</div>
 		</div>
-	</div>
-</section>
-
-<section class="primary-focus" id="grundschule" aria-label="Kategorie für Grundschulen">
-	<div class="primary-focus-content">
-		<span class="eyebrow">Kategorie: Grundschule, Förderschulen</span>
-		<h2>Mehr Übersicht für Klassen 1 bis 4</h2>
-		<p>Diese Ansicht ist auf den Schulalltag in Grundschulen zugeschnitten: schnelle Materialausgabe, klar erkennbare Verfügbarkeiten und einfache Workflows für Lehrkräfte ohne lange Einarbeitung.</p>
-		<div class="primary-points" aria-label="Vorteile für Grundschulen">
-			<span>Schnelle Ausleihe pro Klasse</span>
-			<span>Farbcodes für Materialtypen</span>
-			<span>Weniger Verwaltungsaufwand</span>
-			<span>Kinderleichte Bedienung</span>
-		</div>
-		<div class="cta-row">
-			<a class="btn btn-primary" href="{{ url_for('inventarsystem') }}">Grundschul-Modul ansehen</a>
-			<a class="btn btn-secondary" href="{{ url_for('kontakt') }}">Beratung für Grundschule</a>
-		</div>
-	</div>
-</section>
-
-<section class="primary-focus" id="grundschule" aria-label="Kategorie für Grundschulen">
-	<div class="primary-focus-content">
-		<span class="eyebrow">Kategorie: Weiterführende Schulen (Mittelschule, Realschule, Gymnasien, Förderschulen)</span>
-		<h2>Mehr Übersicht für Klassen 5 bis 13</h2>
-		<p>Diese Ansicht ist auf den Schulalltag in weiterführenden Schulen zugeschnitten: schnelle Materialausgabe, klar erkennbare Verfügbarkeiten und einfache Workflows für Lehrkräfte ohne lange Einarbeitung.</p>
-		<div class="primary-points" aria-label="Vorteile für Grundschulen">
-			<span>Schnelle Ausleihe pro Klasse</span>
-			<span>Farbcodes für Materialtypen</span>
-			<span>Weniger Verwaltungsaufwand</span>
-			<span>Kinderleichte Bedienung</span>
-		</div>
-		<div class="cta-row">
-			<a class="btn btn-primary" href="{{ url_for('inventarsystem') }}">Modul ansehen</a>
-			<a class="btn btn-secondary" href="{{ url_for('kontakt') }}">Beratung für Weiterführende Schulen</a>
-		</div>
-	</div>
-</section>
-
-<section class="primary-focus" id="grundschule" aria-label="Kategorie für Grundschulen">
-	<div class="primary-focus-content">
-		<span class="eyebrow">Kategorie: Oberschulen (FOS, BOS)</span>
-		<h2>Mehr Übersicht für Klassen 10 bis 13</h2>
-		<p>Diese Ansicht ist auf den Schulalltag in Oberschulen zugeschnitten: schnelle Materialausgabe, klar erkennbare Verfügbarkeiten und einfache Workflows für Lehrkräfte ohne lange Einarbeitung.</p>
-		<div class="primary-points" aria-label="Vorteile für Grundschulen">
-			<span>Schnelle Ausleihe pro Klasse</span>
-			<span>Farbcodes für Materialtypen</span>
-			<span>Weniger Verwaltungsaufwand</span>
-			<span>Kinderleichte Bedienung</span>
-		</div>
-		<div class="cta-row">
-			<a class="btn btn-primary" href="{{ url_for('inventarsystem') }}">Modul ansehen</a>
-			<a class="btn btn-secondary" href="{{ url_for('kontakt') }}">Beratung für Oberschulen</a>
-		</div>
-	</div>
-</section>
-
-<section class="section" id="nutzen" style="animation-delay: 100ms;">
-	<h2>Vorteile für Verwaltung und Bibliothek</h2>
-	<p>Alle Daten zu Lehrmitteln, Geräten und Ausleihen sind gebündelt, sodass Rückfragen schnell geklärt werden können.</p>
-	<div class="section-grid">
-		<article class="card">
-			<h3>Lehrmittel für einfache Unterichtsplanung</h3>
-			<p>Bücher und Unterrichtsmaterialien lassen sich schon im vorhinein ganz bequem von zuhause Planen. Dadurch vermeiden sich doppel benötigungen durch Lehrkräfte und somit Spannungen im Kollegium.</p>
-		</article>
-		<article class="card">
-			<h3>Scanner-gestuetzte Ausleihe</h3>
-			<p>Barcode- oder QR-Workflows beschleunigen Ausgabe und Rücknahme deutlich, auch bei grossen Bestandsmengen.</p>
-		</article>
-		<article class="card">
-			<h3>IT- und Medienbestand kombiniert</h3>
-			<p>Tablets, Laptops, Webcams, Print-Medien und Lehrmittel werden gemeinsam verwaltet statt in voneinander getrennten Listen.</p>
-		</article>
-	</div>
-</section>
-
-<section class="section" id="alltag" style="animation-delay: 180ms;">
-	<h2>Typische Lehrmittel-Szenarien</h2>
-	<p>Die folgenden Beispiele orientieren sich an realen Schulabläufen mit Fokus auf Tempo und Nachvollziehbarkeit.</p>
-	<div class="routine-list">
-		<div class="routine">
-			<div>
-				<b>Neue Klassensätze treffen ein</b>
-				Lehrmittel werden etikettiert, Klassen zugeordnet und mit Ausgabehistorie gespeichert.
-			</div>
-			<span>Lehrmittel</span>
-		</div>
-		<div class="routine">
-			<div>
-				<b>Rückfrage zu ausgeliehenen Medien</b>
-				Verfügbarkeit, Entleiher und Rückgabedatum sind sofort sichtbar, ohne manuelle Listenpflege.
-			</div>
-			<span>Ausleihe</span>
-		</div>
-		<div class="routine">
-			<div>
-				<b>Defekt bei einem Endgerät</b>
-				Zustand, Schaden und Verantwortlichkeiten werden dokumentiert, inklusive klarer Eskalationswege.
-			</div>
-			<span>Sicherheit</span>
-		</div>
-	</div>
-</section>
-
-<section class="section" id="sicherheit" style="animation-delay: 220ms;">
-	<h2>Erweiterte Sicherheit für den Schulbetrieb</h2>
-	<p>Die Plattform setzt auf Datenschutz und Betriebssicherheit, damit personenbezogene Daten und Inventardaten langfristig geschützt bleiben.</p>
-	<div class="section-grid">
-		<article class="card">
-			<h3>Rollen- und Bereichstrennung</h3>
-			<p>Bibliothek, Verwaltung und IT erhalten abgestufte Rechte, sodass jede Rolle nur ihre benoetigten Funktionen sieht.</p>
-		</article>
-		<article class="card">
-			<h3>Protokollierung und Nachweis</h3>
-			<p>Ausgaben, Rücknahmen und kritische Admin-Aktionen werden dokumentiert und sind jederzeit auditierbar.</p>
-		</article>
-		<article class="card">
-			<h3>Gesicherte Web-Session</h3>
-			<p>Sicherheits-Header, HttpOnly-Cookies und klare Session-Richtlinien schützen den laufenden Betrieb vor typischen Webangriffen.</p>
-		</article>
-	</div>
-</section>
-
-<section class="section" id="ablauf" style="animation-delay: 260ms;">
-	<h2>So verläuft die Zusammenarbeit</h2>
-	<p>Ein klarer Prozess sorgt für Sicherheit, besonders bei begrenzten Zeitfenstern im Schulbetrieb.</p>
-	<div class="process" aria-label="Ablauf in fünf Schritten">
-		<div class="step"><strong>1. Kennenlernen</strong><small>Ziele klären</small></div>
-		<div class="step"><strong>2. Struktur</strong><small>Bestehende Abläufe erfassen</small></div>
-		<div class="step"><strong>3. Einrichtung</strong><small>System passgenau einstellen</small></div>
-		<div class="step"><strong>4. Schulung</strong><small>Praxisnah einführen</small></div>
-		<div class="step"><strong>5. Betrieb</strong><small>Persönlich begleiten</small></div>
 	</div>
 </section>
 

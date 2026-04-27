@@ -370,48 +370,17 @@
                 <span>Invario</span>
             </a>
             <div class="nav-links" aria-label="Main Navigation">
-                <a href="{{ url_for('dienstleistungen') }}">Leistungen für Schulen</a>
-                <a href="{{ url_for('projekte') }}">Praxisbeispiele</a>
-                <a href="{{ url_for('team') }}">Team</a>
+                <a href="{{ url_for('default') }}">Start</a>
+                <a href="{{ url_for('dienstleistungen') }}">Für Schulen</a>
                 <a href="{{ url_for('kontakt') }}">Kontakt</a>
-                <a href="{{ url_for('inventarsystem') }}">Inventarsystem</a>
             </div>
             <div class="nav-actions">
                 {% if 'username' in session %}
-                    <a class="nav-btn" href="{{ url_for('appointments') }}">Buchungsoption</a>
-
-                    <details class="nav-dropdown">
-                        <summary class="nav-btn">Nutzerbereich</summary>
-                        <div class="dropdown-menu">
-                            <a href="{{ url_for('my_invoices') }}">Meine Rechnungen</a>
-                            <a href="{{ url_for('my_instance_management') }}">Meine Instanz</a>
-                            <a href="{{ url_for('user_chat') }}">Chat mit Admin</a>
-                            <a href="{{ url_for('user_tickets') }}">Support Tickets</a>
-                        </div>
-                    </details>
-
-                    {% if session.get('is_admin') %}
-                        <details class="nav-dropdown">
-                            <summary class="nav-btn">Admin</summary>
-                            <div class="dropdown-menu">
-                                <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
-                                <a href="{{ url_for('admin_users') }}">Userverwaltung</a>
-                                <a href="{{ url_for('admin_invoices') }}">Rechnungsverwaltung</a>
-                                <a href="{{ url_for('admin_chats') }}">Admin-Chat</a>
-                                <a href="{{ url_for('admin_tickets') }}">Support-Center</a>
-                                <a href="{{ url_for('admin_system_tools') }}">System-Tools</a>
-                                <a href="{{ url_for('admin_blog') }}">Blog verwalten</a>
-                                <a href="{{ url_for('admin_team') }}">Team Cards</a>
-                                <a href="{{ url_for('admin_instances') }}">Schul-Instanzen</a>
-                            </div>
-                        </details>
-                    {% endif %}
-
+                    <a class="nav-btn primary" href="{{ url_for('appointments') }}">Buchungsoption</a>
                     <a class="nav-btn" href="{{ url_for('logout') }}">Logout</a>
                 {% else %}
-                    <a class="nav-btn" href="{{ url_for('blog') }}">Neuigkeiten</a>
-                    <a class="nav-btn" href="{{ url_for('login') }}">Login</a>
-                    <a class="nav-btn primary" href="{{ url_for('register') }}">Registrieren</a>
+                    <a class="nav-btn primary" href="{{ url_for('login') }}">Login</a>
+                    <a class="nav-btn" href="{{ url_for('register') }}">Registrieren</a>
                 {% endif %}
             </div>
         </div>
