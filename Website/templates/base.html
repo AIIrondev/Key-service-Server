@@ -13,13 +13,13 @@
     <link rel="canonical" href="{{ request.url_root.rstrip('/') }}{{ request.path }}">
     <!-- OpenGraph / Twitter -->
     <meta property="og:site_name" content="Invario">
-    <meta property="og:title" content="{% block title %}Digitale Schulverwaltung{% endblock %}">
+    <meta property="og:title" content="{{ meta_title|default('Digitale Schulverwaltung') }}">
     <meta property="og:description" content="{{ meta_description|default('Invario — Lehrmittel-, Inventar- und Ausleihverwaltung für Schulen. Sicher, einfach, nachvollziehbar.') }}">
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ request.url_root.rstrip('/') }}{{ request.path }}">
     <meta property="og:image" content="{{ url_for('static', filename='images/logo-1.jpeg') }}">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{% block title %}Digitale Schulverwaltung{% endblock %}">
+    <meta name="twitter:title" content="{{ meta_title|default('Digitale Schulverwaltung') }}">
     <meta name="twitter:description" content="{{ meta_description|default('Invario — Lehrmittel-, Inventar- und Ausleihverwaltung für Schulen. Sicher, einfach, nachvollziehbar.') }}">
     <meta name="twitter:image" content="{{ url_for('static', filename='images/logo-1.jpeg') }}">
     {% block head %}

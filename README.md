@@ -1,4 +1,3 @@
-
 # Key Service Server
 
 Dieses Repository ist auf einen schlanken, Docker-first Betrieb ausgerichtet.
@@ -178,6 +177,42 @@ export INSTANCE_WILDCARD_CERT_FILE=/etc/nginx/certs/wildcard.example.de.crt
 export INSTANCE_WILDCARD_KEY_FILE=/etc/nginx/certs/wildcard.example.de.key
 ./launch_prod.sh
 ```
+
+## SEO & LLM-Optimierung
+
+Die Website ist für Suchmaschinen und LLM-Scraper optimiert:
+
+- **Meta-Tags & OpenGraph**: Jede Seite enthält sinnvolle `<meta name="description">`, OpenGraph- und Twitter-Tags sowie einen Canonical-Link. Die Startseite und wichtige Unterseiten haben eine eigene `meta_description`.
+- **JSON-LD**: Die Startseite enthält strukturierte Daten (Schema.org WebSite/Organization) als JSON-LD.
+- **Maschinenlesbare Endpunkte**:
+    - `/health` — gibt `{ "status": "ok", "time": ... }` zurück (Status 200), geeignet für Health-Checks und Monitoring.
+    - `/sitemap.xml` — maschinenlesbare Sitemap für Suchmaschinen, dynamisch generiert.
+    - `/robots.txt` — erlaubt Crawling, verweist auf Sitemap, blockiert `/admin/` und Uploads.
+- **Server-Side Rendering**: Alle wichtigen Inhalte sind serverseitig gerendert und ohne JavaScript zugänglich.
+
+**Beispiel für Health-Check:**
+
+```bash
+curl -i http://127.0.0.1:4999/health
+```
+
+**Beispiel für Sitemap:**
+
+```bash
+curl -i http://127.0.0.1:4999/sitemap.xml
+```
+
+**robots.txt Beispiel:**
+
+    User-agent: *
+    Disallow: /admin/
+    Disallow: /static/uploads/
+    Allow: /
+    Sitemap: /sitemap.xml
+
+**Hinweis:**
+- Die SEO-Meta-Tags können pro Seite in den Templates überschrieben werden (`meta_description`).
+- Die Sitemap kann bei Bedarf um weitere Seiten ergänzt werden.
 
 ## Empfohlener Ablauf
 
