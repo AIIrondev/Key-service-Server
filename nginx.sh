@@ -81,12 +81,19 @@ configure_nginx_site() {
   echo "Nutze HTTPS nginx Template fuer $domain."
 
   if [ ! -f "$template_file" ]; then
-    echo "Fehler: nginx Template nicht gefunden: $template_file"
-    exit 1
+    echo "[FEHLER] nginx Template nicht gefunden: $template_file" >&2
+    echo "[HINWEIS] Prüfe, ob die Datei existiert und korrekt benannt ist." >&2
+    exit 11
   fi
 
-  render_nginx_template "$template_file" "$site_file" "$domain" "$upstream_port" "$cert_file" "$key_file"
-  sudo ln -sf "$site_file" "$site_link"
+  if ! render_nginx_template "$template_file" "$site_file" "$domain" "$upstream_port" "$cert_file" "$key_file"; then
+    echo "[FEHLER] nginx Template konnte nicht gerendert werden: $template_file" >&2
+    exit 12
+  fi
+  if ! sudo ln -sf "$site_file" "$site_link"; then
+    echo "[FEHLER] Symlink für nginx Site konnte nicht erstellt werden: $site_link" >&2
+    exit 13
+  fi
 }
 
 ensure_ssl_certificate() {
@@ -95,25 +102,30 @@ ensure_ssl_certificate() {
   local key_file="$3"
 
   if ! command -v openssl >/dev/null 2>&1; then
-    echo "Fehler: openssl ist nicht installiert."
-    exit 1
+    echo "[FEHLER] openssl ist nicht installiert. Bitte installiere openssl." >&2
+    exit 21
   fi
 
   sudo mkdir -p "$CERT_DIR"
 
   if [ -f "$cert_file" ] && [ -f "$key_file" ]; then
-    echo "SSL Zertifikat gefunden fuer $domain: $cert_file"
-    return
+    if sudo openssl x509 -in "$cert_file" -noout >/dev/null 2>&1; then
+      echo "SSL Zertifikat gefunden fuer $domain: $cert_file"
+      return
+    else
+      echo "[WARNUNG] Zertifikat $cert_file ist beschädigt oder ungültig. Erstelle neu..."
+      sudo rm -f "$cert_file" "$key_file"
+    fi
   fi
 
-  echo "Kein SSL Zertifikat fuer $domain gefunden. Erzeuge self-signed Zertifikat..."
+  echo "Kein gültiges SSL Zertifikat für $domain gefunden. Erzeuge self-signed Zertifikat..."
   if ! sudo openssl req -x509 -nodes -newkey rsa:2048 -sha256 \
     -days "$SSL_CERT_DAYS" \
     -keyout "$key_file" \
     -out "$cert_file" \
     -subj "/CN=$domain" \
     -addext "subjectAltName=DNS:$domain"; then
-    # Fallback fuer aeltere openssl-Versionen ohne -addext.
+    # Fallback für ältere openssl-Versionen ohne -addext.
     sudo openssl req -x509 -nodes -newkey rsa:2048 -sha256 \
       -days "$SSL_CERT_DAYS" \
       -keyout "$key_file" \
@@ -123,30 +135,34 @@ ensure_ssl_certificate() {
 
   sudo chmod 600 "$key_file"
   sudo chmod 644 "$cert_file"
+  echo "[INFO] Selbstsigniertes Zertifikat für $domain wurde erstellt: $cert_file"
 }
 
 reload_nginx() {
   echo "Pruefe nginx Konfiguration..."
-  sudo nginx -t
+  if ! sudo nginx -t; then
+    echo "[FEHLER] nginx Konfiguration fehlerhaft! Bitte prüfe die Ausgaben oben." >&2
+    exit 31
+  fi
 
   if sudo pgrep -x nginx >/dev/null 2>&1; then
     echo "Nginx Prozess gefunden, lade Konfiguration neu..."
     if ! sudo nginx -s reload; then
-      echo "Warnung: nginx konnte nicht automatisch neu geladen werden."
+      echo "[WARNUNG] nginx konnte nicht automatisch neu geladen werden."
       echo "Die Konfiguration wurde geschrieben; bitte nginx bei Bedarf manuell neu laden."
     fi
   elif sudo systemctl is-active --quiet nginx; then
     echo "Lade nginx neu..."
     if ! sudo systemctl reload nginx; then
-      echo "Warnung: nginx reload via systemd fehlgeschlagen."
-      echo "Bitte pruefe: sudo systemctl status nginx.service"
+      echo "[WARNUNG] nginx reload via systemd fehlgeschlagen."
+      echo "Bitte prüfe: sudo systemctl status nginx.service"
     fi
   else
     echo "Nginx ist nicht aktiv, starte nginx..."
     if ! sudo systemctl start nginx; then
-      echo "Warnung: Nginx konnte nicht ueber systemd gestartet werden."
-      echo "Falls nginx bereits manuell laeuft, kann die Weiterleitung trotzdem funktionieren."
-      echo "Ansonsten pruefe: sudo systemctl status nginx.service"
+      echo "[WARNUNG] Nginx konnte nicht über systemd gestartet werden."
+      echo "Falls nginx bereits manuell läuft, kann die Weiterleitung trotzdem funktionieren."
+      echo "Ansonsten prüfe: sudo systemctl status nginx.service"
       echo "Und Logs mit: sudo journalctl -xeu nginx.service"
     fi
   fi
