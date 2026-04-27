@@ -1,5 +1,11 @@
 User-agent: *
 Disallow: /admin/
+Disallow: /my/
+Disallow: /login
+Disallow: /register
+Disallow: /chat
+Disallow: /tickets
+Disallow: /appointments
 Disallow: /static/uploads/
 Allow: /
 Sitemap: /sitemap.xml
