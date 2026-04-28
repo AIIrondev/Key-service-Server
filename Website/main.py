@@ -1826,8 +1826,7 @@ def appointments():
 def book_option_package():
     package_raw = _sanitize_text(request.form.get("package") or "", 40).lower()
     package_map = {
-        "normal": "Normal",
-        "pro": "Pro",
+        "inventarsystem": "Inventarsystem",
         "buecherei": "Bücherei",
     }
     selected_package = package_map.get(package_raw)

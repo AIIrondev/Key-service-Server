@@ -108,27 +108,94 @@
 </section>
 
 <section class="packages-grid">
-    {% for package in software_packages %}
-        <article class="package-card">
-            <h2 class="package-name">{{ package.name }}</h2>
-            <p class="package-headline">{{ package.headline }}</p>
-            <ul class="feature-list">
-                {% for feature in package.features %}
-                    <li>{{ feature }}</li>
-                {% endfor %}
-            </ul>
-            <div class="package-actions">
-                {% if 'username' in session %}
-                    <form method="POST" action="{{ url_for('book_option_package') }}">
-                        <input type="hidden" name="package" value="{{ package.slug }}">
-                        <button class="btn" type="submit">Option buchen</button>
-                    </form>
-                {% else %}
-                    <a class="btn secondary" href="{{ url_for('login') }}">Mit Konto buchen</a>
-                {% endif %}
-            </div>
-        </article>
-    {% endfor %}
+    <div class="flex flex-col bg-white rounded-3xl">
+      <div class="px-6 py-8 sm:p-10 sm:pb-6">
+        <div class="grid items-center justify-center w-full grid-cols-1 text-left">
+          <div>
+            <h2
+              class="text-lg font-medium tracking-tighter text-gray-600 lg:text-3xl">
+                Inventarsystem
+            </h2>
+            <p class="mt-2 text-sm text-gray-500"> 
+                Stabiler Einstieg für den Schulalltag
+                - Inventarverwaltung mit Rollenrechten
+                - Basis-Support und Ticketing
+                - Schulweite Übersichten
+                - Erweiterte Instanzverwaltung
+                - Detailberichte und Admin-Insights
+            </p>
+          </div>
+          <div class="mt-6">
+            <p>
+              <span class="text-5xl font-light tracking-tight text-black">
+                250 € vb.
+              </span>
+              <span class="text-base font-medium text-gray-500"> /mo </span>
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="flex px-6 pb-8 sm:px-8">
+        <a
+          aria-describedby="tier-company"
+          class="flex items-center justify-center w-full px-6 py-2.5 text-center text-white duration-200 bg-black border-2 border-black rounded-full nline-flex hover:bg-transparent hover:border-black hover:text-black focus:outline-none focus-visible:outline-black text-sm focus-visible:ring-black" href="#">
+          <div class="package-actions">
+            {% if 'username' in session %}
+                <form method="POST" action="{{ url_for('book_option_package') }}">
+                    <input type="hidden" name="package" value="inventarsystem">
+                    <button class="btn" type="submit">Option buchen</button>
+                </form>
+            {% else %}
+                <a class="btn secondary" href="{{ url_for('login') }}">Mit Konto buchen</a>
+            {% endif %}
+        </div>
+        </a>
+      </div>
+    </div>
+    
+    <div class="flex flex-col bg-white rounded-3xl">
+      <div class="px-6 py-8 sm:p-10 sm:pb-6">
+        <div class="grid items-center justify-center w-full grid-cols-1 text-left">
+          <div>
+            <h2
+              class="text-lg font-medium tracking-tighter text-gray-600 lg:text-3xl">
+                Bibliothekssystem Modul
+            </h2>
+            <p class="mt-2 text-sm text-gray-500"> 
+                Optimiert für Bibliothek und Medien
+
+                - Ausleih- und Rückgabeprozesse
+                - Bestandsübersichten für Medien
+                - Transparente Historie pro Medium
+            </p>
+          </div>
+          <div class="mt-6">
+            <p>
+              <span class="text-5xl font-light tracking-tight text-black">
+                150 € vb.
+              </span>
+              <span class="text-base font-medium text-gray-500"> /mo </span>
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="flex px-6 pb-8 sm:px-8">
+        <a
+          aria-describedby="tier-company"
+          class="flex items-center justify-center w-full px-6 py-2.5 text-center text-white duration-200 bg-black border-2 border-black rounded-full nline-flex hover:bg-transparent hover:border-black hover:text-black focus:outline-none focus-visible:outline-black text-sm focus-visible:ring-black" href="#">
+          <div class="package-actions">
+            {% if 'username' in session %}
+                <form method="POST" action="{{ url_for('book_option_package') }}">
+                    <input type="hidden" name="package" value="buecherei">
+                    <button class="btn" type="submit">Option buchen</button>
+                </form>
+            {% else %}
+                <a class="btn secondary" href="{{ url_for('login') }}">Mit Konto buchen</a>
+            {% endif %}
+        </div>
+        </a>
+      </div>
+    </div>
 </section>
 
 <section class="notice">
