@@ -5,204 +5,282 @@
 {% block head %}
 {{ super() }}
 <style>
-    .packages-hero {
-        background: linear-gradient(140deg, #f6f2e6 0%, #e8efe4 55%, #dfe9ef 100%);
-        border: 1px solid #ced8d1;
-        border-radius: 18px;
-        padding: 1.4rem;
-        box-shadow: 0 14px 34px rgba(16, 36, 47, 0.08);
-        margin-bottom: 1rem;
+    .booking-hero {
+        background: linear-gradient(135deg, rgba(28, 90, 99, 0.14), rgba(255, 255, 255, 0.65)),
+                    linear-gradient(180deg, #fffefb 0%, #f2f5f2 100%);
+        border: 1px solid rgba(28, 90, 99, 0.16);
+        border-radius: 24px;
+        padding: 2.2rem;
+        margin-bottom: 1.8rem;
+        box-shadow: 0 18px 44px rgba(18, 49, 54, 0.08);
+        overflow: hidden;
+        position: relative;
     }
 
-    .packages-hero h1 {
-        color: #173f57;
-        font-size: clamp(1.65rem, 3.2vw, 2.45rem);
-        margin-bottom: 0.35rem;
+    .booking-hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at top right, rgba(34, 98, 128, 0.16), transparent 36%);
+        pointer-events: none;
+    }
+
+    .booking-hero > * {
+        position: relative;
+        z-index: 1;
+    }
+
+    .booking-hero h1 {
+        margin-bottom: 0.65rem;
+        color: #133d4a;
+        font-size: clamp(2rem, 3.5vw, 3.2rem);
+    }
+
+    .booking-hero p {
+        margin: 0.75rem 0 0;
+        max-width: 780px;
+        color: #3b5f69;
+        font-size: clamp(1rem, 1.05vw, 1.1rem);
     }
 
     .packages-grid {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 0.9rem;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.4rem;
+        margin-bottom: 1.8rem;
     }
 
     .package-card {
         background: #ffffff;
-        border: 1px solid #d5e0e8;
-        border-radius: 16px;
-        padding: 1rem;
-        box-shadow: 0 10px 24px rgba(23, 44, 57, 0.05);
+        border: 1px solid #dfe7e7;
+        border-radius: 22px;
+        box-shadow: 0 18px 40px rgba(23, 44, 57, 0.05);
+        padding: 1.8rem;
         display: grid;
-        gap: 0.7rem;
+        gap: 1.2rem;
+        transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
     }
 
-    .package-name {
+    .package-card:hover {
+        transform: translateY(-3px);
+        border-color: #b2d4dc;
+        box-shadow: 0 24px 48px rgba(23, 44, 57, 0.1);
+    }
+
+    .package-card__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .package-card__tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.45rem 0.8rem;
+        border-radius: 999px;
+        background: #e6f5f8;
+        color: #106476;
+        font-size: 0.9rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+    }
+
+    .package-card__name {
         margin: 0;
-        color: #184560;
-        font-size: 1.35rem;
+        color: #143f46;
+        font-size: clamp(1.4rem, 2.5vw, 2rem);
+        line-height: 1.08;
     }
 
-    .package-headline {
-        color: #3a6177;
-        font-weight: 600;
+    .package-card__price {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 0.35rem;
+        font-weight: 700;
+        color: #102d37;
+        white-space: nowrap;
+    }
+
+    .package-card__price span {
+        font-size: clamp(2rem, 3vw, 2.75rem);
+        letter-spacing: -0.04em;
+    }
+
+    .package-card__price small {
+        color: #57717b;
         font-size: 0.95rem;
     }
 
-    .feature-list {
+    .package-card__description {
         margin: 0;
-        padding-left: 1.1rem;
-        color: #456274;
-        display: grid;
-        gap: 0.35rem;
+        color: #4b6a72;
+        line-height: 1.75;
     }
 
-    .package-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.55rem;
+    .package-card__features {
+        margin: 1rem 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .package-card__features li {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.75rem;
+        align-items: flex-start;
+        color: #4f6a72;
+        font-size: 0.98rem;
+    }
+
+    .package-card__features li::before {
+        content: "✓";
+        color: #187490;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .package-card__actions {
+        margin-top: 0.5rem;
+    }
+
+    .package-card__actions form,
+    .package-card__actions a {
+        width: 100%;
+        display: inline-flex;
     }
 
     .btn {
-        border: 1px solid #0d4f77;
-        background: linear-gradient(120deg, #0d6294 0%, #0b476a 100%);
+        width: 100%;
+        border: 1px solid #1c5a63;
+        background: linear-gradient(120deg, #1d6d79 0%, #164b55 100%);
         color: #ffffff;
         border-radius: 999px;
-        padding: 0.45rem 0.88rem;
+        padding: 0.95rem 1.2rem;
         font-weight: 700;
         cursor: pointer;
-        font: inherit;
+        text-align: center;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .btn:hover,
+    .btn:focus-visible {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 24px rgba(28, 90, 99, 0.22);
     }
 
     .btn.secondary {
-        border-color: #9ab5c8;
-        background: #f2f8fc;
-        color: #275a78;
+        border-color: #c7dde3;
+        background: #f7fbfb;
+        color: #1d5f6f;
     }
 
     .notice {
-        margin-top: 1rem;
+        padding: 1.3rem 1.35rem;
+        border-radius: 20px;
         background: #ffffff;
-        border: 1px solid #d4e0e9;
-        border-radius: 14px;
-        padding: 0.9rem;
-        color: #274f65;
+        border: 1px solid #dfe7ea;
+        color: #304f5a;
+        box-shadow: 0 12px 24px rgba(23, 44, 57, 0.04);
     }
 
     .notice strong {
-        color: #173f57;
+        color: #15444c;
     }
 
-    @media (max-width: 980px) {
-        .packages-grid {
-            grid-template-columns: 1fr;
+    .package-card__tag + .package-card__name {
+        margin-top: 0.4rem;
+    }
+
+    @media (max-width: 760px) {
+        .booking-hero {
+            padding: 1.6rem;
+        }
+
+        .package-card {
+            padding: 1.4rem;
         }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<section class="packages-hero">
-    <h1>Buchungsoptionen als Softwarepakete</h1>
-    <p>Alle Pakete sind frei einsehbar, auch ohne Admin.</p>
-    <p>Jedes Paket basiert auf derselben Sicherheitsarchitektur mit Rollenrechten, geschützten Sessions und nachvollziehbaren Aktionen.</p>
+<section class="booking-hero">
+    <h1>Buchungsoptionen entdecken</h1>
+    <p>Unsere Pakete sind klar strukturiert und transparent. Wählen Sie die passende Lösung für Ihre Schule und senden Sie die Anfrage direkt an unser Admin-Team.</p>
 </section>
 
-<section class="packages-grid">
-    <div class="flex flex-col bg-white rounded-3xl">
-      <div class="px-6 py-8 sm:p-10 sm:pb-6">
-        <div class="grid items-center justify-center w-full grid-cols-1 text-left">
-          <div>
-            <h2
-              class="text-lg font-medium tracking-tighter text-gray-600 lg:text-3xl">
-                Inventarsystem
-            </h2>
-            <p class="mt-2 text-sm text-gray-500"> 
-                Stabiler Einstieg für den Schulalltag
-                - Inventarverwaltung mit Rollenrechten
-                - Basis-Support und Ticketing
-                - Schulweite Übersichten
-                - Erweiterte Instanzverwaltung
-                - Detailberichte und Admin-Insights
-            </p>
-          </div>
-          <div class="mt-6">
-            <p>
-              <span class="text-5xl font-light tracking-tight text-black">
-                250 € vb.
-              </span>
-              <span class="text-base font-medium text-gray-500"> /mo </span>
-            </p>
-          </div>
+<section class="packages-grid" aria-label="Buchungspakete">
+    <article class="package-card">
+        <div class="package-card__header">
+            <div>
+                <span class="package-card__tag">Beliebt</span>
+                <h2 class="package-card__name">Inventarsystem</h2>
+            </div>
+            <div class="package-card__price">
+                <span>250 €</span>
+                <small>/ Monat</small>
+            </div>
         </div>
-      </div>
-      <div class="flex px-6 pb-8 sm:px-8">
-        <a
-          aria-describedby="tier-company"
-          class="flex items-center justify-center w-full px-6 py-2.5 text-center text-white duration-200 bg-black border-2 border-black rounded-full nline-flex hover:bg-transparent hover:border-black hover:text-black focus:outline-none focus-visible:outline-black text-sm focus-visible:ring-black" href="#">
-          <div class="package-actions">
+        <p class="package-card__description">Der stabile Einstieg in die Schulverwaltung mit Inventarverwaltung, Benutzerrechten und Berichten für den gesamten Schulbetrieb.</p>
+        <ul class="package-card__features">
+            <li>Inventarverwaltung mit Rollenrechten</li>
+            <li>Basis-Support und Ticketing</li>
+            <li>Schulweite Übersichten und Berichte</li>
+            <li>Erweiterte Instanzverwaltung</li>
+        </ul>
+        <div class="package-card__actions">
             {% if 'username' in session %}
                 <form method="POST" action="{{ url_for('book_option_package') }}">
                     <input type="hidden" name="package" value="inventarsystem">
-                    <button class="btn" type="submit">Option buchen</button>
+                    <button class="btn" type="submit">Jetzt buchen</button>
                 </form>
             {% else %}
                 <a class="btn secondary" href="{{ url_for('login') }}">Mit Konto buchen</a>
             {% endif %}
         </div>
-        </a>
-      </div>
-    </div>
-    
-    <div class="flex flex-col bg-white rounded-3xl">
-      <div class="px-6 py-8 sm:p-10 sm:pb-6">
-        <div class="grid items-center justify-center w-full grid-cols-1 text-left">
-          <div>
-            <h2
-              class="text-lg font-medium tracking-tighter text-gray-600 lg:text-3xl">
-                Bibliothekssystem Modul
-            </h2>
-            <p class="mt-2 text-sm text-gray-500"> 
-                Optimiert für Bibliothek und Medien
+    </article>
 
-                - Ausleih- und Rückgabeprozesse
-                - Bestandsübersichten für Medien
-                - Transparente Historie pro Medium
-            </p>
-          </div>
-          <div class="mt-6">
-            <p>
-              <span class="text-5xl font-light tracking-tight text-black">
-                150 € vb.
-              </span>
-              <span class="text-base font-medium text-gray-500"> /mo </span>
-            </p>
-          </div>
+    <article class="package-card">
+        <div class="package-card__header">
+            <div>
+                <span class="package-card__tag">Modul</span>
+                <h2 class="package-card__name">Bibliothekssystem</h2>
+            </div>
+            <div class="package-card__price">
+                <span>150 €</span>
+                <small>/ Monat</small>
+            </div>
         </div>
-      </div>
-      <div class="flex px-6 pb-8 sm:px-8">
-        <a
-          aria-describedby="tier-company"
-          class="flex items-center justify-center w-full px-6 py-2.5 text-center text-white duration-200 bg-black border-2 border-black rounded-full nline-flex hover:bg-transparent hover:border-black hover:text-black focus:outline-none focus-visible:outline-black text-sm focus-visible:ring-black" href="#">
-          <div class="package-actions">
+        <p class="package-card__description">Ein spezialisiertes Modul für Bibliotheken und Medienzentren mit Ausleihprozessen, Medienbeständen und historischer Transparenz.</p>
+        <ul class="package-card__features">
+            <li>Ausleih- und Rückgabeprozesse</li>
+            <li>Bestandsübersichten für Medien</li>
+            <li>Transparente Historie pro Medium</li>
+            <li>Einfaches Modul-Setup für Schulen</li>
+        </ul>
+        <div class="package-card__actions">
             {% if 'username' in session %}
                 <form method="POST" action="{{ url_for('book_option_package') }}">
                     <input type="hidden" name="package" value="buecherei">
-                    <button class="btn" type="submit">Option buchen</button>
+                    <button class="btn" type="submit">Jetzt buchen</button>
                 </form>
             {% else %}
                 <a class="btn secondary" href="{{ url_for('login') }}">Mit Konto buchen</a>
             {% endif %}
         </div>
-        </a>
-      </div>
-    </div>
+    </article>
 </section>
 
 <section class="notice">
     {% if 'username' in session %}
-        <p><strong>Hinweis:</strong> Buchungsanfragen werden direkt vom Admin-Team verarbeitet und Ihrer Instanz zugeordnet.</p>
+        <p><strong>Hinweis:</strong> Deine Buchungsanfrage wird direkt vom Admin-Team bearbeitet und deiner Schulinstanz zugeordnet.</p>
     {% else %}
-        <p><strong>Hinweis:</strong> Bitte einloggen oder registrieren, um Buchungsoptionen anzufragen.</p>
+        <p><strong>Hinweis:</strong> Bitte logge dich ein oder registriere dich, um eine Buchungsoption anzufragen.</p>
     {% endif %}
 </section>
 {% endblock %}
