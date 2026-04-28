@@ -156,13 +156,22 @@
             display: flex;
             align-items: center;
             gap: 1.1rem;
+            flex-wrap: wrap;
             font-weight: 600;
             color: var(--text-soft);
             font-size: 0.98rem;
         }
 
+        .nav-links a {
+            white-space: nowrap;
+        }
+
         .nav-links a:hover {
             color: var(--brand);
+        }
+
+        .nav-links .nav-user-link {
+            display: none;
         }
 
         .nav-actions {
@@ -393,6 +402,10 @@
                 transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
             }
 
+            .nav-links .nav-user-link {
+                display: block;
+            }
+
             .nav-links.open {
                 opacity: 1;
                 visibility: visible;
@@ -408,6 +421,11 @@
                 font-weight: 700;
             }
 
+            .nav-links .nav-user-link {
+                padding-left: 1rem;
+                border-left: 3px solid rgba(28, 90, 99, 0.18);
+            }
+
             .nav-links a:hover,
             .nav-links a:focus-visible {
                 background: #e7f0ec;
@@ -418,6 +436,10 @@
                 width: 100%;
                 justify-content: flex-end;
                 flex-wrap: wrap;
+            }
+
+            .nav-links .nav-user-link {
+                display: block;
             }
 
             .nav-actions .nav-btn {
@@ -467,6 +489,10 @@
             .nav-actions .nav-btn {
                 width: 100%;
             }
+
+            .nav-links .nav-user-link {
+                display: block;
+            }
         }
     </style>
     {% endblock %}
@@ -487,6 +513,17 @@
                 <a href="{{ url_for('default') }}">Start</a>
                 <a href="{{ url_for('dienstleistungen') }}">Für Schulen</a>
                 <a href="{{ url_for('kontakt') }}">Kontakt</a>
+                {% if 'username' in session %}
+                    <a class="nav-user-link" href="{{ url_for('my_invoices') }}">Meine Rechnungen</a>
+                    <a class="nav-user-link" href="{{ url_for('my_instance_management') }}">Meine Instanz</a>
+                    <a class="nav-user-link" href="{{ url_for('user_chat') }}">Chat mit Admin</a>
+                    <a class="nav-user-link" href="{{ url_for('user_tickets') }}">Support Tickets</a>
+                    {% if session.get('is_admin') %}
+                        <a class="nav-user-link" href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a>
+                        <a class="nav-user-link" href="{{ url_for('admin_users') }}">Userverwaltung</a>
+                        <a class="nav-user-link" href="{{ url_for('admin_invoices') }}">Rechnungsverwaltung</a>
+                    {% endif %}
+                {% endif %}
             </div>
             <div class="nav-actions">
                 {% if 'username' in session %}
