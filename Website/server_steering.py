@@ -180,6 +180,38 @@ class instace:
             counter += 1
         return result
 
+    def backup(name: str) -> bool:
+        """
+        Creates a backup of an instance with the subdomain [name].invario.eu
+
+        Input:
+        - name -> String
+
+        Output:
+        - bool if the backup works (True: backup worked; False: didnt work)
+        """
+        import subprocess
+        try:
+            subprocess.run(
+                [
+                    "docker",
+                    "compose",
+                    "-f",
+                    "docker-compose-multitenant.yml",
+                    "exec",
+                    "-T",
+                    "mongodb",
+                    "mongodump",
+                    f"--archive=/data/backups/inventar_{name}-$(date +%Y%m%d%H%M%S).gz",
+                    "--gzip",
+                    "--db",
+                    f"inventar_{name}"
+                ],
+                check=True
+            )
+            return True
+        except subprocess.CalledProcessError:
+            return False
 
 class ussage:
     """
