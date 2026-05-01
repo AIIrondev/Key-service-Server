@@ -63,6 +63,8 @@ Wichtige Ports:
 - Gitea SSH: 2222
 - Website Upstream: 4999
 
+Hinweis: Die Website nutzt in Docker Compose intern den Service-Namen `mongodb` als MongoDB-Host. Wenn du die Website lokal mit `python` oder außerhalb des Containers startest, muss `MONGO_URI` auf einen hostzugänglichen MongoDB-Endpunkt zeigen oder `mongodb` über `27017:27017` erreichbar sein.
+
 ### Nginx
 
 Datei: [nginx.sh](nginx.sh)

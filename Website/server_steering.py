@@ -5,16 +5,18 @@ import requests
 _var = "/opt/legendary-octo-garbanzo"
 _cmd = "run-tenant-cmd.sh"
 
-def add_dns(name: str) -> bool:
+def add_dns(name: str, port: int) -> bool:
     """
     Adds the subdomain to the DNS Routes
 
     Input:
     - name (Name of the subdomain) -> String
+    - port (Port number for the subdomain) -> int
 
     Output:
     - bool (True if adding of the Subdomain is active)
     """
+    # This is a placeholder function, as the actual implementation would depend on the DNS provider and how the DNS records are managed.
     pass
 
 def clear_special(var_:str) -> str:
@@ -45,7 +47,7 @@ def clear_special(var_:str) -> str:
     except:
         return False
 
-def execute_script(wd_: str, file_: str, com_: str, com2_: str="None"):
+def execute_script(wd_: str, file_: str, com_: str, com2_: str="None", com3_: str="None"):
     """
     executes a script with the option of to extra inputs
 
@@ -54,6 +56,7 @@ def execute_script(wd_: str, file_: str, com_: str, com2_: str="None"):
     - file_ = working file that youre targeting -> String
     - com_ = first option -> String
     - com2_ = second option (Optional if needet)-> String
+    - com3_ = third option (Optional if needet)-> String
 
     Output:
     - ether False if failed -> bool
@@ -64,9 +67,11 @@ def execute_script(wd_: str, file_: str, com_: str, com2_: str="None"):
     if not update_path:
         return False
     if com2_ != "None":
-        cmd = f'bash "{update_path}" {com_}'
-    else:
         cmd = f'bash "{update_path}" {com_} {com2_}'
+    elif com3_ != "None":
+        cmd = f'bash "{update_path}" {com_} {com2_} {com3_}'
+    else:
+        cmd = f'bash "{update_path}" {com_}'
     try:
         result = subprocess.run(
             ["bash", "-lc", cmd],
@@ -99,7 +104,7 @@ class instace:
     def __init__():
         return list()
 
-    def new(name: str) -> bool:
+    def new(name: str):
         """
         Generates a new instance with the subdomain [name].invario.eu
 
@@ -107,10 +112,16 @@ class instace:
         - name -> String
 
         Output:
-        - bool if the initiation works (True: generation worked; False: didnt work)
+        - int (Port number for the subdomain) or False if the creation of the instance didnt work
         """
-        if execute_script(_var, _cmd, "add", clear_special(name)):
-            return True
+        port_starter = 10002
+        port = port_starter
+        for i in instace.list():
+            port =+ 1
+
+        if execute_script(_var, _cmd, "add", clear_special(name), port):
+            add_dns(name, port)
+            return int(port)
         else:
             return False
 
